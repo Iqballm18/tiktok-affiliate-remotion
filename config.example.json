@@ -1,0 +1,11 @@
+{
+  "defaultWatermark": "video milik @username",
+  "webPort": 3100,
+  "defaultFps": 60,
+  "defaultTheme": "pastel",
+  "autoFitVoiceOver": true,
+  "enableGpuRender": false,
+  "gdriveFolderUrl": "",
+  "gdriveWebhookUrl": ""
+}
+

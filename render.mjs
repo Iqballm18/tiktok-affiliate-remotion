@@ -1,0 +1,339 @@
+#!/usr/bin/env node
+
+/**
+ * render.mjs — Pure Node.js Render Pipeline for TikTok Affiliate Remotion
+ * Replaces bash/heredoc with programmatic @remotion/renderer & @remotion/bundler
+ * 
+ * Usage:
+ *   node render.mjs <product-id-or-json> [v1|v2|all] [--fps=30|60] [--still --frame=120]
+ *   node render.mjs --batch
+ */
+
+import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { bundle } from '@remotion/bundler';
+import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
+import { loadProduct, resolveVariantProps, listProducts, loadConfig } from './scripts/product-helper.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ENTRY_POINT = path.resolve(__dirname, 'src/index.ts');
+const OUT_DIR = path.resolve(__dirname, 'out');
+const PUBLIC_DIR = path.resolve(__dirname, 'public');
+
+// In-memory bundle cache across multiple renders
+let cachedBundleLocation = null;
+
+/**
+ * Menyinkronkan seluruh isi folder public/ ke dalam folder bundle Remotion.
+ * Ini memastikan audio voiceover baru, transkrip json baru, atau video baru
+ * langsung terbarui di Remotion tanpa perlu rebuild bundle Webpack yang memakan waktu.
+ */
+export function syncPublicToBundle(bundleLocation, onLog = console.log) {
+  if (!bundleLocation || !fs.existsSync(bundleLocation)) return;
+  const bundlePublic = path.join(bundleLocation, 'public');
+  if (!fs.existsSync(bundlePublic)) {
+    fs.mkdirSync(bundlePublic, { recursive: true });
+  }
+
+  try {
+    fs.cpSync(PUBLIC_DIR, bundlePublic, {
+      recursive: true,
+      force: true,
+      dereference: true,
+    });
+    // onLog('[SYNC] File media public/ terbaru disinkronkan ke bundle Remotion.');
+  } catch (err) {
+    onLog(`[WARN] Gagal menyinkronkan file public ke bundle: ${err.message}`);
+  }
+}
+
+export function invalidateBundle() {
+  cachedBundleLocation = null;
+}
+
+export async function getOrBuildBundle(onLog = console.log, forceRebuild = false) {
+  if (!forceRebuild && cachedBundleLocation && fs.existsSync(cachedBundleLocation)) {
+    syncPublicToBundle(cachedBundleLocation, onLog);
+    return cachedBundleLocation;
+  }
+  onLog('[BUNDLER] Mempersiapkan bundle Remotion (Webpack/Rspack)...');
+  const bundleLocation = await bundle({
+    entryPoint: ENTRY_POINT,
+    onProgress: (p) => {
+      if (p % 25 === 0 || p === 100) {
+        onLog(`[BUNDLER] Progres bundling: ${p}%`);
+      }
+    },
+  });
+  cachedBundleLocation = bundleLocation;
+  syncPublicToBundle(bundleLocation, onLog);
+  onLog('[BUNDLER] Bundle berhasil dibuat.');
+  return bundleLocation;
+}
+
+/**
+ * Programmatic render of a single product variant
+ */
+export async function renderProductVariant({
+  productOrId,
+  variantKey = 'v1',
+  fpsOverride,
+  customOutputName,
+  useGpu,
+  onProgress,
+  onLog = console.log,
+  cancelToken,
+}) {
+  const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
+  const config = loadConfig();
+  const fps = fpsOverride ? parseInt(fpsOverride, 10) : (config.defaultFps || 60);
+
+  onLog(`\n==================================================`);
+  onLog(`🎬 Menyiapkan Render: ${customOutputName || product.name}`);
+  onLog(`📌 Variasi: ${variantKey}`);
+  onLog(`⚡ FPS: ${fps}`);
+  onLog(`==================================================`);
+
+  // 1. Resolve props, auto-fit duration & captions
+  const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps });
+  onLog(`[PROPS] Durasi video: ${totalClipsSec.toFixed(1)}s (${durationInFrames} frames @ ${fps}fps)`);
+
+  // 2. Build or reuse bundle & sinkronkan aset public/ terbaru
+  const bundleLocation = await getOrBuildBundle(onLog);
+  syncPublicToBundle(bundleLocation, onLog);
+
+  // 3. Select composition
+  const composition = await selectComposition({
+    serveUrl: bundleLocation,
+    id: 'TikTokAffiliate',
+    inputProps: props,
+  });
+
+  // Ensure output directory exists
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+  }
+
+  // Sanitize filename
+  const rawTitle = customOutputName || product.name;
+  const cleanProductName = rawTitle.replace(/[/\\?%*:|"<>]/g, '-').trim();
+  const outFileName = `${cleanProductName} ${variantKey}.mp4`;
+  const outputLocation = path.join(OUT_DIR, outFileName);
+
+  onLog(`[RENDER] Menyimpan video ke: out/${outFileName}`);
+
+  // 4. Siapkan opsi akselerasi GPU (Chromium GPU Compositing & 2D Canvas)
+  const enableGpu = useGpu !== undefined ? !!useGpu : !!config.enableGpuRender;
+
+  // Catatan teknis: Remotion menggunakan binary internal FFmpeg yang hanya mendukung
+  // NVENC (Nvidia) dan belum menyertakan AMF (AMD). Namun untuk GPU Radeon, Remotion
+  // mendukung akselerasi penuh pada tahap Chromium Headless (WebGL, Canvas, Layer Compositing)
+  // yang memakan 90% beban proses render video.
+  const chromiumOptions = enableGpu ? {
+    args: [
+      '--enable-gpu',
+      '--ignore-gpu-blocklist',
+      '--enable-accelerated-2d-canvas',
+      '--use-angle=default',
+    ],
+  } : {};
+
+  if (enableGpu) {
+    onLog(`[GPU] 🎮 Akselerasi GPU Radeon AKTIF (Chromium WebGL & 2D Canvas Compositing)`);
+    onLog(`[GPU] Pipeline: AMD GPU Frame Render + Remotion Fast Encoder`);
+  } else {
+    onLog(`[CPU] Render menggunakan mode CPU standar (libx264, crf=20)`);
+    onLog(`[CPU] Tips: Aktifkan GPU Rendering di modal untuk mempercepat render frame`);
+  }
+
+  // 4. Render media
+  let lastLoggedFrame = -1;
+  const startTime = Date.now();
+
+  const renderResult = await renderMedia({
+    composition,
+    serveUrl: bundleLocation,
+    codec: 'h264',
+    crf: 20,
+    outputLocation,
+    inputProps: props,
+    concurrency: 8,
+    disallowParallelEncoding: false,
+    cancelToken,
+    chromiumOptions,
+    onProgress: (prog) => {
+      const rendered = prog.renderedFrames;
+      const total = prog.totalFrames || durationInFrames;
+      const percent = total > 0 ? (rendered / total) * 100 : 0;
+
+      // Calculate simple ETA
+      const elapsed = (Date.now() - startTime) / 1000;
+      const fpsRendered = rendered > 0 && elapsed > 0 ? rendered / elapsed : 0;
+      const remainingFrames = total - rendered;
+      const etaSeconds = fpsRendered > 0 ? Math.round(remainingFrames / fpsRendered) : 0;
+      const etaStr = etaSeconds > 60 ? `${Math.floor(etaSeconds / 60)}m ${etaSeconds % 60}s` : `${etaSeconds}s`;
+
+      if (rendered !== lastLoggedFrame && (rendered % 60 === 0 || rendered === total)) {
+        lastLoggedFrame = rendered;
+        onLog(`[REMOTION] Frame ${rendered}/${total} (${percent.toFixed(1)}%) — ETA: ${etaStr}`);
+      }
+
+      if (typeof onProgress === 'function') {
+        onProgress({
+          step: rendered >= total ? 'Meng-encode Video' : 'Merender Frame Remotion',
+          frame: rendered,
+          totalFrames: total,
+          percent,
+          eta: etaStr,
+          encodedFrames: prog.encodedFrames,
+        });
+      }
+    },
+  });
+
+  const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
+  const stat = fs.existsSync(outputLocation) ? fs.statSync(outputLocation) : { size: 0 };
+  const sizeMB = (stat.size / (1024 * 1024)).toFixed(1);
+
+  onLog(`[SUCCESS] Selesai dalam ${durationSec}s! File: out/${outFileName} (${sizeMB} MB)`);
+
+  return {
+    success: true,
+    outFileName,
+    outputLocation,
+    sizeMB,
+    durationSec,
+  };
+}
+
+/**
+ * Render single still frame for instant visual preview
+ */
+export async function renderProductStill({
+  productOrId,
+  variantKey = 'v1',
+  frame = 60,
+  onLog = console.log,
+  onProgress = () => { },
+}) {
+  onProgress({ step: 'sync', message: 'Menyelaraskan media & membaca props...', percent: 20 });
+  const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
+  const { props } = resolveVariantProps(product, variantKey);
+
+  onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion (Webpack)...', percent: 45 });
+  const bundleLocation = await getOrBuildBundle(onLog);
+  syncPublicToBundle(bundleLocation, onLog);
+
+  onProgress({ step: 'select', message: 'Memuat komposisi video 1080x1920...', percent: 65 });
+  const composition = await selectComposition({
+    serveUrl: bundleLocation,
+    id: 'TikTokAffiliate',
+    inputProps: props,
+  });
+
+  // Simpan ke direktori temp OS agar out/previews/ TIDAK PERNAH menumpuk file sampah
+  const tempPreviewDir = path.join(os.tmpdir(), 'remotion_previews');
+  if (!fs.existsSync(tempPreviewDir)) fs.mkdirSync(tempPreviewDir, { recursive: true });
+  const previewPath = path.join(tempPreviewDir, `preview_live_${Date.now()}.png`);
+
+  onProgress({ step: 'render', message: `Merender frame ${frame} di Chromium headless...`, percent: 85 });
+  onLog(`[STILL] Merender still frame ${frame} untuk pratinjau cepat...`);
+  await renderStill({
+    composition,
+    serveUrl: bundleLocation,
+    output: previewPath,
+    inputProps: props,
+    frame: parseInt(frame, 10),
+    imageFormat: 'png',
+  });
+
+  onProgress({ step: 'done', message: 'Pratinjau frame berhasil dibuat!', percent: 100 });
+  onLog(`[STILL] Pratinjau frame selesai.`);
+  return {
+    previewPath,
+    previewFilename: path.basename(previewPath),
+  };
+}
+
+// CLI Execution if run directly
+if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename)) {
+  const args = process.argv.slice(2);
+  if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
+    console.log(`
+Penggunaan CLI render.mjs:
+  node render.mjs <product-id> [target: v1|v2|all] [--fps=30|60]
+  node render.mjs <product-id> [target] --still --frame=120
+  node render.mjs --batch [--fps=30|60]
+
+Contoh:
+  node render.mjs blackmores v1
+  node render.mjs blackmores all --fps=30
+  node render.mjs labore v1 --still --frame=60
+  node render.mjs --batch
+`);
+    process.exit(0);
+  }
+
+  // Parse flags
+  const isBatch = args.includes('--batch');
+  const isStill = args.includes('--still');
+  const fpsArg = args.find(a => a.startsWith('--fps='));
+  const fps = fpsArg ? fpsArg.split('=')[1] : (args.find(a => a === '30' || a === '60') || null);
+  const frameArg = args.find(a => a.startsWith('--frame='));
+  const frame = frameArg ? parseInt(frameArg.split('=')[1], 10) : 60;
+
+  try {
+    if (isBatch) {
+      console.log('[BATCH] Memulai render massal semua produk di products/ ...');
+      const products = listProducts();
+      for (const p of products) {
+        console.log(`\n--- Memproses Produk: ${p.name} (${p.id}) ---`);
+        for (const vk of p.variantKeys) {
+          await renderProductVariant({
+            productOrId: p.id,
+            variantKey: vk,
+            fpsOverride: fps,
+          });
+        }
+      }
+      console.log('\n[BATCH] Semua produk selesai dirender!');
+      process.exit(0);
+    }
+
+    const productId = args[0];
+    const target = args[1] && !args[1].startsWith('--') ? args[1] : 'all';
+
+    if (isStill) {
+      const vk = target === 'all' || target === 'v2' ? 'v2' : 'v1';
+      await renderProductStill({
+        productOrId: productId,
+        variantKey: vk,
+        frame,
+      });
+      process.exit(0);
+    }
+
+    const product = loadProduct(productId);
+    const variantsToRender = target === 'all'
+      ? Object.keys(product.variants || {})
+      : (target === '1' ? ['v1'] : (target === '2' ? ['v2'] : [target]));
+
+    for (const vk of variantsToRender) {
+      await renderProductVariant({
+        productOrId: product,
+        variantKey: vk,
+        fpsOverride: fps,
+      });
+    }
+
+    console.log('\n🎉 Render selesai sempurna!');
+    process.exit(0);
+  } catch (err) {
+    console.error('\n❌ Terjadi kesalahan saat render:', err.message);
+    process.exit(1);
+  }
+}
+

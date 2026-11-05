@@ -1,0 +1,515 @@
+[
+  {
+    "text": " Jangan",
+    "startMs": 50,
+    "endMs": 430,
+    "timestampMs": 140,
+    "confidence": 0.820738,
+    "isCorrected": false,
+    "originalWhisper": "Jangan"
+  },
+  {
+    "text": " beli",
+    "startMs": 430,
+    "endMs": 710,
+    "timestampMs": 560,
+    "confidence": 0.995992,
+    "isCorrected": false,
+    "originalWhisper": "beli"
+  },
+  {
+    "text": " ini",
+    "startMs": 710,
+    "endMs": 920,
+    "timestampMs": 980,
+    "confidence": 0.987046,
+    "isCorrected": false,
+    "originalWhisper": "ini"
+  },
+  {
+    "text": " kalau",
+    "startMs": 920,
+    "endMs": 1280,
+    "timestampMs": 1420,
+    "confidence": 0.467948,
+    "isCorrected": false,
+    "originalWhisper": "kalau"
+  },
+  {
+    "text": " kamu",
+    "startMs": 1280,
+    "endMs": 1570,
+    "timestampMs": 1900,
+    "confidence": 0.984364,
+    "isCorrected": false,
+    "originalWhisper": "kamu"
+  },
+  {
+    "text": " gak",
+    "startMs": 1570,
+    "endMs": 1920,
+    "timestampMs": 2140,
+    "confidence": 0.318096,
+    "isCorrected": true,
+    "originalWhisper": "nggak"
+  },
+  {
+    "text": " mau",
+    "startMs": 1920,
+    "endMs": 2130,
+    "timestampMs": 2400,
+    "confidence": 0.979251,
+    "isCorrected": false,
+    "originalWhisper": "mau"
+  },
+  {
+    "text": " lemari",
+    "startMs": 2130,
+    "endMs": 2550,
+    "timestampMs": 2520,
+    "confidence": 0.974061,
+    "isCorrected": false,
+    "originalWhisper": "lemari"
+  },
+  {
+    "text": " pakaian",
+    "startMs": 2550,
+    "endMs": 3040,
+    "timestampMs": 2820,
+    "confidence": 0.547667,
+    "isCorrected": false,
+    "originalWhisper": "pakaian"
+  },
+  {
+    "text": " kamu",
+    "startMs": 3040,
+    "endMs": 3320,
+    "timestampMs": 3320,
+    "confidence": 0.97535,
+    "isCorrected": false,
+    "originalWhisper": "kamu"
+  },
+  {
+    "text": " kering",
+    "startMs": 3320,
+    "endMs": 3840,
+    "timestampMs": 3580,
+    "confidence": 0.955759,
+    "isCorrected": false,
+    "originalWhisper": "kering"
+  },
+  {
+    "text": " dan",
+    "startMs": 3840,
+    "endMs": 4120,
+    "timestampMs": 4040,
+    "confidence": 0.732916,
+    "isCorrected": false,
+    "originalWhisper": "dan"
+  },
+  {
+    "text": " bebas",
+    "startMs": 4120,
+    "endMs": 4590,
+    "timestampMs": 4380,
+    "confidence": 0.940023,
+    "isCorrected": false,
+    "originalWhisper": "bebas"
+  },
+  {
+    "text": " bau",
+    "startMs": 4590,
+    "endMs": 4860,
+    "timestampMs": 4900,
+    "confidence": 0.891283,
+    "isCorrected": false,
+    "originalWhisper": "bau"
+  },
+  {
+    "text": " apek",
+    "startMs": 4860,
+    "endMs": 5250,
+    "timestampMs": 5260,
+    "confidence": 0.789418,
+    "isCorrected": true,
+    "originalWhisper": "apak"
+  },
+  {
+    "text": " selamanya!",
+    "startMs": 5250,
+    "endMs": 6400,
+    "timestampMs": 5520,
+    "confidence": 0.997318,
+    "isCorrected": false,
+    "originalWhisper": "selamanya!"
+  },
+  {
+    "text": " Kotak",
+    "startMs": 6400,
+    "endMs": 6850,
+    "timestampMs": 6820,
+    "confidence": 0.568211,
+    "isCorrected": false,
+    "originalWhisper": "Kotak"
+  },
+  {
+    "text": " Bagus",
+    "startMs": 6850,
+    "endMs": 7220,
+    "timestampMs": 7280,
+    "confidence": 0.850135,
+    "isCorrected": true,
+    "originalWhisper": "bagus"
+  },
+  {
+    "text": " Serap",
+    "startMs": 7220,
+    "endMs": 7630,
+    "timestampMs": 7480,
+    "confidence": 0.830624,
+    "isCorrected": true,
+    "originalWhisper": "serap"
+  },
+  {
+    "text": " Air",
+    "startMs": 7630,
+    "endMs": 7880,
+    "timestampMs": 7780,
+    "confidence": 0.859436,
+    "isCorrected": true,
+    "originalWhisper": "air"
+  },
+  {
+    "text": " lima",
+    "startMs": 7880,
+    "endMs": 8209,
+    "timestampMs": 8045,
+    "confidence": 0.977568,
+    "isCorrected": true,
+    "originalWhisper": "500"
+  },
+  {
+    "text": " ratus",
+    "startMs": 8209,
+    "endMs": 8620,
+    "timestampMs": 8415,
+    "confidence": 0.977568,
+    "isCorrected": true,
+    "originalWhisper": "500"
+  },
+  {
+    "text": " mili",
+    "startMs": 8620,
+    "endMs": 8790,
+    "timestampMs": 8540,
+    "confidence": 0.605466,
+    "isCorrected": true,
+    "originalWhisper": "ml"
+  },
+  {
+    "text": " ini",
+    "startMs": 8790,
+    "endMs": 9080,
+    "timestampMs": 8940,
+    "confidence": 0.979284,
+    "isCorrected": false,
+    "originalWhisper": "ini"
+  },
+  {
+    "text": " life",
+    "startMs": 9080,
+    "endMs": 9470,
+    "timestampMs": 9340,
+    "confidence": 0.256583,
+    "isCorrected": true,
+    "originalWhisper": "live"
+  },
+  {
+    "text": " changing",
+    "startMs": 9470,
+    "endMs": 10080,
+    "timestampMs": 9740,
+    "confidence": 0.851868,
+    "isCorrected": false,
+    "originalWhisper": "changing"
+  },
+  {
+    "text": " banget",
+    "startMs": 10080,
+    "endMs": 10640,
+    "timestampMs": 10360,
+    "confidence": 0.98654,
+    "isCorrected": true,
+    "originalWhisper": "banget!"
+  },
+  {
+    "text": " karena",
+    "startMs": 10640,
+    "endMs": 11120,
+    "timestampMs": 11220,
+    "confidence": 0.950748,
+    "isCorrected": true,
+    "originalWhisper": "Karena"
+  },
+  {
+    "text": " wadahnya",
+    "startMs": 11120,
+    "endMs": 11760,
+    "timestampMs": 11640,
+    "confidence": 0.944035,
+    "isCorrected": false,
+    "originalWhisper": "wadahnya"
+  },
+  {
+    "text": " bisa",
+    "startMs": 11760,
+    "endMs": 12080,
+    "timestampMs": 12220,
+    "confidence": 0.994459,
+    "isCorrected": false,
+    "originalWhisper": "bisa"
+  },
+  {
+    "text": " diisi",
+    "startMs": 12080,
+    "endMs": 12480,
+    "timestampMs": 12420,
+    "confidence": 0.976934,
+    "isCorrected": false,
+    "originalWhisper": "diisi"
+  },
+  {
+    "text": " ulang",
+    "startMs": 12480,
+    "endMs": 12880,
+    "timestampMs": 12880,
+    "confidence": 0.961032,
+    "isCorrected": false,
+    "originalWhisper": "ulang"
+  },
+  {
+    "text": " berkali-kali",
+    "startMs": 12880,
+    "endMs": 13840,
+    "timestampMs": 13120,
+    "confidence": 0.97989,
+    "isCorrected": false,
+    "originalWhisper": "berkali-kali"
+  },
+  {
+    "text": " pakai",
+    "startMs": 13840,
+    "endMs": 14240,
+    "timestampMs": 14040,
+    "confidence": 0.881911,
+    "isCorrected": false,
+    "originalWhisper": "pakai"
+  },
+  {
+    "text": " pouch",
+    "startMs": 14240,
+    "endMs": 14640,
+    "timestampMs": 14400,
+    "confidence": 0.927599,
+    "isCorrected": false,
+    "originalWhisper": "pouch"
+  },
+  {
+    "text": " refill.",
+    "startMs": 14640,
+    "endMs": 15160,
+    "timestampMs": 14840,
+    "confidence": 0.993356,
+    "isCorrected": false,
+    "originalWhisper": "refill."
+  },
+  {
+    "text": " Daya",
+    "startMs": 15160,
+    "endMs": 15550,
+    "timestampMs": 15640,
+    "confidence": 0.731865,
+    "isCorrected": false,
+    "originalWhisper": "Daya"
+  },
+  {
+    "text": " serapnya",
+    "startMs": 15550,
+    "endMs": 16330,
+    "timestampMs": 15880,
+    "confidence": 0.925472,
+    "isCorrected": false,
+    "originalWhisper": "serapnya"
+  },
+  {
+    "text": " juara,",
+    "startMs": 16330,
+    "endMs": 17160,
+    "timestampMs": 16500,
+    "confidence": 0.924508,
+    "isCorrected": true,
+    "originalWhisper": "juara."
+  },
+  {
+    "text": " udara",
+    "startMs": 17160,
+    "endMs": 17590,
+    "timestampMs": 17540,
+    "confidence": 0.879357,
+    "isCorrected": true,
+    "originalWhisper": "Udara"
+  },
+  {
+    "text": " lembap",
+    "startMs": 17590,
+    "endMs": 18110,
+    "timestampMs": 17920,
+    "confidence": 0.970804,
+    "isCorrected": true,
+    "originalWhisper": "lembab"
+  },
+  {
+    "text": " langsung",
+    "startMs": 18110,
+    "endMs": 18810,
+    "timestampMs": 18560,
+    "confidence": 0.798959,
+    "isCorrected": false,
+    "originalWhisper": "langsung"
+  },
+  {
+    "text": " kekunci",
+    "startMs": 18810,
+    "endMs": 19410,
+    "timestampMs": 19110,
+    "confidence": 0.905067,
+    "isCorrected": true,
+    "originalWhisper": "ke + kunci"
+  },
+  {
+    "text": " rapi.",
+    "startMs": 19410,
+    "endMs": 19860,
+    "timestampMs": 19580,
+    "confidence": 0.929487,
+    "isCorrected": false,
+    "originalWhisper": "rapi."
+  },
+  {
+    "text": " Jauh",
+    "startMs": 19860,
+    "endMs": 20200,
+    "timestampMs": 20360,
+    "confidence": 0.944991,
+    "isCorrected": false,
+    "originalWhisper": "Jauh"
+  },
+  {
+    "text": " lebih",
+    "startMs": 20200,
+    "endMs": 20640,
+    "timestampMs": 20900,
+    "confidence": 0.991665,
+    "isCorrected": false,
+    "originalWhisper": "lebih"
+  },
+  {
+    "text": " hemat",
+    "startMs": 20640,
+    "endMs": 21070,
+    "timestampMs": 21100,
+    "confidence": 0.848314,
+    "isCorrected": false,
+    "originalWhisper": "hemat"
+  },
+  {
+    "text": " di",
+    "startMs": 21070,
+    "endMs": 21240,
+    "timestampMs": 21320,
+    "confidence": 0.996265,
+    "isCorrected": false,
+    "originalWhisper": "di"
+  },
+  {
+    "text": " kantong,",
+    "startMs": 21240,
+    "endMs": 22000,
+    "timestampMs": 21580,
+    "confidence": 0.926365,
+    "isCorrected": true,
+    "originalWhisper": "kantong."
+  },
+  {
+    "text": " buruan",
+    "startMs": 22000,
+    "endMs": 22510,
+    "timestampMs": 22340,
+    "confidence": 0.815357,
+    "isCorrected": true,
+    "originalWhisper": "Buruan,"
+  },
+  {
+    "text": " cek",
+    "startMs": 22510,
+    "endMs": 22690,
+    "timestampMs": 22880,
+    "confidence": 0.887428,
+    "isCorrected": false,
+    "originalWhisper": "cek"
+  },
+  {
+    "text": " flash",
+    "startMs": 22690,
+    "endMs": 23050,
+    "timestampMs": 23140,
+    "confidence": 0.935749,
+    "isCorrected": false,
+    "originalWhisper": "flash"
+  },
+  {
+    "text": " sale",
+    "startMs": 23050,
+    "endMs": 23300,
+    "timestampMs": 23420,
+    "confidence": 0.55717,
+    "isCorrected": false,
+    "originalWhisper": "sale"
+  },
+  {
+    "text": " di",
+    "startMs": 23300,
+    "endMs": 23420,
+    "timestampMs": 23540,
+    "confidence": 0.99646,
+    "isCorrected": false,
+    "originalWhisper": "di"
+  },
+  {
+    "text": " keranjang",
+    "startMs": 23420,
+    "endMs": 23970,
+    "timestampMs": 23600,
+    "confidence": 0.53021,
+    "isCorrected": true,
+    "originalWhisper": "kranjang"
+  },
+  {
+    "text": " kuning",
+    "startMs": 23970,
+    "endMs": 24310,
+    "timestampMs": 24060,
+    "confidence": 0.988008,
+    "isCorrected": false,
+    "originalWhisper": "kuning"
+  },
+  {
+    "text": " ya!",
+    "startMs": 24310,
+    "endMs": 24720,
+    "timestampMs": 24420,
+    "confidence": 0.814048,
+    "isCorrected": false,
+    "originalWhisper": "ya!"
+  }
+]

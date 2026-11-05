@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Affiliate Video Studio — Remotion Node Render Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/app.css">
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- Top Master Header -->
+    <header class="studio-header">
+      <div class="header-left">
+        <div class="brand-badge">
+          <div class="brand-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <span>Affiliate Studio</span>
+          <span class="pill rose">Remotion Node</span>
+        </div>
+
+        <!-- Studio Navigation Tabs -->
+        <nav class="studio-tabs" id="mainStudioTabs">
+          <button class="studio-tab-btn active" data-tab="studio">
+            <span>🎬</span> Studio Produksi
+          </button>
+          <button class="studio-tab-btn" data-tab="subtitles">
+            <span>🎙️</span> Koreksi Subtitle Whisper
+          </button>
+          <button class="studio-tab-btn" data-tab="public">
+            <span>📂</span> Galeri & Berkas Media (<span class="num" id="headerPublicCount">0</span>)
+          </button>
+        </nav>
+      </div>
+
+      <div class="header-right">
+        <span class="pill emerald" id="renderStatusPill">● Siap</span>
+        <button class="btn small" id="btnOpenGDriveModal" type="button" title="Buka atau atur link folder Google Drive">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+          </svg>
+          <span>Link GDrive</span>
+        </button>
+        <button class="btn small" id="btnOpenImportModal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Import JSON Gemini
+        </button>
+        <button class="btn small" id="btnPreviewStill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          Lihat Frame
+        </button>
+        <button class="btn small primary" id="btnStartRender">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Mulai Render Video
+        </button>
+      </div>
+    </header>
+
+    <!-- Floating Mini-Progress Bar (Sticky Under Header) -->
+    <div class="header-progress-strip" id="headerProgressStrip" style="display: none;">
+      <div class="header-progress-fill" id="headerProgressFill"></div>
+    </div>
+
+    <!-- Main Workspace Container -->
+    <main class="studio-main">
+
+      <!-- ========================================================= -->
+      <!-- TAB 1: STUDIO PRODUKSI (Product Config, Form, Player, SSE) -->
+      <!-- ========================================================= -->
+      <section class="tab-view active" id="tabStudio">
+        <div class="studio-grid">
+
+          <!-- Left Column: Product Settings & Realtime Console -->
+          <div style="display: flex; flex-direction: column; gap: var(--gap);">
+
+            <!-- Panel 1: Konfigurasi Produk & Judul Video Output -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Pilih & Konfigurasi Produk</h2>
+                  <p class="panel-sub" id="activeProductBreadcrumb">Memuat data produk...</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button class="btn small" id="btnNewProduct">+ Produk Baru</button>
+                  <button class="btn small primary" id="btnSaveProduct">Simpan Produk</button>
+                </div>
+              </div>
+
+              <form id="productForm" onsubmit="return false;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="selectProduct">Produk Tersimpan (JSON)</label>
+                    <select class="input" id="selectProduct">
+                      <!-- Populated dynamically -->
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="inputProductName">Nama Produk Internal</label>
+                    <input class="input" type="text" id="inputProductName"
+                      placeholder="Contoh: Labore Barrier Revive Cream">
+                  </div>
+                </div>
+
+                <!-- Custom Output Video Title, Watermark & Position -->
+                <div class="form-row three-col">
+                  <div class="form-group">
+                    <label class="form-label" for="inputCustomOutputName">
+                      <span style="font-weight: 600; color: #fff;">Nama Video Output</span>
+                      <span class="pill rose">out/*.mp4</span>
+                    </label>
+                    <input class="input" type="text" id="inputCustomOutputName"
+                      placeholder="Judul file render output">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="inputWatermark">Teks Watermark</label>
+                    <input class="input" type="text" id="inputWatermark" value="video milik @inanikma_">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="selectWatermarkPosition">Posisi Watermark</label>
+                    <select class="input" id="selectWatermarkPosition">
+                      <option value="floating">Floating (Anti-Subtitle)</option>
+                      <option value="top_left">Kiri Atas</option>
+                      <option value="top_right">Kanan Atas</option>
+                      <option value="mid_left">Tengah Kiri</option>
+                      <option value="mid_right">Tengah Kanan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Visual Video Source (Shared across variants) -->
+                <div class="form-group">
+                  <label class="form-label" for="selectProductVideo">
+                    <span>File Video Produk Mentah (public/)</span>
+                    <span style="font-size: 11px; color: var(--text-faint);">Dipakai oleh klip Babak 1 s/d 4</span>
+                  </label>
+                  <select class="input" id="selectProductVideo">
+                    <!-- Populated dynamically from public/*.mp4 -->
+                  </select>
+                </div>
+              </form>
+            </section>
+
+            <!-- Panel 2: Editor Variasi & Babak Klip Video -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div class="segmented" id="variantSegmented">
+                    <button class="active" data-variant="v1">Variasi 1 (v1)</button>
+                    <button data-variant="v2">Variasi 2 (v2)</button>
+                  </div>
+                  <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
+                </div>
+                <div class="panel-sub">4 Babak Klip + Copywriting Presisi</div>
+              </div>
+
+              <!-- Dedicated Voice Over & Audio Section for Active Variant -->
+              <div class="form-row" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px; margin-bottom: 12px;">
+                <div class="form-group" style="flex: 2;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <label class="form-label" for="selectVoiceOver" style="margin: 0;">
+                      <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">🎙️ Voice Over untuk Variasi 1 (v1)</span>
+                      <span id="pillVoiceOverStatus" class="pill emerald" style="cursor: pointer;" title="Klik untuk membuka & mengedit transkrip subtitle">Memeriksa...</span>
+                    </label>
+                    <button class="btn small" id="btnJumpToSubtitle" type="button" title="Langsung buka tab koreksi subtitle untuk file audio ini">
+                      🎙️ Edit Subtitle Audio Ini
+                    </button>
+                  </div>
+                  <select class="input" id="selectVoiceOver">
+                    <!-- Populated dynamically from public/*.mp3 -->
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 1.2;">
+                  <label class="form-label" for="selectBgmTrack">
+                    <span>Musik Latar BGM</span>
+                    <span style="font-size: 11px; color: var(--text-faint);">Ducking</span>
+                  </label>
+                  <select class="input" id="selectBgmTrack">
+                    <option value="">(Tanpa BGM / Hening)</option>
+                  </select>
+                </div>
+                <div class="form-group" style="flex: 0.8;">
+                  <label class="form-label" for="inputVoiceOverDelay">Jeda Narasi (s)</label>
+                  <input class="input" type="number" id="inputVoiceOverDelay" value="0" min="0" max="30" step="0.5">
+                </div>
+              </div>
+
+              <!-- Theme Row -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="selectThemeStyle">Tema Visual</label>
+                  <select class="input" id="selectThemeStyle">
+                    <option value="pastel" data-color="#FF4D6D" data-bg="#F8FAFC" data-text="#0F172A" data-sub="Soft Rose • Clean Beauty & Aesthetic">Pastel (Soft, Aesthetic)</option>
+                    <option value="editorial" data-color="#E2FF32" data-bg="#090A0F" data-text="#F8FAFC" data-sub="Acid Lime Neon • Dark High-Fashion">Editorial (Bold, High Fashion)</option>
+                    <option value="minimal" data-color="#FFFFFF" data-bg="#000000" data-text="#FFFFFF" data-sub="Monochrome • Clean Luxury Black & White">Minimal (Clean, Monochrome)</option>
+                    <option value="flash_sale" data-color="#FF2E54" data-bg="#0A0A0D" data-text="#FFFFFF" data-sub="TikTok Crimson Red & Gold Urgency">Flash Sale (Urgent, High Energy)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="selectCardStyle">Gaya Kartu</label>
+                  <select class="input" id="selectCardStyle">
+                    <option value="unified_glass" data-shape="glass" data-sub="Satu pulau kaca frosted glass rounded ala Apple Island">Unified Glass (Glassmorphism)</option>
+                    <option value="editorial_minimal" data-shape="two_tier" data-sub="Struktur 2 tingkat terpisah proporsional & modern">Editorial Minimal (Tipografi Rapi)</option>
+                    <option value="creator_aesthetic" data-shape="floating" data-sub="Teks mengambang alami border difusi halus (anti AI-slop)">Creator Aesthetic (Border Halus)</option>
+                    <option value="clean_capsule" data-shape="capsule" data-sub="Pill kapsul horizontal modern dengan visual footprint ringkas">Clean Capsule (Modern Kapsul)</option>
+                    <option value="tiktok_native_ugc" data-shape="tiktok_ugc" data-sub="Subtitle khas CapCut/TikTok: teks putih + stempel highlight kuning stabilo FYP">TikTok Native UGC (Highlight Kuning)</option>
+                    <option value="top_banner_promo" data-shape="top_banner" data-sub="Banner strip promo flash sale di atas, maksimalkan ruang demo produk">Top-Banner Promo (Flash Sale Strip)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Live Highlight Preview Box for Tema & Gaya Kartu -->
+              <div id="themeLivePreviewWrap" class="theme-live-preview-wrap">
+                <div class="theme-live-preview-top">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="preview-badge-pill">👁️ Pratinjau Tampilan di Video</span>
+                    <span style="font-size: 10px; color: var(--text-faint);">(Sesuai Render Remotion Asli)</span>
+                  </div>
+                  <span class="preview-theme-tag" id="livePreviewTag">Editorial • Unified Glass</span>
+                </div>
+                <div class="theme-mockup-stage" id="livePreviewStage">
+                  <!-- Simulated video footage background layer -->
+                  <div class="theme-mockup-bg-layer" id="livePreviewBgLayer"></div>
+                  <div class="theme-mockup-scrim-layer"></div>
+
+                  <div class="theme-mockup-container" id="livePreviewContainer">
+                    <div class="theme-mockup-badge" id="livePreviewBadge">
+                      <span class="theme-mockup-dot" id="livePreviewDot"></span>
+                      <span id="livePreviewBadgeText">IBU-IBU WAJIB TAU</span>
+                    </div>
+                    <div class="theme-mockup-textbox" id="livePreviewTextBox">
+                      <div class="theme-mockup-line1" id="livePreviewLine1">Nyesel baru tahu sekarang...</div>
+                      <div class="theme-mockup-highlight" id="livePreviewHighlight">Lemari Bebas Apek Seharian!</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="theme-live-preview-desc" id="livePreviewDesc">
+                  Kombinasi warna gelap dengan aksen Acid Lime neon & kartu kaca elegan. Sangat kontras dan memiliki stopping power tinggi.
+                </div>
+              </div>
+
+              <!-- Storyboard Cards View: Satuan Adegan (Naskah & Klip Terpadu) -->
+              <div class="form-group" style="margin-top: 6px;">
+                <label class="form-label">
+                  <span style="font-weight: 700; color: #fff;">🎬 Storyboard Adegan (Naskah & Klip Terpadu)</span>
+                  <span style="font-size: 11px; color: var(--text-faint);">Format waktu detik (<code>8</code>) atau mm:ss (<code>01:38</code>)</span>
+                </label>
+
+                <!-- Visual Timeline Strip Overview -->
+                <div class="timeline-strip">
+                  <div class="timeline-segment hook" id="barClip0" style="width: 25%;" title="Babak 1: Hook"></div>
+                  <div class="timeline-segment demo" id="barClip1" style="width: 25%;" title="Babak 2: Demo"></div>
+                  <div class="timeline-segment spec" id="barClip2" style="width: 25%;" title="Babak 3: Spec"></div>
+                  <div class="timeline-segment cta"  id="barClip3" style="width: 25%;" title="Babak 4: CTA"></div>
+                </div>
+
+                <div class="storyboard-container" id="storyboardContainer">
+                  <!-- Kartu Babak 1: Hook Dinamis -->
+                  <div class="storyboard-card hook">
+                    <div class="storyboard-header">
+                      <div class="storyboard-title-wrap">
+                        <span class="storyboard-num-badge">01 · Hook</span>
+                        <h3 class="storyboard-title">Babak 1: Hook Dinamis</h3>
+                      </div>
+                      <div class="storyboard-actions">
+                        <span class="storyboard-dur-badge" id="clipDur_0">5.0s</span>
+                        <button class="btn small btn-preview-babak" data-clip="0" type="button" title="Pratinjau frame detik 1 tanpa repot">
+                          📸 Pratinjau Babak
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Klip Timing Bar -->
+                    <div class="storyboard-timing-bar">
+                      <div class="timing-field">
+                        <span class="timing-label">Mulai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="0" data-field="start" value="0s">
+                      </div>
+                      <div class="timing-field">
+                        <span class="timing-label">Selesai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="0" data-field="end" value="5s">
+                      </div>
+                    </div>
+
+                    <!-- Naskah & Copywriting Inputs -->
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                      <div class="form-group">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                          <label class="form-label" for="inputBadgeText" style="margin: 0;">Badge Utama (Babak 1)</label>
+                          <span style="font-size: 11px; color: var(--text-faint);">Klik preset atau ketik manual:</span>
+                        </div>
+                        <input class="input" type="text" id="inputBadgeText" placeholder="CONTOH: PROMO 11.11 HARI INI">
+                        <!-- Quick Preset Badge Chips (Kategori Formula Hook Viral TikTok) -->
+                        <div class="badge-quick-chips">
+                          <!-- Target Audiens -->
+                          <button type="button" class="badge-chip audience" data-badge="IBU-IBU WAJIB TAU" title="Formula Call-out Target Audiens">⚠️ Ibu-Ibu Wajib Tau</button>
+                          <button type="button" class="badge-chip audience" data-badge="ANAK KOS SIMPAN INI" title="Formula Call-out Target Audiens">🚨 Anak Kos Simpan Ini</button>
+                          <button type="button" class="badge-chip audience" data-badge="SPILL RACUN TIKTOK" title="Formula Creator Spill">👀 Spill Racun TikTok</button>
+
+                          <!-- Curiosity Gap / Larangan -->
+                          <button type="button" class="badge-chip curiosity" data-badge="JANGAN BELI DULU!" title="Formula Larangan (High Curiosity)">❌ Jangan Beli Dulu!</button>
+                          <button type="button" class="badge-chip curiosity" data-badge="NYESEL BARU TAHU" title="Formula FOMO / Regret">⛔ Nyesel Baru Tahu</button>
+                          <button type="button" class="badge-chip curiosity" data-badge="RAHASIA LEMARI WANGI" title="Formula Rahasia / Lifehack">🤫 Rahasia Lemari Wangi</button>
+
+                          <!-- Social Proof -->
+                          <button type="button" class="badge-chip social" data-badge="TERJUAL 50RB+ PCS" title="Formula Bukti Penjualan Masif">🔥 Terjual 50rb+ Pcs</button>
+                          <button type="button" class="badge-chip social" data-badge="RATING 4.9 DI TIKTOK" title="Formula Reputasi Bintang 5">⭐ Rating 4.9 TikTok</button>
+                          <button type="button" class="badge-chip social" data-badge="PALING BANYAK DICARI" title="Formula Rekomendasi Populer">🏆 Paling Banyak Dicari</button>
+
+                          <!-- Event Promo & Urgensi -->
+                          <button type="button" class="badge-chip event" data-badge="FLASH SALE HARI INI" title="Formula Urgensi Waktu">⚡ Flash Sale Hari Ini</button>
+                          <button type="button" class="badge-chip event" data-badge="PROMO TANGGAL KEMBAR" title="Formula Event Tanggal Kembar">🏷️ Tanggal Kembar</button>
+                          <button type="button" class="badge-chip event" data-badge="DISKON BESAR HARI INI" title="Formula Diskon">💥 Diskon Hari Ini</button>
+                          <button type="button" class="badge-chip event" data-badge="GRATIS ONGKIR XTRA" title="Formula Gratis Ongkir">🚚 Gratis Ongkir Xtra</button>
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group">
+                          <label class="form-label" for="inputHookLine1">
+                            <span>Hook Baris 1</span>
+                            <span class="char-counter" id="countHookLine1">0/38</span>
+                          </label>
+                          <input class="input" type="text" id="inputHookLine1" placeholder="Kulit sering perih dan merah?">
+                        </div>
+                        <div class="form-group">
+                          <label class="form-label" for="inputHookHighlight">
+                            <span>Hook Highlight (Warna Aksen)</span>
+                            <span class="char-counter" id="countHookHighlight">0/38</span>
+                          </label>
+                          <input class="input" type="text" id="inputHookHighlight" placeholder="Kembalikan Barrier Kulitmu!">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Kartu Babak 2: Solusi & Demo -->
+                  <div class="storyboard-card demo">
+                    <div class="storyboard-header">
+                      <div class="storyboard-title-wrap">
+                        <span class="storyboard-num-badge">02 · Demo</span>
+                        <h3 class="storyboard-title">Babak 2: Solusi & Demo Produk</h3>
+                      </div>
+                      <div class="storyboard-actions">
+                        <span class="storyboard-dur-badge" id="clipDur_1">7.0s</span>
+                        <button class="btn small btn-preview-babak" data-clip="1" type="button" title="Pratinjau frame Babak 2">
+                          📸 Pratinjau Babak
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Klip Timing Bar -->
+                    <div class="storyboard-timing-bar">
+                      <div class="timing-field">
+                        <span class="timing-label">Mulai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="1" data-field="start" value="5s">
+                      </div>
+                      <div class="timing-field">
+                        <span class="timing-label">Selesai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="1" data-field="end" value="12s">
+                      </div>
+                    </div>
+
+                    <!-- Naskah & Copywriting Inputs -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="inputDemoLine1">
+                          <span>Demo Baris 1</span>
+                          <span class="char-counter" id="countDemoLine1">0/38</span>
+                        </label>
+                        <input class="input" type="text" id="inputDemoLine1" placeholder="Tekstur Rich Meleleh di Kulit">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="inputDemoHighlight">
+                          <span>Demo Highlight (Aksen)</span>
+                          <span class="char-counter" id="countDemoHighlight">0/38</span>
+                        </label>
+                        <input class="input" type="text" id="inputDemoHighlight" placeholder="Lembap Cepat Redakan Iritasi">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Kartu Babak 3: Spesifikasi / Bukti -->
+                  <div class="storyboard-card spec">
+                    <div class="storyboard-header">
+                      <div class="storyboard-title-wrap">
+                        <span class="storyboard-num-badge">03 · Spec</span>
+                        <h3 class="storyboard-title">Babak 3: Spesifikasi & Bukti Keunggulan</h3>
+                      </div>
+                      <div class="storyboard-actions">
+                        <span class="storyboard-dur-badge" id="clipDur_2">7.0s</span>
+                        <button class="btn small btn-preview-babak" data-clip="2" type="button" title="Pratinjau frame Babak 3">
+                          📸 Pratinjau Babak
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Klip Timing Bar -->
+                    <div class="storyboard-timing-bar">
+                      <div class="timing-field">
+                        <span class="timing-label">Mulai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="2" data-field="start" value="12s">
+                      </div>
+                      <div class="timing-field">
+                        <span class="timing-label">Selesai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="2" data-field="end" value="19s">
+                      </div>
+                    </div>
+
+                    <!-- Naskah & Copywriting Inputs -->
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="inputSpecLine1">
+                          <span>Spec Baris 1</span>
+                          <span class="char-counter" id="countSpecLine1">0/38</span>
+                        </label>
+                        <input class="input" type="text" id="inputSpecLine1" placeholder="Formula 0% Alkohol dan Parfum">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="inputSpecHighlight">
+                          <span>Spec Highlight (Aksen)</span>
+                          <span class="char-counter" id="countSpecHighlight">0/38</span>
+                        </label>
+                        <input class="input" type="text" id="inputSpecHighlight" placeholder="Aman Dipakai Dari Usia 1 Tahun">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Kartu Babak 4: Call to Action -->
+                  <div class="storyboard-card cta">
+                    <div class="storyboard-header">
+                      <div class="storyboard-title-wrap">
+                        <span class="storyboard-num-badge">04 · CTA</span>
+                        <h3 class="storyboard-title">Babak 4: Call to Action (Ajakan Beli)</h3>
+                      </div>
+                      <div class="storyboard-actions">
+                        <span class="storyboard-dur-badge" id="clipDur_3">5.0s</span>
+                        <button class="btn small btn-preview-babak" data-clip="3" type="button" title="Pratinjau frame Babak 4">
+                          📸 Pratinjau Babak
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Klip Timing Bar -->
+                    <div class="storyboard-timing-bar">
+                      <div class="timing-field">
+                        <span class="timing-label">Mulai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="3" data-field="start" value="19s">
+                      </div>
+                      <div class="timing-field">
+                        <span class="timing-label">Selesai:</span>
+                        <input type="text" class="input clip-time-input" data-clip="3" data-field="end" value="24s">
+                      </div>
+                    </div>
+
+                    <!-- Naskah CTA Input -->
+                    <div class="form-group">
+                      <label class="form-label" for="inputCtaText">Teks CTA (Keranjang Kuning)</label>
+                      <input class="input" type="text" id="inputCtaText" value="Cek Promo di Keranjang Kuning">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hidden fallback element for script compatibility -->
+                <div id="clipsTableBody" style="display: none;"></div>
+              </div>
+            </section>
+
+            <!-- Panel 3: Live Monitor Render & SSE Console -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Monitor Render Real-Time</h2>
+                  <p class="panel-sub" id="monitorSubText">Menunggu proses render dimulai...</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <select class="input" id="selectFps" style="width: 130px; height: 28px; font-size: 12px;">
+                    <option value="60">60 FPS (Cinema)</option>
+                    <option value="30">30 FPS (Fast Mode)</option>
+                  </select>
+                  <button class="btn danger small" id="btnCancelRender" style="display: none;">
+                    Hentikan
+                  </button>
+                </div>
+              </div>
+
+              <div class="progress-box">
+                <div class="progress-header">
+                  <span id="progressStep">Status: Idle</span>
+                  <span class="num" id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-stats">
+                  <span class="num" id="progressFrames">0 / 0 frame</span>
+                  <span class="num" id="progressEta">Estimasi: -</span>
+                </div>
+              </div>
+
+              <pre class="console-box" id="consoleBox"><span class="log-line"><span class="log-time">[00:00:00]</span> Sistem siap. Konfigurasi produk lalu klik Mulai Render Video.</span></pre>
+            </section>
+
+          </div>
+
+          <!-- Right Column: 9:16 Video Player & Direct Media Dropzone -->
+          <div style="display: flex; flex-direction: column; gap: var(--gap);">
+
+            <!-- Panel 4: Pemutar Video (9:16 Phone Mockup) -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Pemutar Video (9:16)</h2>
+                  <p class="panel-sub">Tinjau video hasil render & pratinjau</p>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                  <!-- Size Toggle Buttons (S, M, L) -->
+                  <div class="player-size-toggle" title="Pilihan Ukuran Tampilan Pemutar Video Desktop">
+                    <button class="player-size-btn" data-size="sm" type="button" title="Ukuran Ringkas (270px)">S</button>
+                    <button class="player-size-btn active" data-size="md" type="button" title="Ukuran Standar Desktop (340px)">M</button>
+                    <button class="player-size-btn" data-size="lg" type="button" title="Ukuran Besar / Bioskop (400px)">L</button>
+                  </div>
+                  <button class="btn small" id="btnToggleSafeArea" type="button" title="Tampilkan panduan zona aman TikTok (ikon Like, komen, keranjang kuning)">
+                    👁️ Safe Area TikTok
+                  </button>
+                  <button class="btn small" id="btnUploadToGDrive" type="button" style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);" title="Unggah video ini langsung ke Google Drive secara otomatis">
+                    <span>⚡</span> Upload ke Drive
+                  </button>
+                  <a class="btn small" id="btnOpenExternal" href="#" target="_blank" style="display: none;">
+                    Buka Tab
+                  </a>
+                  <a class="btn small primary" id="btnDownloadVideo" href="#" download style="display: none;">
+                    Unduh MP4
+                  </a>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <select class="input" id="selectOutputVideo">
+                  <option value="">Pilih video yang sudah dirender...</option>
+                </select>
+              </div>
+
+              <!-- Live Google Drive Upload Progress Box -->
+              <div id="gdriveUploadProgressBox" class="gdrive-upload-box" style="display: none;">
+                <div class="gdrive-upload-header">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="upload-pulse-dot" id="uploadPulseDot"></span>
+                    <strong id="gdriveUploadTitle" style="color: #fff; font-size: 13px;">Mengunggah ke Google Drive...</strong>
+                  </div>
+                  <span id="gdriveUploadPercent" class="num" style="color: #34d399; font-weight: 700; font-size: 13px;">0%</span>
+                </div>
+
+                <!-- Progress Bar Track -->
+                <div class="upload-progress-track">
+                  <div id="gdriveUploadBarFill" class="upload-progress-fill" style="width: 0%;"></div>
+                </div>
+
+                <div class="gdrive-upload-footer">
+                  <span id="gdriveUploadStatusText" style="color: var(--text-faint); font-size: 11px;">Mempersiapkan data...</span>
+                  <span id="gdriveUploadSizeText" class="num" style="color: var(--text-muted); font-size: 11px;">0 MB / 0 MB</span>
+                </div>
+
+                <div id="gdriveUploadSuccessActions" style="display: none; margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
+                  <span style="font-size: 11px; color: #34d399; display: flex; align-items: center; gap: 4px;">
+                    <span>✓</span> Tersimpan di Google Drive
+                  </span>
+                  <div style="display: flex; gap: 6px;">
+                    <a id="btnGdriveViewUploaded" class="btn small primary" href="#" target="_blank" style="font-size: 11px; padding: 0 10px; height: 26px;">
+                      🔗 Buka Video
+                    </a>
+                    <button id="btnGdriveDismissProgress" class="btn small" type="button" style="font-size: 11px; padding: 0 8px; height: 26px;">
+                      Tutup
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="player-container">
+                <div class="phone-bezel" id="phoneBezel">
+                  <video id="videoPreview" controls playsinline loop></video>
+                  <img id="playerStillImage" style="display: none; width: 100%; height: 100%; object-fit: contain; background: #000;" alt="Pratinjau Frame">
+                  <button class="btn small" id="btnExitStillView" style="display: none; position: absolute; top: 12px; left: 12px; z-index: 25; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.25); font-size: 11px; height: 24px; padding: 0 8px;">
+                    ✕ Putar Video
+                  </button>
+                  <div class="player-empty" id="playerEmptyMsg">Pilih video dari daftar atau klik Pratinjau Babak</div>
+
+                  <!-- TikTok UI Safe Area Overlay -->
+                  <div class="tiktok-safe-area-overlay" id="tiktokSafeAreaOverlay">
+                    <!-- Top Bar: Tabs & Search -->
+                    <div class="tt-top-bar">
+                      <div class="tt-tabs">
+                        <span class="tt-tab">Mengikuti</span>
+                        <span class="tt-tab active">Untuk Anda</span>
+                      </div>
+                      <div class="tt-search-icon">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <circle cx="11" cy="11" r="8"></circle>
+                          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                      </div>
+                    </div>
+
+                    <!-- Subtle Guideline Boundary for Safe Area -->
+                    <div class="tt-guide-boundary">
+                      <span class="tt-guide-tag">Safe Zone</span>
+                    </div>
+
+                    <!-- Right Column: TikTok Action Buttons -->
+                    <div class="tt-right-actions">
+                      <div class="tt-action-item">
+                        <div class="tt-avatar-box">
+                          👤
+                          <div class="tt-plus-badge">+</div>
+                        </div>
+                      </div>
+                      <div class="tt-action-item">
+                        <span class="tt-action-icon">❤️</span>
+                        <span class="tt-action-count">42.8K</span>
+                      </div>
+                      <div class="tt-action-item">
+                        <span class="tt-action-icon">💬</span>
+                        <span class="tt-action-count">824</span>
+                      </div>
+                      <div class="tt-action-item">
+                        <span class="tt-action-icon">🔖</span>
+                        <span class="tt-action-count">5,190</span>
+                      </div>
+                      <div class="tt-action-item">
+                        <span class="tt-action-icon">↗️</span>
+                        <span class="tt-action-count">1.4K</span>
+                      </div>
+                      <div class="tt-action-item">
+                        <div class="tt-disc-rotate">💿</div>
+                      </div>
+                    </div>
+
+                    <!-- Bottom Area: Yellow Cart & Caption -->
+                    <div class="tt-bottom-area">
+                      <div class="tt-yellow-cart">
+                        <span>🛍️</span>
+                        <span>Cek Promo Keranjang Kuning</span>
+                      </div>
+                      <div class="tt-username">@affiliate_creator ✓</div>
+                      <div class="tt-caption">Racun produk viral wajib punya hari ini! #tiktokaffiliate #fyp</div>
+                      <div class="tt-sound">
+                        <span>♫</span>
+                        <span>Suara Asli - Creator Studio</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Player Controls Bar: Loop & Speed Selector -->
+                <div class="player-tools-bar">
+                  <button class="btn small player-tool-btn active" id="btnToggleLoop" type="button" title="Aktifkan/nonaktifkan looping video otomatis">
+                    <span>🔁</span> Loop Aktif
+                  </button>
+                  <div class="speed-selector-group">
+                    <span class="speed-label">Speed:</span>
+                    <button class="speed-btn" data-speed="0.75" type="button">0.75x</button>
+                    <button class="speed-btn active" data-speed="1.0" type="button">1x</button>
+                    <button class="speed-btn" data-speed="1.25" type="button">1.25x</button>
+                    <button class="speed-btn" data-speed="1.5" type="button">1.5x</button>
+                  </div>
+                </div>
+
+                <div class="num" id="videoMetaText" style="font-size: 12px; color: var(--text-muted);">-</div>
+              </div>
+            </section>
+
+            <!-- Panel 5: Unggah Media Langsung (public/) -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Unggah Media Langsung</h2>
+                  <p class="panel-sub">Tarik & lepas file ke folder <code>public/</code></p>
+                </div>
+              </div>
+
+              <div class="dropzone" id="fileDropzone">
+                <div class="dropzone-icon">📁</div>
+                <div class="dropzone-title">Klik untuk pilih file atau seret file ke sini</div>
+                <div class="dropzone-sub">Mendukung video MP4/MOV dan audio MP3/WAV</div>
+                <input type="file" id="fileUploadInput" accept="video/mp4,video/quicktime,audio/mpeg,audio/wav"
+                  style="display: none;">
+              </div>
+
+              <div id="uploadStatusBox" style="display: none;"></div>
+            </section>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 2: KOREKSI SUBTITLE WHISPER (Word Merge, Split, Delete)-->
+      <!-- ========================================================= -->
+      <section class="tab-view" id="tabSubtitles">
+        <div class="studio-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Koreksi Subtitle Whisper AI Presisi</h2>
+              <p class="panel-sub">Perbaiki salah dengar, sesuaikan timing, atau satukan kata yang terpotong (misal "kera" + "njang" → "keranjang").</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn small" id="btnTranscribeCurrentVO">⚡ Auto-Transkrip VO Aktif</button>
+              <button class="btn small primary" id="btnSaveSubtitles">💾 Simpan Perubahan Subtitle</button>
+            </div>
+          </div>
+
+          <!-- Subtitle Control Bar & Audio Sync Player -->
+          <div class="subtitle-toolbar">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label class="form-label" style="margin: 0; white-space: nowrap;">File Transkrip JSON:</label>
+              <select class="input" id="selectTranscriptFile" style="width: 240px;">
+                <!-- Populated dynamically from public/*.json -->
+              </select>
+            </div>
+
+            <!-- Interactive Audio Player -->
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+              <label class="form-label" style="margin: 0; white-space: nowrap;">Audio Voiceover:</label>
+              <audio id="subtitleAudioPlayer" controls style="flex: 1; min-width: 260px; height: 34px;"></audio>
+            </div>
+          </div>
+
+          <!-- Auto-Correct via Ground-Truth Gemini Script -->
+          <div style="background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <label class="form-label" for="inputReferenceScript" style="font-weight: 600; color: #fff; margin: 0;">
+                <span>✨ Naskah Narasi Acuan (Script Gemini / Ground-Truth)</span>
+                <span class="pill emerald">Anti-Salah Dengar Whisper</span>
+              </label>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn small" id="btnClearReferenceScript" type="button" title="Kosongkan naskah acuan">
+                  🗑️ Kosongkan
+                </button>
+                <button class="btn small primary" id="btnAutoCorrectSubtitles">
+                  ✨ Auto-Correct Subtitle via Naskah
+                </button>
+              </div>
+            </div>
+            <textarea class="input" id="inputReferenceScript" style="height: 60px; font-size: 12.5px; line-height: 18px;" placeholder="Tempelkan naskah voice over asli dari Gemini di sini, lalu klik 'Auto-Correct Subtitle via Naskah' untuk memperbaiki ejaan, tanda baca, dan kata yang terpotong secara instan..."></textarea>
+            <div id="autoCorrectFeedback" class="feedback-banner success" style="display: none; padding: 8px 12px; font-size: 12px;"></div>
+          </div>
+
+          <!-- Helpful Instruction Banner -->
+          <div class="feedback-banner warn">
+            <strong>💡 Fitur Koreksi Subtitle:</strong>
+            Klik timestamp <strong>Mulai / Selesai</strong> untuk mendengarkan audio pada detik tersebut.
+            Gunakan tombol <strong>[🔗 Gabung Bawah]</strong> untuk menyatukan kata yang terpotong oleh Whisper AI ke kata berikutnya.
+          </div>
+
+          <!-- High-Density Subtitle Table -->
+          <div class="table-wrap" style="max-height: 580px; overflow-y: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th class="num" style="width: 45px; text-align: center;">No</th>
+                  <th class="num" style="width: 95px;">Mulai (s)</th>
+                  <th class="num" style="width: 95px;">Selesai (s)</th>
+                  <th class="num" style="width: 75px;">Durasi</th>
+                  <th>Kata / Teks Subtitle</th>
+                  <th style="width: 250px;">Aksi Cepat</th>
+                </tr>
+              </thead>
+              <tbody id="wordsTableBody">
+                <tr>
+                  <td colspan="6" style="text-align: center; color: var(--text-faint); padding: 30px;">
+                    Pilih file transkrip JSON di atas untuk menampilkan daftar kata...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 3: GALERI & BERKAS MEDIA (out/, previews, public/)      -->
+      <!-- ========================================================= -->
+      <section class="tab-view" id="tabPublic">
+        <section class="studio-panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Galeri Video & Berkas Media</h2>
+              <p class="panel-sub">Kelola video hasil render (out/), frame pratinjau (out/previews/), dan seluruh berkas aset proyek (public/).</p>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn small" id="btnOpenOutFolder" type="button" title="Buka folder out/ di Windows File Explorer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Buka Folder out/
+              </button>
+              <button class="btn small" id="btnOpenPublicFolder" type="button" title="Buka folder public/ di Windows File Explorer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Buka Folder public/
+              </button>
+              <button class="btn small primary" id="btnRefreshPublicBrowser" type="button">
+                🔄 Segarkan
+              </button>
+            </div>
+          </div>
+
+          <!-- Live Google Drive Upload Progress Box (Untuk Tab Galeri) -->
+          <div id="gdriveGalleryUploadProgressBox" class="gdrive-upload-box" style="display: none; margin-bottom: 14px;">
+            <div class="gdrive-upload-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="upload-pulse-dot" id="uploadGalleryPulseDot"></span>
+                <strong id="gdriveGalleryUploadTitle" style="color: #fff; font-size: 13px;">Mengunggah ke Google Drive...</strong>
+              </div>
+              <span id="gdriveGalleryUploadPercent" class="num" style="color: #34d399; font-weight: 700; font-size: 13px;">0%</span>
+            </div>
+
+            <!-- Progress Bar Track -->
+            <div class="upload-progress-track">
+              <div id="gdriveGalleryUploadBarFill" class="upload-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <div class="gdrive-upload-footer">
+              <span id="gdriveGalleryUploadStatusText" style="color: var(--text-faint); font-size: 11px;">Mempersiapkan data...</span>
+              <span id="gdriveGalleryUploadSizeText" class="num" style="color: var(--text-muted); font-size: 11px;">0 MB / 0 MB</span>
+            </div>
+
+            <div id="gdriveGalleryUploadSuccessActions" style="display: none; margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
+              <span style="font-size: 11px; color: #34d399; display: flex; align-items: center; gap: 4px;">
+                <span>✓</span> Tersimpan di Google Drive
+              </span>
+              <div style="display: flex; gap: 6px;">
+                <a id="btnGdriveGalleryViewUploaded" class="btn small primary" href="#" target="_blank" style="font-size: 11px; padding: 0 10px; height: 26px;">
+                  🔗 Buka Video di Drive
+                </a>
+                <button id="btnGdriveGalleryDismissProgress" class="btn small" type="button" style="font-size: 11px; padding: 0 8px; height: 26px;">
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Segmented Filter View Switcher -->
+          <div style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; flex-wrap: wrap;">
+            <button class="btn small primary public-view-filter active" data-view="videos">
+              🎬 Video Hasil Render (<span id="countPublicVideos">0</span>)
+            </button>
+            <button class="btn small public-view-filter" data-view="previews">
+              📸 Pratinjau Frame (<span id="countPublicPreviews">0</span>)
+            </button>
+            <button class="btn small public-view-filter" data-view="media">
+              📦 Berkas Media Produk (<span id="countPublicMedia">0</span>)
+            </button>
+            <button class="btn small public-view-filter" data-view="sfx">
+              🔊 Efek Suara SFX (<span id="countPublicSfx">0</span>)
+            </button>
+          </div>
+
+          <!-- Instant Filter Search Bar -->
+          <div class="public-search-bar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="input" id="inputPublicSearch" placeholder="Cari cepat video, frame, rekaman suara, atau SFX...">
+            <button id="btnClearPublicSearch" class="public-search-clear" type="button" title="Bersihkan pencarian" style="display: none;">✕</button>
+          </div>
+
+          <!-- Sub-view 1: Video Render (out/) Table (Default Active) -->
+          <div id="publicVideosView" style="display: block;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nama File Video</th>
+                    <th style="width: 150px;">Variasi</th>
+                    <th class="num" style="width: 120px; text-align: right;">Ukuran</th>
+                    <th class="num" style="width: 170px;">Waktu Render</th>
+                    <th style="width: 210px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="publicVideosTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sub-view 2: Pratinjau Frame (out/previews/) Grid -->
+          <div id="publicPreviewsView" style="display: none;">
+            <div class="preview-grid" id="publicPreviewsGrid">
+              <!-- Populated dynamically with preview cards -->
+            </div>
+          </div>
+
+          <!-- Sub-view 3: Berkas Media Produk (public/ raw videos, voiceovers, transcripts) Table -->
+          <div id="publicMediaView" style="display: none;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nama Berkas Media</th>
+                    <th style="width: 170px;">Kategori</th>
+                    <th class="num" style="width: 120px; text-align: right;">Ukuran</th>
+                    <th class="num" style="width: 170px;">Waktu Modifikasi</th>
+                    <th style="width: 230px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="publicMediaTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Sub-view 4: Efek Suara SFX & Audio Transitions (public/sfx/) Table -->
+          <div id="publicSfxView" style="display: none;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nama Efek Suara (SFX)</th>
+                    <th style="width: 150px;">Format / Tipe</th>
+                    <th class="num" style="width: 120px; text-align: right;">Ukuran</th>
+                    <th style="width: 160px; text-align: center;">Dengarkan Suara</th>
+                    <th style="width: 170px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="publicSfxTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal 1: Import JSON Gemini -->
+  <div class="modal-backdrop" id="modalImportGemini" style="display: none;">
+    <div class="modal-dialog large">
+      <div class="modal-header">
+        <h3>Import Copywriting & Klip dari Prompt Gemini</h3>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseImportModal" type="button" title="Tutup Modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); line-height: 19px;">
+          Tempelkan output JSON dari Gemini di bawah ini. Studio akan otomatis mengisi hook, demo, spesifikasi, CTA, dan timestamp klip (nama video dan voiceover tetap menggunakan pilihan studio Anda).
+        </p>
+        <textarea class="input" id="textareaGeminiJson"
+          style="height: 250px; font-family: var(--font-mono); font-size: 12px;" placeholder='{
+  "id": "nama-produk",
+  "name": "Nama Produk Resmi",
+  "variants": {
+    "v1": {
+      "hookLine1": "...",
+      "hookHighlight": "...",
+      "clips": [{ "startSec": 0, "endSec": 5 }, ...]
+    }
+  }
+}'></textarea>
+
+        <div id="importFeedback" class="feedback-banner" style="display: none;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn small" id="btnValidateJson">Periksa & Validasi</button>
+        <button class="btn small primary" id="btnApplyImportedJson" disabled>Terapkan ke Studio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Preview Still Frame -->
+  <div class="modal-backdrop" id="modalStillPreview" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3>Pratinjau Frame Video (Still Frame)</h3>
+          <span class="pill emerald" id="stillModalStatusPill">● Siap</span>
+        </div>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseStillModal" type="button" title="Tutup Modal">✕</button>
+      </div>
+      <div class="modal-body" style="align-items: center; text-align: center;">
+        <!-- Control Bar -->
+        <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; width: 100%; justify-content: center; flex-wrap: wrap;">
+          <label style="font-size: 13px; color: var(--text-muted); font-weight: 500;">Pilih Babak Preview:</label>
+          <select class="input" id="selectPreviewSecond" style="width: 175px;">
+            <option value="60">Detik 1 (Hook Awal)</option>
+            <option value="420">Detik 7 (Demo Bukti)</option>
+            <option value="840">Detik 14 (Spesifikasi)</option>
+            <option value="1440">Detik 24 (CTA Glow)</option>
+          </select>
+          <button class="btn small primary" id="btnRefreshStill">
+            <span id="btnRefreshStillIcon">📸</span>
+            <span id="btnRefreshStillText">Render Frame</span>
+          </button>
+        </div>
+
+        <!-- Live Progress Box (Progress & Notifikasi Proses Rendering) -->
+        <div id="stillProgressBox" style="display: none; width: 100%; background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px 14px; text-align: left; margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="still-spinner" id="stillSpinner"></div>
+              <span id="stillProgressStepText" style="font-weight: 600; font-size: 13px; color: #fff;">Memulai render frame...</span>
+            </div>
+            <span id="stillTimerText" class="num" style="font-size: 12px; color: var(--accent-gold); font-weight: 600;">0.0s</span>
+          </div>
+
+          <!-- Progress Bar Fill -->
+          <div class="progress-bar-bg" style="height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; margin-bottom: 6px;">
+            <div id="stillProgressBarFill" style="height: 100%; width: 15%; background: linear-gradient(90deg, var(--accent-rose), var(--accent-gold)); transition: width 250ms ease;"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint);">
+            <span id="stillProgressDetailText">Tahap 1: Sinkronisasi media...</span>
+            <span id="stillPercentText" class="num" style="font-weight: 600;">15%</span>
+          </div>
+        </div>
+
+        <!-- Feedback Alert Banner -->
+        <div id="stillFeedbackBanner" class="feedback-banner" style="display: none; width: 100%; margin-bottom: 8px;"></div>
+
+        <!-- Image Display & Loading State -->
+        <div id="stillImageContainer"
+          style="max-height: 480px; width: 100%; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-control); display: flex; align-items: center; justify-content: center; background: #000; min-height: 260px; position: relative;">
+          <div style="padding: 40px; color: var(--text-muted); display: none;" id="stillLoadingText">
+            <div class="still-big-spinner"></div>
+            <p style="margin-top: 14px; font-size: 13px; font-weight: 500;" id="stillLoadingSubtext">Sedang merender frame Chromium...</p>
+          </div>
+          <img id="stillImagePreview" style="display: none; max-height: 480px; width: auto; object-fit: contain;" alt="Pratinjau Frame">
+          <div id="stillEmptyPlaceholder" style="color: var(--text-faint); font-size: 13px; line-height: 20px; padding: 20px;">
+            Pilih detik babak di atas lalu klik <strong>Render Frame</strong> untuk melihat pratinjau teks & visual secara instan.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <div style="font-size: 12px; color: var(--text-muted);" id="stillMetaInfo">
+          Resolusi Frame: 1080 × 1920 (9:16)
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn small" id="btnCloseStillModal2">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Dialog Konfirmasi Kustom (Pengganti confirm() browser) -->
+  <div class="modal-backdrop" id="modalConfirmDialog" style="display: none;">
+    <div class="modal-dialog small confirm-dialog-box">
+      <div class="confirm-dialog-body">
+        <div class="confirm-icon-wrap" id="confirmDialogIcon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="confirm-text-wrap">
+          <h3 id="confirmDialogTitle" class="confirm-title">Konfirmasi Aksi</h3>
+          <div id="confirmDialogMessage" class="confirm-msg">Apakah Anda yakin ingin melanjutkan?</div>
+          <div id="confirmDialogSubtext" class="confirm-sub" style="display: none;"></div>
+        </div>
+      </div>
+      <div class="confirm-dialog-actions">
+        <button class="btn small" id="btnConfirmCancel" type="button">Batal</button>
+        <button class="btn small danger" id="btnConfirmOk" type="button">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Konfigurasi Google Drive & Upload Otomatis -->
+  <div class="modal-backdrop" id="modalGDriveConfig" style="display: none;">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.12); display: flex; align-items: center; justify-content: center; color: #34d399; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+            </svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="margin: 0; font-size: 15px;">Integrasi Google Drive & Upload Otomatis</h3>
+            <p class="panel-sub" style="margin: 0; font-size: 11px;">Kirim video hasil render langsung ke Google Drive dengan 1-klik</p>
+          </div>
+        </div>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseGDriveModal" type="button" title="Tutup Modal">✕</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Status Box -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-control); padding: 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <strong style="color: #6ee7b7;">⚡ Status Fitur Upload Otomatis (Solusi 2):</strong>
+            <span class="pill emerald" id="pillGDriveStatus">● Terhubung</span>
+          </div>
+          <p style="margin: 0; color: #cbd5e1;">
+            Video dapat langsung diunggah secara otomatis ke folder Google Drive Anda melalui tombol <strong>⚡ Upload ke Drive</strong> tanpa repot drag & drop!
+          </p>
+        </div>
+
+        <!-- Input Link URL Folder Drive -->
+        <div class="form-group">
+          <label class="form-label" for="inputGDriveUrl">
+            <span>1. Link Folder Google Drive Anda</span>
+          </label>
+          <input class="input" type="url" id="inputGDriveUrl" placeholder="https://drive.google.com/drive/folders/...">
+          <span style="font-size: 11px; color: var(--text-faint); margin-top: 4px; display: block;">
+            Folder tujuan penyimpanan video di Google Drive Anda.
+          </span>
+        </div>
+
+        <!-- Input Link Webhook Google Apps Script -->
+        <div class="form-group">
+          <label class="form-label" for="inputGDriveWebhookUrl">
+            <span>2. URL Google Apps Script Webhook (Untuk Upload Otomatis)</span>
+          </label>
+          <input class="input" type="url" id="inputGDriveWebhookUrl" placeholder="https://script.google.com/macros/s/.../exec">
+          <span style="font-size: 11px; color: var(--text-faint); margin-top: 4px; display: block;">
+            Jalur eksekusi Apps Script yang mengunggah video langsung ke folder di atas.
+          </span>
+        </div>
+
+        <!-- Feedback Alert -->
+        <div id="gdriveSaveFeedback" class="feedback-banner" style="display: none; margin: 0;"></div>
+      </div>
+
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn small" id="btnTestGDriveLink" type="button" title="Buka tautan folder ini di tab browser baru untuk memastikan URL benar">
+          🔗 Buka Folder Drive
+        </button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn small" id="btnCloseGDriveModal2" type="button">Tutup</button>
+          <button class="btn small primary" id="btnSaveGDriveLink" type="button">Simpan Pengaturan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Konfirmasi Pilihan Render Video -->
+  <div class="modal-backdrop" id="modalRenderConfirm" style="display: none;">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(225, 29, 72, 0.15); display: flex; align-items: center; justify-content: center; color: #f43f5e; flex-shrink: 0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </div>
+          <div>
+            <h3 class="modal-title" style="margin: 0; font-size: 15px;">Konfirmasi Render Video</h3>
+            <p class="panel-sub" style="margin: 0; font-size: 11px;">Pilih variasi video yang ingin diproduksi</p>
+          </div>
+        </div>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseRenderConfirmModal" type="button" title="Tutup Modal">✕</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Info Produk Singkat -->
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <span style="font-size: 12px; color: var(--text-muted); flex-shrink: 0;">Produk yang Dirender:</span>
+          <strong id="renderModalProductName" style="font-size: 12px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: right;" title="">-</strong>
+        </div>
+
+        <!-- Pilihan Variasi Video (Cards) -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" style="margin-bottom: 8px;">
+            <span>Pilih Video yang Akan Dirender</span>
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 8px;" id="renderScopeOptions">
+            <!-- Option: Variasi 1 Saja -->
+            <label class="render-scope-card" id="cardScopeV1">
+              <input type="radio" name="renderTargetOption" value="v1">
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                  <strong style="font-size: 13px; color: #fff;">Hanya Variasi 1 (Pastel)</strong>
+                  <span class="pill emerald" style="font-size: 10px; padding: 1px 6px;">v1</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV1Title">
+                  Problem-Solution • Format Pastel Aesthetic
+                </div>
+              </div>
+            </label>
+
+            <!-- Option: Variasi 2 Saja -->
+            <label class="render-scope-card" id="cardScopeV2">
+              <input type="radio" name="renderTargetOption" value="v2">
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                  <strong style="font-size: 13px; color: #fff;">Hanya Variasi 2 (Bold)</strong>
+                  <span class="pill amber" style="font-size: 10px; padding: 1px 6px;">v2</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV2Title">
+                  Value & Quality • Format Editorial Minimal
+                </div>
+              </div>
+            </label>
+
+            <!-- Option: Semua Variasi Sekaligus -->
+            <label class="render-scope-card active" id="cardScopeAll">
+              <input type="radio" name="renderTargetOption" value="all" checked>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
+                  <strong style="font-size: 13px; color: #fff;">Semua Variasi Sekaligus (v1 & v2)</strong>
+                  <span class="pill rose" style="font-size: 10px; padding: 1px 6px;">Rekomendasi</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
+                  Merender Variasi 1 dan Variasi 2 secara berurutan untuk materi A/B testing TikTok.
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Pilihan FPS Kualitas & Target Output -->
+        <div style="display: flex; gap: 12px; align-items: center; width: 100%;">
+          <div style="flex: 1; min-width: 0;">
+            <label class="form-label" for="renderModalFps" style="font-size: 11px; margin-bottom: 4px;">Frame Rate (FPS)</label>
+            <select class="input" id="renderModalFps" style="height: 32px; font-size: 12px; width: 100%; box-sizing: border-box;">
+              <option value="60">60 FPS (Cinema / Paling Mulus)</option>
+              <option value="30">30 FPS (Fast Mode / Render Kilat)</option>
+            </select>
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <label class="form-label" style="font-size: 11px; margin-bottom: 4px;">Format Berkas Output</label>
+            <div style="font-size: 11px; color: var(--text-muted); height: 32px; line-height: 30px; background: rgba(255, 255, 255, 0.04); padding: 0 10px; border-radius: var(--radius-control); border: 1px solid var(--border-subtle); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; box-sizing: border-box;" id="renderModalOutputName" title="out/*.mp4">
+              out/*.mp4
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggle GPU Render (AMD Radeon Acceleration) -->
+        <div id="gpuRenderToggleRow" style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 2px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: #a78bfa; flex-shrink:0;">
+                <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 6v12M6 6v3M18 6v3M6 15v3M18 15v3"/>
+              </svg>
+              <strong style="font-size: 12px; color: #fff;">Akselerasi GPU (AMD Radeon)</strong>
+              <span class="pill" id="gpuStatusBadge" style="font-size: 10px; padding: 1px 7px; background: rgba(167,139,250,0.15); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3);">Hardware WebGL</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="gpuRenderDesc">
+              Gunakan GPU Radeon untuk akselerasi Chromium Frame Compositing, WebGL, dan 2D Canvas.
+            </div>
+          </div>
+          <label class="toggle-switch" title="Aktifkan Akselerasi GPU AMD Radeon">
+            <input type="checkbox" id="chkGpuRender">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle); padding: 12px 18px;">
+        <button class="btn small" id="btnCancelRenderConfirm" type="button">Batal</button>
+        <button class="btn small primary" id="btnExecuteRenderConfirm" type="button" style="background: var(--accent-rose); border-color: var(--accent-rose); font-weight: 600; padding: 0 16px; height: 32px;">
+          ▷ Mulai Render
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Toast Notification Container (Pojok Kanan Atas) -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/app.js"></script>
+</body>
+
+</html>

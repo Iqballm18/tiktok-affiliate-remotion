@@ -1,8 +1,91 @@
-node_modules
-dist
-.DS_Store
-.env
+# ==========================================
+# Dependencies
+# ==========================================
+node_modules/
+package-lock.json.backup
 
-# Ignore the output video from Git but not videos you import into src/.
-out
-whisper.cpp
+# ==========================================
+# Remotion & Webpack Build Outputs (~35MB+)
+# ==========================================
+build/
+dist/
+.remotion/
+
+# ==========================================
+# Video Render Outputs (MP4, PNG Frames, etc.)
+# ==========================================
+out/*
+!out/.gitkeep
+
+# ==========================================
+# Large AI Models & Whisper Binaries (~600MB+)
+# ==========================================
+whisper.cpp/
+models/
+*.bin
+
+# ==========================================
+# Large Raw Video Footages & Test Media
+# (GitHub rejects files > 100MB like video_1.MOV)
+# ==========================================
+*.mov
+*.MOV
+*.mp4
+*.MP4
+*.mkv
+*.avi
+*.webm
+
+# Raw footage inside public/
+public/*.mov
+public/*.MOV
+public/*.mp4
+public/*.MP4
+public/*.mkv
+public/*.avi
+public/*.webm
+
+# User voiceovers inside public/ (keep SFX sounds)
+public/*.mp3
+public/*.wav
+!public/sfx/
+!public/sfx/**
+!public/.gitkeep
+
+# ==========================================
+# Sensitive Local Config & API Credentials
+# ==========================================
+config.json
+.env
+.env.*
+.env.local
+!config.example.json
+
+# ==========================================
+# Local AI Assistant Workspace & Tool Caches
+# ==========================================
+.agents/
+.claude/
+.taste-skill/
+.gemini/
+
+# ==========================================
+# Editor & IDE Directories
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================================
+# Logs & Temporary Files
+# ==========================================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.temp

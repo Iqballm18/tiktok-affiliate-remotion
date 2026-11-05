@@ -1,0 +1,105 @@
+{
+  "id": "bagus-serap-air",
+  "name": "Bagus Serap Air Heavy Duty Dehumidifier",
+  "variants": {
+    "v1": {
+      "title": "Problem-Solution & Tekstur",
+      "themeStyle": "minimal",
+      "cardStyle": "tiktok_native_ugc",
+      "sfxPreset": "beauty",
+      "ctaSound": "kaching",
+      "enableSfx": true,
+      "sfxVolume": 1,
+      "showProgressBar": true,
+      "showSafeZoneGuide": false,
+      "unmuteHook": false,
+      "voiceOverDelaySec": 0,
+      "voiceOverScript": "Jangan beli ini kalau kamu gak mau lemari pakaian kamu kering dan bebas bau apek selamanya! Kotak Bagus Serap Air lima ratus mili ini life changing banget karena wadahnya bisa diisi ulang berkali-kali pakai pouch refill. Daya serapnya juara, udara lembap langsung kekunci rapi. Jauh lebih hemat di kantong, buruan cek flash sale di keranjang kuning ya!",
+      "badgeText": "NYESEL BARU TAHU",
+      "demoBadge": "REFILL BUTIRAN AKTIF",
+      "specBadge": "DAYA SERAP KUAT",
+      "hookLine1": "Nyesel baru tahu sekarang...",
+      "hookHighlight": "Lemari Bebas Apek Seharian!",
+      "demoLine1": "Tinggal Tuang Butiran Ajaibnya",
+      "demoHighlight": "Praktis Hemat Dan Gak Ribet",
+      "specLine1": "Daya Serap Air Super Kuat",
+      "specHighlight": "Baju Tetap Wangi & Terawat",
+      "ctaText": "Promo 11.11",
+      "clips": [
+        {
+          "startSec": 0,
+          "endSec": 6,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 54,
+          "endSec": 62,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 30,
+          "endSec": 37,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 87,
+          "endSec": 94,
+          "src": "video_1.MOV"
+        }
+      ],
+      "voiceOver": "voiceover_v1.mp3",
+      "watermarkText": "@inanikma_ | @spillbyna_",
+      "watermarkPosition": "floating"
+    },
+    "v2": {
+      "title": "First Impression & Nilai Formula",
+      "themeStyle": "editorial",
+      "cardStyle": "creator_aesthetic",
+      "sfxPreset": "minimal",
+      "ctaSound": "kaching",
+      "enableSfx": true,
+      "sfxVolume": 1,
+      "showProgressBar": true,
+      "showSafeZoneGuide": false,
+      "unmuteHook": false,
+      "voiceOverDelaySec": 0,
+      "voiceOverScript": "Jangan beli ini kalau kamu gak mau lemari pakaian kamu kering dan bebas bau apek selamanya! Kotak Bagus Serap Air lima ratus mili ini life changing banget karena wadahnya bisa diisi ulang berkali-kali pakai pouch refill. Daya serapnya juara, udara lembap langsung kekunci rapi. Jauh lebih hemat di kantong, buruan cek flash sale di keranjang kuning ya!",
+      "badgeText": "IBU-IBU WAJIB TAU",
+      "demoBadge": "BISA REFILL BERKALI KALI",
+      "specBadge": "KAPASITAS LIMA RATUS ML",
+      "hookLine1": "Jangan beli ini kalau kamu...",
+      "hookHighlight": "Gak Mau Lemari Bebas Bau!",
+      "demoLine1": "Bisa Refill Berkali-Kali",
+      "demoHighlight": "Jauh Lebih Hemat di Kantong",
+      "specLine1": "Kapasitas Kotak Lima Ratus Ml",
+      "specHighlight": "Investasi Rumah Sehat & Segar",
+      "ctaText": "Cek Flash Sale di Keranjang Kuning",
+      "clips": [
+        {
+          "startSec": 22,
+          "endSec": 28,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 60,
+          "endSec": 68,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 42,
+          "endSec": 49,
+          "src": "video_1.MOV"
+        },
+        {
+          "startSec": 88,
+          "endSec": 94,
+          "src": "video_1.MOV"
+        }
+      ],
+      "voiceOver": "voiceover_v2.mp3",
+      "watermarkText": "video milik @inanikma_",
+      "watermarkPosition": "floating"
+    }
+  },
+  "videoSource": "video_1.MOV"
+}
