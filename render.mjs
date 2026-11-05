@@ -25,6 +25,30 @@ const PUBLIC_DIR = path.resolve(__dirname, 'public');
 
 // In-memory bundle cache across multiple renders
 let cachedBundleLocation = null;
+let lastBundleBuiltTime = 0;
+
+function hasSrcFilesChanged(sinceTime) {
+  if (!sinceTime) return true;
+  const srcDir = path.resolve(__dirname, 'src');
+  try {
+    const checkDir = (dir) => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (checkDir(fullPath)) return true;
+        } else {
+          const stat = fs.statSync(fullPath);
+          if (stat.mtimeMs > sinceTime) return true;
+        }
+      }
+      return false;
+    };
+    return checkDir(srcDir);
+  } catch (_) {
+    return true;
+  }
+}
 
 /**
  * Menyinkronkan seluruh isi folder public/ ke dalam folder bundle Remotion.
@@ -52,10 +76,12 @@ export function syncPublicToBundle(bundleLocation, onLog = console.log) {
 
 export function invalidateBundle() {
   cachedBundleLocation = null;
+  lastBundleBuiltTime = 0;
 }
 
 export async function getOrBuildBundle(onLog = console.log, forceRebuild = false) {
-  if (!forceRebuild && cachedBundleLocation && fs.existsSync(cachedBundleLocation)) {
+  const needsRebuild = forceRebuild || !cachedBundleLocation || !fs.existsSync(cachedBundleLocation) || hasSrcFilesChanged(lastBundleBuiltTime);
+  if (!needsRebuild) {
     syncPublicToBundle(cachedBundleLocation, onLog);
     return cachedBundleLocation;
   }
@@ -69,6 +95,7 @@ export async function getOrBuildBundle(onLog = console.log, forceRebuild = false
     },
   });
   cachedBundleLocation = bundleLocation;
+  lastBundleBuiltTime = Date.now();
   syncPublicToBundle(bundleLocation, onLog);
   onLog('[BUNDLER] Bundle berhasil dibuat.');
   return bundleLocation;

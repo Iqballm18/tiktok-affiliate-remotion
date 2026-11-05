@@ -949,6 +949,22 @@
     });
   }
 
+  // Debounced Auto-save: Menyimpan perubahan otomatis ke JSON produk agar saat refresh data tidak hilang
+  let autoSaveTimeout = null;
+  function triggerAutoSave() {
+    clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+      syncFormToVariant();
+      if (state.activeProductId && state.currentProduct) {
+        fetch(`/api/products/${state.activeProductId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(state.currentProduct)
+        }).catch(err => console.warn('Auto-save error:', err.message));
+      }
+    }, 400);
+  }
+
   // -------------------------------------------------------------
   // Form Listeners
   // -------------------------------------------------------------
@@ -1040,6 +1056,8 @@
     if (!badgeVal) return;
     el.inputBadgeText.value = badgeVal;
     syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
     showToast({
       type: 'info',
       title: 'Badge Diterapkan',
@@ -1216,8 +1234,27 @@
     input.addEventListener('input', updateCharCounters);
   });
 
-  [el.inputBadgeText, el.inputHookLine1, el.inputHookHighlight].forEach(inp => {
-    if (inp) inp.addEventListener('input', updateThemeVisualPreview);
+  const autoSyncInputs = [
+    el.inputBadgeText,
+    el.inputHookLine1,
+    el.inputHookHighlight,
+    el.inputDemoLine1,
+    el.inputDemoHighlight,
+    el.inputSpecLine1,
+    el.inputSpecHighlight,
+    el.inputCtaText,
+    el.inputCtaLabel,
+    el.inputUrgencyTag,
+  ];
+
+  autoSyncInputs.forEach(inp => {
+    if (inp) {
+      inp.addEventListener('input', () => {
+        syncFormToVariant();
+        updateThemeVisualPreview();
+        triggerAutoSave();
+      });
+    }
   });
 
   // Mengubah tema / tata letak manual berarti keluar dari preset (menjadi "Kustom").
