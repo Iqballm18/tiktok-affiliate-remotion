@@ -204,16 +204,26 @@
                 </div>
               </div>
 
+              <!-- AI Design Reason banner (if provided by Gemini) -->
+              <div id="designReasonBox" class="design-reason-box" style="display: none; margin-bottom: 12px; padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; font-size: 12px; color: #93c5fd;">
+                <div style="font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
+                  <span>💡 Alasan Desain AI (designReason):</span>
+                </div>
+                <div id="designReasonText" style="line-height: 1.4; color: #e2e8f0;"></div>
+              </div>
+
               <!-- Preset + Gaya Badge -->
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="selectPreset">Preset Desain</label>
                   <select class="input" id="selectPreset">
                     <option value="">Kustom (atur manual di bawah)</option>
-                    <option value="skincare">Skincare — pastel lembut, badge stabilo</option>
-                    <option value="gadget">Gadget — editorial gelap, badge LIVE</option>
-                    <option value="flash_sale">Flash Sale — merah-emas, highlight kuning</option>
-                    <option value="lifestyle">Lifestyle — monokrom bersih</option>
+                    <option value="skincare">Skincare — Quiet Serif, Subtitle Reveal</option>
+                    <option value="gadget">Gadget — Label Tape, Subtitle Outline</option>
+                    <option value="flash_sale">Flash Sale — Thermal Receipt, Marker Sweep</option>
+                    <option value="lifestyle">Lifestyle — Type Stack Poster, Subtitle Outline</option>
+                    <option value="household">Rumah Tangga — Sticky Note Catatan Tempel</option>
+                    <option value="parenting">Ibu &amp; Bayi — Chat Thread iMessage</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -228,9 +238,9 @@
                 </div>
               </div>
 
-              <!-- Pengaturan lanjutan: tema & tata letak (override preset) -->
+              <!-- Pengaturan lanjutan: tema, layout hook & caption (override preset) -->
               <details class="advanced-design" id="advancedDesign">
-                <summary style="cursor: pointer; font-size: 12px; color: var(--text-faint); margin-bottom: 8px;">Pengaturan lanjutan: tema &amp; tata letak teks (menimpa preset)</summary>
+                <summary style="cursor: pointer; font-size: 12px; color: var(--text-faint); margin-bottom: 8px;">Pengaturan lanjutan: tema, tata letak teks &amp; subtitle (menimpa preset)</summary>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="selectThemeStyle">Tema Visual</label>
@@ -242,14 +252,36 @@
                   </select>
                 </div>
                 <div class="form-group">
-                  <label class="form-label" for="selectCardStyle">Gaya Tata Letak Teks</label>
+                  <label class="form-label" for="selectCardStyle">Gaya Tata Letak Hook</label>
                   <select class="input" id="selectCardStyle">
-                    <option value="unified_glass" data-shape="glass" data-sub="Tipografi mengambang bersih dengan highlight bersinar tanpa kotak latar">Unified Clean (Floating Accent)</option>
-                    <option value="editorial_minimal" data-shape="two_tier" data-sub="Tipografi editorial tajam berbayangan pekat tanpa kotak penutup video">Editorial Minimal (Floating Clean)</option>
-                    <option value="creator_aesthetic" data-shape="floating" data-sub="Teks floating organik kreator asli dengan drop-shadow sinematik">Creator Aesthetic (Floating Shadow)</option>
-                    <option value="clean_capsule" data-shape="capsule" data-sub="Tipografi modern ringkas mengambang bebas di atas video">Clean Modern (Floating Typography)</option>
-                    <option value="tiktok_native_ugc" data-shape="tiktok_ugc" data-sub="Subtitle khas CapCut/TikTok: teks putih + stempel highlight kuning stabilo FYP">TikTok Native UGC (Tag Kuning Stabilo)</option>
-                    <option value="top_banner_promo" data-shape="top_banner" data-sub="Banner strip promo flash sale di atas, maksimalkan 100% ruang video">Top-Banner Promo (Flash Sale Strip)</option>
+                    <optgroup label="Layout Fisik / Berkarakter (Baru)">
+                      <option value="sticky_note" data-shape="sticky_note" data-sub="Catatan tempel Caveat dengan selotip & tilt fisik (Dapur/Rumah)">Sticky Note (Catatan Tempel)</option>
+                      <option value="receipt" data-shape="receipt" data-sub="Struk thermal DM Mono dengan total terbalik (Flash Sale/Diskon)">Thermal Receipt (Struk Belanja)</option>
+                      <option value="chat_thread" data-shape="chat_thread" data-sub="Balon iMessage dua arah (Ibu, Bayi, Skincare)">Chat Thread (iMessage)</option>
+                      <option value="type_stack" data-shape="type_stack" data-sub="Tipografi poster bold masked reveal (Lifestyle/General)">Type Stack (Poster Masked)</option>
+                      <option value="label_tape" data-shape="label_tape" data-sub="Pita timbul label-maker per baris (Gadget/Teknik)">Label Tape (Pita Emboss)</option>
+                      <option value="quiet_serif" data-shape="quiet_serif" data-sub="Serif italic high-end editorial minimal (Skincare/Luxury)">Quiet Serif (Editorial Italic)</option>
+                    </optgroup>
+                    <optgroup label="Layout Tipografi Mengambang">
+                      <option value="creator_aesthetic" data-shape="floating" data-sub="Teks floating organik kreator asli dengan drop-shadow sinematik">Creator Aesthetic (Floating Shadow)</option>
+                      <option value="editorial_minimal" data-shape="two_tier" data-sub="Tipografi editorial tajam berbayangan pekat tanpa kotak penutup video">Editorial Minimal (Floating Clean)</option>
+                      <option value="unified_glass" data-shape="glass" data-sub="Tipografi mengambang bersih dengan highlight bersinar">Unified Clean (Floating Accent)</option>
+                      <option value="clean_capsule" data-shape="capsule" data-sub="Tipografi modern ringkas mengambang bebas di atas video">Clean Modern (Floating Typography)</option>
+                      <option value="tiktok_native_ugc" data-shape="tiktok_ugc" data-sub="Subtitle khas CapCut/TikTok: teks putih + stempel highlight kuning stabilo FYP">TikTok Native UGC (Tag Kuning Stabilo)</option>
+                      <option value="top_banner_promo" data-shape="top_banner" data-sub="Banner strip promo flash sale di atas, maksimalkan 100% ruang video">Top-Banner Promo (Flash Sale Strip)</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-top: 10px;">
+                <div class="form-group">
+                  <label class="form-label" for="selectCaptionStyle">Gaya Subtitle / Caption Hook</label>
+                  <select class="input" id="selectCaptionStyle">
+                    <option value="">Otomatis (mengikuti preset)</option>
+                    <option value="outline_pop">Outline Pop (Kontur Tegas &amp; Pop-in)</option>
+                    <option value="marker_sweep">Marker Sweep (Sapuan Stabilo)</option>
+                    <option value="reveal">Word Reveal (Muncul Tenang Kata per Kata)</option>
+                    <option value="plate">Pill Plate (Kapsul Minimalis)</option>
                   </select>
                 </div>
               </div>

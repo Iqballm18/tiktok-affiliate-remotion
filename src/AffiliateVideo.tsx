@@ -17,6 +17,7 @@ import { TikTokSafeZone } from './components/TikTokSafeZone';
 import { FloatingWatermark } from './components/FloatingWatermark';
 import { HookSubtitle } from './components/HookSubtitle';
 import { HookBadge, resolveBadgeVariant } from './components/HookBadge';
+import { HeadlineLayout, resolveHookLayout } from './components/HookLayouts';
 import { resolvePreset } from './presets';
 import { loadThemeFonts } from './load-theme-fonts';
 import { Caption } from '@remotion/captions';
@@ -54,7 +55,13 @@ export const affiliateSchema = z.object({
     // dan badgeStyle yang kosong. Field eksplisit di bawah selalu menang atas preset.
     preset: z.string().optional(),
     themeStyle: z.string().optional(),
+    // Layout hook. Baru: sticky_note | receipt | chat_thread | type_stack | label_tape | quiet_serif.
+    // Lama: unified_glass | editorial_minimal | creator_aesthetic | clean_capsule | tiktok_native_ugc | top_banner_promo.
     cardStyle: z.string().optional(),
+    // Gaya subtitle: outline_pop | marker_sweep | reveal | plate. Kosong = outline_pop (atau dari preset).
+    captionStyle: z.string().optional(),
+    // Alasan singkat pemilihan desain oleh Gemini. Hanya catatan, tidak memengaruhi render.
+    designReason: z.string().optional(),
     // Gaya badge: sticker | alert | marker | glass. Kosong = otomatis (hook: sticker, demo & spec: glass).
     badgeStyle: z.string().optional(),
     showProgressBar: z.boolean().optional(),
@@ -705,6 +712,23 @@ const EditorialHeadline: React.FC<{
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
 
+        // Layout baru ditangani komponen tersendiri (HookLayouts.tsx). Gaya lama jatuh ke bawah.
+        const hookLayout = resolveHookLayout(cardStyle);
+        if (hookLayout) {
+            return (
+                <HeadlineLayout
+                    layout={hookLayout}
+                    badge={badge}
+                    line1={line1}
+                    highlightLine={highlightLine}
+                    durationInFrames={durationInFrames}
+                    variant={variant}
+                    theme={theme}
+                    urgencyTag={urgencyTag}
+                />
+            );
+        }
+
         const mode = resolveStyleMode(cardStyle);
         const badgeVariant = resolveBadgeVariant(
             badgeStyle,
@@ -1205,6 +1229,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     preset: presetKey,
     themeStyle: themeStyleProp,
     cardStyle: cardStyleProp,
+    captionStyle: captionStyleProp,
     badgeStyle: badgeStyleProp,
     showProgressBar,
     enableSfx,
@@ -1249,6 +1274,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const preset = resolvePreset(presetKey);
     const themeStyle = themeStyleProp ?? preset?.themeStyle;
     const cardStyle = cardStyleProp ?? preset?.cardStyle;
+    const captionStyle = captionStyleProp ?? preset?.captionStyle;
     const badgeStyle = badgeStyleProp ?? preset?.badgeStyle;
     const theme = getTheme(themeStyle);
     let accumulatedFrames = 0;
@@ -1497,7 +1523,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
 
             {/* L2.4: BACKGROUND MUSIC (BGM DENGAN SMART AUDIO DUCKING) */}
             {bgmTrack && (
-                <Sequence from={0} durationInFrames={totalDurationInFrames} name="BackgroundMusic">
+                <Sequence durationInFrames={totalDurationInFrames} name="BackgroundMusic">
                     <Audio
                         src={staticFile(bgmTrack)}
                         loop
@@ -1553,6 +1579,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         durationInFrames={hookDuration}
                         theme={theme}
                         karaokeHighlight={karaokeHighlight}
+                        captionStyle={captionStyle}
                     />
                 )}
             </Sequence>
@@ -1618,6 +1645,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         )}
                         theme={theme}
                         karaokeHighlight={karaokeHighlight}
+                        captionStyle={captionStyle}
                         // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
                         liftFromFrame={ctaStartFrame - voStartFrame}
                         liftPx={CAPTION_LIFT_IN_CTA}

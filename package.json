@@ -11,6 +11,7 @@
   "dependencies": {
     "@remotion/animation-utils": "4.0.539",
     "@remotion/cli": "4.0.539",
+    "@remotion/google-fonts": "4.0.539",
     "@remotion/layout-utils": "4.0.539",
     "@remotion/media-utils": "4.0.539",
     "@remotion/zod-types": "4.0.539",

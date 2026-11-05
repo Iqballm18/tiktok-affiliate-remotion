@@ -2,12 +2,49 @@ import React from 'react';
 import { useCurrentFrame, useVideoConfig, spring, interpolate, Easing } from 'remotion';
 import { Caption, createTikTokStyleCaptions } from '@remotion/captions';
 import { ThemeDefinition } from '../theme';
+import { FONT } from '../load-hook-fonts';
 
 export interface TimedSubtitle {
     text: string;
     startSec?: number;
     endSec?: number;
 }
+
+/**
+ * Gaya subtitle:
+ *  - outline_pop  (default) teks putih dengan kontur gelap, kata yang sedang diucapkan terangkat dan berwarna.
+ *                 Gaya subtitle asli TikTok/CapCut, terbaca di footage apa pun.
+ *  - marker_sweep stabilo menyapu di belakang kata yang diucapkan, lalu tertinggal samar sebagai
+ *                 penanda "sudah dibaca". Cocok untuk promo dan konten berenergi tinggi.
+ *  - reveal       kata muncul satu per satu saat diucapkan, tanpa warna sorot. Tenang, cocok untuk
+ *                 skincare dan lifestyle.
+ *  - plate        satu pelat gelap solid, kata aktif bergaris bawah. Untuk footage yang sangat ramai.
+ */
+export type CaptionStyle = 'outline_pop' | 'marker_sweep' | 'reveal' | 'plate';
+
+export const resolveCaptionStyle = (raw?: string): CaptionStyle => {
+    const s = (raw || '').toLowerCase().trim().replace(/[-\s]/g, '_');
+    switch (s) {
+        case 'marker_sweep':
+        case 'marker':
+        case 'sweep':
+        case 'stabilo':
+            return 'marker_sweep';
+        case 'reveal':
+        case 'typewriter':
+        case 'quiet':
+            return 'reveal';
+        case 'plate':
+        case 'box':
+        case 'classic':
+            return 'plate';
+        case 'outline_pop':
+        case 'outline':
+        case 'native':
+        default:
+            return 'outline_pop';
+    }
+};
 
 export interface HookSubtitleProps {
     text?: string;
@@ -16,6 +53,8 @@ export interface HookSubtitleProps {
     durationInFrames: number;
     theme: ThemeDefinition;
     karaokeHighlight?: boolean;
+    /** Gaya subtitle: outline_pop | marker_sweep | reveal | plate. Kosong = outline_pop. */
+    captionStyle?: string;
     /** Frame (relatif ke Sequence caption) saat caption mulai naik, mis. awal babak CTA. */
     liftFromFrame?: number;
     /** Seberapa jauh (px) caption naik mulai liftFromFrame. */
@@ -34,6 +73,8 @@ type WordState = 'active' | 'past' | 'upcoming';
 interface RenderWord {
     text: string;
     state: WordState;
+    /** 0..1: seberapa jauh kata ini sudah diucapkan (hanya bermakna untuk kata aktif). */
+    progress: number;
 }
 
 /**
@@ -49,7 +90,6 @@ const splitTextIntoChunks = (fullText: string): string[] => {
 
     for (const w of rawWords) {
         currentChunk.push(w);
-        // Pecah tiap 3-4 kata, atau jika ada tanda baca jeda (. , ? !)
         const hasPunctuation = /[.,?!]$/.test(w);
         if (currentChunk.length >= 4 || (hasPunctuation && currentChunk.length >= 2)) {
             chunks.push(currentChunk.join(' '));
@@ -59,7 +99,6 @@ const splitTextIntoChunks = (fullText: string): string[] => {
 
     if (currentChunk.length > 0) {
         if (chunks.length > 0 && currentChunk.length <= 2) {
-            // Gabung sisa kata yang terlalu pendek ke chunk sebelumnya
             chunks[chunks.length - 1] += ' ' + currentChunk.join(' ');
         } else {
             chunks.push(currentChunk.join(' '));
@@ -69,70 +108,182 @@ const splitTextIntoChunks = (fullText: string): string[] => {
     return chunks;
 };
 
-/** Warna stabilo kata aktif mengikuti tema. */
-const getKaraokeColor = (theme: ThemeDefinition): string =>
-    theme.id === 'pastel'
-        ? '#FF2E63'
-        : theme.id === 'minimal'
-          ? '#FFD166'
-          : theme.colors.indicatorColor || '#FFE500';
-
-/** Pilih teks hitam/putih agar kontras di atas warna stabilo (luminansi relatif WCAG). */
-const readableTextOn = (hex: string): string => {
-    const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-    if (!m) return '#0B0B10';
-    const n = parseInt(m[1], 16);
-    const lin = (c: number) => {
-        const s = c / 255;
-        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-    };
-    const lum = 0.2126 * lin((n >> 16) & 255) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
-    return lum > 0.4 ? '#0B0B10' : '#FFFFFF';
+/**
+ * Warna kata aktif per tema. Sengaja bukan hijau-lime neon: lime di atas hitam adalah
+ * kombinasi paling umum di desain buatan AI. Dipilih hangat agar kontras dengan
+ * kulit, makanan, dan kemasan yang dominan di footage affiliate.
+ */
+const accentFor = (theme: ThemeDefinition): string => {
+    switch (theme.id) {
+        case 'pastel':
+            return '#FF8FA3';
+        case 'flash_sale':
+            return '#FFD23F';
+        case 'minimal':
+            return '#FFFFFF';
+        case 'editorial':
+        default:
+            return '#FFC83D';
+    }
 };
 
-// Padding/margin negatif dibuat KONSTAN untuk semua kata: hanya warna latar yang berubah
-// saat kata aktif, sehingga lebar baris tidak pernah bergeser (sebelumnya bobot font
-// 700 -> 900 membuat kata melebar dan seluruh kalimat bergeser tiap kata berganti).
-const PILL_PAD_X = 10;
-const PILL_PAD_Y = 2;
+/** Kontur gelap 8 arah, lebih aman dari -webkit-text-stroke yang membuat sudut huruf lancip. */
+const ring = (px: number, color = 'rgba(0, 0, 0, 0.92)'): string =>
+    [
+        [-px, 0],
+        [px, 0],
+        [0, -px],
+        [0, px],
+        [-px, -px],
+        [px, -px],
+        [-px, px],
+        [px, px],
+    ]
+        .map(([x, y]) => `${x}px ${y}px 0 ${color}`)
+        .join(', ');
 
-/**
- * Kartu subtitle bersama untuk mode Whisper (word-level) maupun mode teks manual.
- * Sebelumnya dua blok ~70 baris yang identik disalin di komponen ini.
- */
+const FONT_SIZE = 64;
+
+const baseWordStyle: React.CSSProperties = {
+    display: 'inline-block',
+    fontFamily: FONT.grotesk,
+    fontSize: FONT_SIZE,
+    fontWeight: 800,
+    letterSpacing: -1.2,
+    lineHeight: 1.12,
+    // Lebar kata tidak pernah berubah antar state: hanya transform/warna/opacity yang bergerak,
+    // jadi baris tidak bergeser saat kata berganti.
+};
+
 const SubtitleCard: React.FC<{
     words: RenderWord[];
     localFrame: number;
     durationFrames: number;
     theme: ThemeDefinition;
     karaokeHighlight: boolean;
+    style: CaptionStyle;
     extraBottom?: number;
-}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight, extraBottom = 0 }) => {
+}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight, style, extraBottom = 0 }) => {
     const { fps } = useVideoConfig();
+    const accent = accentFor(theme);
 
-    const activeColor = getKaraokeColor(theme);
-    const activeTextColor = readableTextOn(activeColor);
-
-    const enterSpring = spring({
-        fps,
-        frame: localFrame,
-        config: theme.springs.snappy,
+    const enterSpring = spring({ fps, frame: localFrame, config: theme.springs.snappy });
+    const enterY = interpolate(enterSpring, [0, 1], [14, 0]);
+    const exitProgress = interpolate(localFrame, [durationFrames - 4, durationFrames], [0, 1], {
+        extrapolateLeft: 'clamp',
+        extrapolateRight: 'clamp',
     });
-    const enterY = interpolate(enterSpring, [0, 1], [16, 0]);
 
-    // Fast exit di ~4 frame terakhir
-    const exitProgress = interpolate(
-        localFrame,
-        [durationFrames - 4, durationFrames],
-        [0, 1],
-        { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-    );
+    const renderWord = (word: RenderWord, idx: number): React.ReactNode => {
+        const active = karaokeHighlight && word.state === 'active';
+        const past = karaokeHighlight && word.state === 'past';
+        const upcoming = karaokeHighlight && word.state === 'upcoming';
+
+        if (style === 'marker_sweep') {
+            // Stabilo menyapu selama kata diucapkan; kata yang sudah lewat menyisakan jejak samar.
+            const sweep = active ? Math.min(1, word.progress * 1.6) : past ? 1 : 0;
+            const barOpacity = active ? 1 : past ? 0.55 : 0;
+            return (
+                <span
+                    key={idx}
+                    style={{
+                        position: 'relative',
+                        display: 'inline-block',
+                        margin: '0 9px',
+                    }}
+                >
+                    <span
+                        style={{
+                            position: 'absolute',
+                            left: -10,
+                            right: -10,
+                            bottom: 0,
+                            height: '62%',
+                            borderRadius: 6,
+                            backgroundColor: accent,
+                            opacity: barOpacity,
+                            transform: `skewX(-8deg) scaleX(${sweep})`,
+                            transformOrigin: 'left center',
+                        }}
+                    />
+                    <span
+                        style={{
+                            ...baseWordStyle,
+                            position: 'relative',
+                            color: '#FFFFFF',
+                            // kontur lebih tipis dari outline_pop supaya stabilo di belakang tetap terlihat
+                            textShadow: `${ring(2.5)}, 0 4px 14px rgba(0, 0, 0, 0.55)`,
+                        }}
+                    >
+                        {word.text}
+                    </span>
+                </span>
+            );
+        }
+
+        if (style === 'reveal') {
+            // Kata hadir saat diucapkan. Tata letak sudah dipesan (opacity 0, bukan dihapus) agar tidak melompat.
+            const appear = upcoming ? 0 : active ? Math.min(1, word.progress * 5) : 1;
+            return (
+                <span
+                    key={idx}
+                    style={{
+                        ...baseWordStyle,
+                        margin: '0 9px',
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        opacity: karaokeHighlight ? appear : 1,
+                        transform: `translateY(${karaokeHighlight ? (1 - appear) * 12 : 0}px)`,
+                        textShadow: `${ring(3.5)}, 0 5px 20px rgba(0, 0, 0, 0.6)`,
+                    }}
+                >
+                    {word.text}
+                </span>
+            );
+        }
+
+        if (style === 'plate') {
+            return (
+                <span
+                    key={idx}
+                    style={{
+                        ...baseWordStyle,
+                        fontSize: 52,
+                        margin: '0 8px',
+                        color: '#FFFFFF',
+                        opacity: upcoming ? 0.6 : 1,
+                        boxShadow: active ? `inset 0 -8px 0 ${accent}` : 'none',
+                    }}
+                >
+                    {word.text}
+                </span>
+            );
+        }
+
+        // outline_pop
+        return (
+            <span
+                key={idx}
+                style={{
+                    ...baseWordStyle,
+                    margin: '0 9px',
+                    color: active ? accent : '#FFFFFF',
+                    transform: active ? 'translateY(-5px) scale(1.07)' : 'translateY(0) scale(1)',
+                    textShadow: `${ring(4.5)}, 0 6px 18px rgba(0, 0, 0, 0.6)`,
+                }}
+            >
+                {word.text}
+            </span>
+        );
+    };
+
+    const plate = style === 'plate';
 
     return (
         <div
             style={{
                 position: 'absolute',
-                bottom: 460 + extraBottom, // Posisi aman di atas caption TikTok, jauh di bawah headline
+                bottom: 460 + extraBottom, // di atas caption TikTok, jauh di bawah headline
                 left: 48,
                 right: 48,
                 display: 'flex',
@@ -141,57 +292,29 @@ const SubtitleCard: React.FC<{
                 pointerEvents: 'none',
                 zIndex: 50,
                 opacity: enterSpring * (1 - exitProgress),
-                transform: `translateY(${enterY}px) scale(${0.96 + enterSpring * 0.04})`,
+                transform: `translateY(${enterY}px)`,
             }}
         >
             <div
                 style={{
-                    // Tanpa backdropFilter (mahal saat render 60 fps); latar dibuat sedikit lebih pekat.
-                    backgroundColor: 'rgba(10, 9, 16, 0.86)',
-                    border: '1.5px solid rgba(255, 255, 255, 0.18)',
-                    borderRadius: 26,
-                    padding: '16px 34px',
-                    boxShadow: '0 16px 36px rgba(0, 0, 0, 0.55)',
                     display: 'flex',
                     flexWrap: 'wrap',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    gap: '8px 20px',
-                    maxWidth: 960,
+                    rowGap: plate ? 4 : 0,
+                    maxWidth: 940,
+                    textAlign: 'center',
+                    ...(plate
+                        ? {
+                              backgroundColor: 'rgba(12, 12, 14, 0.94)',
+                              borderRadius: 10,
+                              padding: '16px 26px 18px',
+                              boxShadow: '0 14px 30px rgba(0, 0, 0, 0.5)',
+                          }
+                        : {}),
                 }}
             >
-                {words.map((word, idx) => {
-                    const isActive = karaokeHighlight && word.state === 'active';
-                    const isPast = karaokeHighlight && word.state === 'past';
-
-                    return (
-                        <span
-                            key={idx}
-                            style={{
-                                display: 'inline-block',
-                                fontFamily: theme.fonts.display,
-                                fontSize: 44,
-                                fontWeight: 800, // konstan: jangan ubah per kata (lihat catatan di atas)
-                                letterSpacing: -0.6,
-                                lineHeight: 1.2,
-                                padding: `${PILL_PAD_Y}px ${PILL_PAD_X}px`,
-                                margin: `-${PILL_PAD_Y}px -${PILL_PAD_X}px`,
-                                borderRadius: 14,
-                                backgroundColor: isActive ? activeColor : 'transparent',
-                                color: isActive
-                                    ? activeTextColor
-                                    : isPast || !karaokeHighlight
-                                      ? '#FFFFFF'
-                                      : 'rgba(255, 255, 255, 0.62)',
-                                transform: isActive ? 'scale(1.06)' : 'scale(1)',
-                                boxShadow: isActive ? `0 6px 18px ${activeColor}66` : 'none',
-                                textShadow: isActive ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.8)',
-                            }}
-                        >
-                            {word.text}
-                        </span>
-                    );
-                })}
+                {words.map(renderWord)}
             </div>
         </div>
     );
@@ -204,11 +327,13 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
     durationInFrames,
     theme,
     karaokeHighlight = true,
+    captionStyle,
     liftFromFrame,
     liftPx = 0,
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
+    const style = resolveCaptionStyle(captionStyle);
 
     const extraBottom =
         liftFromFrame !== undefined && liftPx > 0
@@ -220,7 +345,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
               })
             : 0;
 
-    // 0. JIKA MENGGUNAKAN CAPTIONS WHISPER AI (Word-level millisecond timestamps)
+    // 0. Whisper captions (timestamp per kata)
     const tikTokPages = React.useMemo(() => {
         if (!captions || captions.length === 0) return null;
         return createTikTokStyleCaptions({
@@ -230,7 +355,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
         }).pages;
     }, [captions]);
 
-    // 1. Olah input text / subtitles menjadi array ProcessedChunk (Manual fallback)
+    // 1. Subtitle manual -> chunk
     const chunks: ProcessedChunk[] = React.useMemo(() => {
         if (tikTokPages && tikTokPages.length > 0) return [];
         const rawChunks: { text: string; startFrame?: number; endFrame?: number; weight: number }[] = [];
@@ -238,12 +363,8 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
         if (Array.isArray(subtitles) && subtitles.length > 0) {
             for (const item of subtitles) {
                 if (typeof item === 'string') {
-                    const textChunks = splitTextIntoChunks(item);
-                    for (const tc of textChunks) {
-                        rawChunks.push({
-                            text: tc,
-                            weight: Math.max(1, tc.split(' ').length),
-                        });
+                    for (const tc of splitTextIntoChunks(item)) {
+                        rawChunks.push({ text: tc, weight: Math.max(1, tc.split(' ').length) });
                     }
                 } else if (item && typeof item === 'object' && item.text) {
                     const sf = item.startSec !== undefined ? Math.round(item.startSec * fps) : undefined;
@@ -257,12 +378,8 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
                 }
             }
         } else if (text && text.trim().length > 0) {
-            const textChunks = splitTextIntoChunks(text);
-            for (const tc of textChunks) {
-                rawChunks.push({
-                    text: tc,
-                    weight: Math.max(1, tc.split(' ').length),
-                });
+            for (const tc of splitTextIntoChunks(text)) {
+                rawChunks.push({ text: tc, weight: Math.max(1, tc.split(' ').length) });
             }
         }
 
@@ -293,24 +410,30 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
         });
     }, [tikTokPages, text, subtitles, durationInFrames, fps]);
 
-    // Mode Whisper captions (timestamp per kata)
+    // Mode Whisper
     if (tikTokPages && tikTokPages.length > 0) {
         const currentMs = (frame / fps) * 1000;
         const activePage = tikTokPages.find(
-            (p) => currentMs >= p.startMs && currentMs < p.startMs + p.durationMs
+            (p) => currentMs >= p.startMs && currentMs < p.startMs + p.durationMs,
         );
 
         if (!activePage) return null;
 
-        const words: RenderWord[] = activePage.tokens.map((token) => ({
-            text: token.text.trim(),
-            state:
+        const words: RenderWord[] = activePage.tokens.map((token) => {
+            const state: WordState =
                 currentMs >= token.fromMs && currentMs < token.toMs
                     ? 'active'
                     : currentMs >= token.toMs
                       ? 'past'
-                      : 'upcoming',
-        }));
+                      : 'upcoming';
+            const span = Math.max(1, token.toMs - token.fromMs);
+            return {
+                text: token.text.trim(),
+                state,
+                progress:
+                    state === 'active' ? Math.min(1, Math.max(0, (currentMs - token.fromMs) / span)) : state === 'past' ? 1 : 0,
+            };
+        });
 
         return (
             <SubtitleCard
@@ -319,35 +442,31 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
                 durationFrames={(activePage.durationMs / 1000) * fps}
                 theme={theme}
                 karaokeHighlight={karaokeHighlight}
+                style={style}
                 extraBottom={extraBottom}
             />
         );
     }
 
-    // Jika tidak ada subtitel manual, jangan render apapun
     if (chunks.length === 0) return null;
 
-    // 2. Temukan chunk yang sedang aktif pada frame saat ini
-    const activeChunkIndex = chunks.findIndex(
-        (c) => frame >= c.startFrame && frame < c.endFrame
-    );
-
+    const activeChunkIndex = chunks.findIndex((c) => frame >= c.startFrame && frame < c.endFrame);
     if (activeChunkIndex === -1) return null;
 
     const currentChunk = chunks[activeChunkIndex];
     const chunkLocalFrame = frame - currentChunk.startFrame;
     const chunkDuration = Math.max(1, currentChunk.endFrame - currentChunk.startFrame);
 
-    // 3. Karaoke Timing: tentukan kata mana yang aktif saat ini
+    // Timing karaoke manual: bagi rata durasi chunk ke tiap kata
     const progressInChunk = Math.min(1, Math.max(0, chunkLocalFrame / chunkDuration));
-    const activeWordIndex = Math.min(
-        currentChunk.words.length - 1,
-        Math.floor(progressInChunk * currentChunk.words.length)
-    );
+    const scaled = progressInChunk * currentChunk.words.length;
+    const activeWordIndex = Math.min(currentChunk.words.length - 1, Math.floor(scaled));
 
     const words: RenderWord[] = currentChunk.words.map((w, wIdx) => ({
         text: w,
         state: wIdx === activeWordIndex ? 'active' : wIdx < activeWordIndex ? 'past' : 'upcoming',
+        progress:
+            wIdx === activeWordIndex ? Math.min(1, Math.max(0, scaled - wIdx)) : wIdx < activeWordIndex ? 1 : 0,
     }));
 
     return (
@@ -357,6 +476,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
             durationFrames={chunkDuration}
             theme={theme}
             karaokeHighlight={karaokeHighlight}
+            style={style}
             extraBottom={extraBottom}
         />
     );

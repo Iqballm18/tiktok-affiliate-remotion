@@ -68,6 +68,9 @@
     selectThemeStyle: $('selectThemeStyle'),
     selectCardStyle: $('selectCardStyle'),
     selectPreset: $('selectPreset'),
+    selectCaptionStyle: $('selectCaptionStyle'),
+    designReasonBox: $('designReasonBox'),
+    designReasonText: $('designReasonText'),
     selectBadgeStyle: $('selectBadgeStyle'),
     inputCtaLabel: $('inputCtaLabel'),
     inputUrgencyTag: $('inputUrgencyTag'),
@@ -497,6 +500,15 @@
     el.selectThemeStyle.value = v.themeStyle || 'pastel';
     el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
     if (el.selectPreset) el.selectPreset.value = v.preset || '';
+    if (el.selectCaptionStyle) el.selectCaptionStyle.value = v.captionStyle || '';
+    if (el.designReasonBox && el.designReasonText) {
+      if (v.designReason) {
+        el.designReasonText.textContent = v.designReason;
+        el.designReasonBox.style.display = 'block';
+      } else {
+        el.designReasonBox.style.display = 'none';
+      }
+    }
     if (el.selectBadgeStyle) el.selectBadgeStyle.value = v.badgeStyle || '';
 
     // Update label Voice Over sesuai varian aktif
@@ -583,10 +595,12 @@
   // Visual Theme Presets & Card Style Info for Live Studio Preview
   // Cermin dari src/presets.ts. Ubah di kedua tempat jika preset berubah.
   const DESIGN_PRESETS = {
-    skincare: { themeStyle: 'pastel', cardStyle: 'creator_aesthetic', badgeStyle: 'marker' },
-    gadget: { themeStyle: 'editorial', cardStyle: 'editorial_minimal', badgeStyle: 'alert' },
-    flash_sale: { themeStyle: 'flash_sale', cardStyle: 'tiktok_native_ugc', badgeStyle: 'sticker' },
-    lifestyle: { themeStyle: 'minimal', cardStyle: 'unified_glass', badgeStyle: 'sticker' }
+    skincare: { themeStyle: 'pastel', cardStyle: 'quiet_serif', badgeStyle: 'marker', captionStyle: 'reveal' },
+    gadget: { themeStyle: 'editorial', cardStyle: 'label_tape', badgeStyle: 'alert', captionStyle: 'outline_pop' },
+    flash_sale: { themeStyle: 'flash_sale', cardStyle: 'receipt', badgeStyle: 'sticker', captionStyle: 'marker_sweep' },
+    lifestyle: { themeStyle: 'minimal', cardStyle: 'type_stack', badgeStyle: 'sticker', captionStyle: 'outline_pop' },
+    household: { themeStyle: 'minimal', cardStyle: 'sticky_note', badgeStyle: 'sticker', captionStyle: 'outline_pop' },
+    parenting: { themeStyle: 'pastel', cardStyle: 'chat_thread', badgeStyle: 'glass', captionStyle: 'reveal' }
   };
 
   const THEME_PRESETS = {
@@ -661,6 +675,36 @@
   };
 
   const CARD_SHAPE_INFO = {
+    sticky_note: {
+      name: 'Sticky Note',
+      shapeClass: 'shape-sticky_note',
+      descSuffix: 'Catatan tempel tulisan tangan Caveat dengan selotip & tilt fisik. Cocok untuk produk rumah tangga & dapur.'
+    },
+    receipt: {
+      name: 'Thermal Receipt',
+      shapeClass: 'shape-receipt',
+      descSuffix: 'Struk thermal belanja monospaced dengan total terbalik. Sangat cocok untuk flash sale & pembuktian hemat.'
+    },
+    chat_thread: {
+      name: 'Chat Thread',
+      shapeClass: 'shape-chat_thread',
+      descSuffix: 'Percakapan balon iMessage dua arah (masalah vs rekomendasi). Cocok untuk parenting, ibu-anak, skincare.'
+    },
+    type_stack: {
+      name: 'Type Stack',
+      shapeClass: 'shape-type_stack',
+      descSuffix: 'Tipografi poster tebal tanpa kotak dengan masked reveal dan aksen coretan tangan. Cocok untuk lifestyle & unboxing.'
+    },
+    label_tape: {
+      name: 'Label Tape',
+      shapeClass: 'shape-label_tape',
+      descSuffix: 'Pita timbul mesin label per baris kata. Cocok untuk gadget, elektronik & aksen industrial teknis.'
+    },
+    quiet_serif: {
+      name: 'Quiet Serif',
+      shapeClass: 'shape-quiet_serif',
+      descSuffix: 'Serif italic editorial mewah dengan garis aksen tipis elegan. Cocok untuk kecantikan, skincare & parfum.'
+    },
     unified_glass: {
       name: 'Unified Clean',
       shapeClass: 'shape-glass',
@@ -908,6 +952,7 @@
       if (val) v[key] = val; else delete v[key];
     };
     setOptional('preset', el.selectPreset?.value);
+    setOptional('captionStyle', el.selectCaptionStyle?.value);
     setOptional('badgeStyle', el.selectBadgeStyle?.value);
     setOptional('ctaLabel', el.inputCtaLabel?.value);
     setOptional('urgencyTag', el.inputUrgencyTag?.value);
@@ -1276,9 +1321,17 @@
       el.selectThemeStyle.value = preset.themeStyle;
       el.selectCardStyle.value = preset.cardStyle;
       if (el.selectBadgeStyle) el.selectBadgeStyle.value = preset.badgeStyle;
+      if (el.selectCaptionStyle) el.selectCaptionStyle.value = preset.captionStyle || '';
     }
     syncFormToVariant();
     updateThemeVisualPreview();
+  });
+
+  el.selectCaptionStyle?.addEventListener('change', () => {
+    if (el.selectPreset) el.selectPreset.value = '';
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
   });
 
   el.selectBadgeStyle?.addEventListener('change', () => {

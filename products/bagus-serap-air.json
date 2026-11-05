@@ -5,7 +5,7 @@
     "v1": {
       "title": "Problem-Solution & Tekstur",
       "themeStyle": "minimal",
-      "cardStyle": "editorial_minimal",
+      "cardStyle": "receipt",
       "sfxPreset": "beauty",
       "ctaSound": "kaching",
       "enableSfx": true,
@@ -15,7 +15,7 @@
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Jangan beli ini kalau kamu gak mau lemari pakaian kamu kering dan bebas bau apek selamanya! Kotak Bagus Serap Air lima ratus mili ini life changing banget karena wadahnya bisa diisi ulang berkali-kali pakai pouch refill. Daya serapnya juara, udara lembap langsung kekunci rapi. Jauh lebih hemat di kantong, buruan cek flash sale di keranjang kuning ya!",
-      "badgeText": "NYESEL BARU TAHU",
+      "badgeText": "IBU-IBU WAJIB TAU",
       "demoBadge": "REFILL BUTIRAN AKTIF",
       "specBadge": "DAYA SERAP KUAT",
       "hookLine1": "Nyesel baru tahu sekarang...",
@@ -50,7 +50,8 @@
       "voiceOver": "voiceover_v1.mp3",
       "watermarkText": "@inanikma_ | @spillbyna_",
       "watermarkPosition": "floating",
-      "badgeStyle": "sticker"
+      "captionStyle": "reveal",
+      "badgeStyle": "marker"
     },
     "v2": {
       "title": "First Impression & Nilai Formula",
@@ -65,7 +66,7 @@
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Jangan beli ini kalau kamu gak mau lemari pakaian kamu kering dan bebas bau apek selamanya! Kotak Bagus Serap Air lima ratus mili ini life changing banget karena wadahnya bisa diisi ulang berkali-kali pakai pouch refill. Daya serapnya juara, udara lembap langsung kekunci rapi. Jauh lebih hemat di kantong, buruan cek flash sale di keranjang kuning ya!",
-      "badgeText": "JANGAN BELI DULU!",
+      "badgeText": "RAHASIA LEMARI WANGI",
       "demoBadge": "BISA REFILL BERKALI KALI",
       "specBadge": "KAPASITAS LIMA RATUS ML",
       "hookLine1": "Jangan beli ini kalau kamu...",
