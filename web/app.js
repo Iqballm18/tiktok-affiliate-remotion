@@ -67,6 +67,10 @@
     durationMatchPill: $('durationMatchPill'),
     selectThemeStyle: $('selectThemeStyle'),
     selectCardStyle: $('selectCardStyle'),
+    selectPreset: $('selectPreset'),
+    selectBadgeStyle: $('selectBadgeStyle'),
+    inputCtaLabel: $('inputCtaLabel'),
+    inputUrgencyTag: $('inputUrgencyTag'),
     inputVoiceOverDelay: $('inputVoiceOverDelay'),
     storyboardContainer: $('storyboardContainer'),
     clipsTableBody: $('clipsTableBody'),
@@ -492,6 +496,8 @@
 
     el.selectThemeStyle.value = v.themeStyle || 'pastel';
     el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
+    if (el.selectPreset) el.selectPreset.value = v.preset || '';
+    if (el.selectBadgeStyle) el.selectBadgeStyle.value = v.badgeStyle || '';
 
     // Update label Voice Over sesuai varian aktif
     if (el.labelVoiceOver) {
@@ -531,6 +537,8 @@
     el.inputSpecLine1.value = v.specLine1 || '';
     el.inputSpecHighlight.value = v.specHighlight || '';
     el.inputCtaText.value = v.ctaText || 'Cek Promo di Keranjang Kuning';
+    if (el.inputCtaLabel) el.inputCtaLabel.value = v.ctaLabel || '';
+    if (el.inputUrgencyTag) el.inputUrgencyTag.value = v.urgencyTag || '';
     // Naskah acuan dibiarkan kosong secara default sesuai permintaan user agar tidak perlu repot menghapus teks lama
     // if (el.inputReferenceScript) el.inputReferenceScript.value = '';
 
@@ -573,6 +581,14 @@
   }
 
   // Visual Theme Presets & Card Style Info for Live Studio Preview
+  // Cermin dari src/presets.ts. Ubah di kedua tempat jika preset berubah.
+  const DESIGN_PRESETS = {
+    skincare: { themeStyle: 'pastel', cardStyle: 'creator_aesthetic', badgeStyle: 'marker' },
+    gadget: { themeStyle: 'editorial', cardStyle: 'editorial_minimal', badgeStyle: 'alert' },
+    flash_sale: { themeStyle: 'flash_sale', cardStyle: 'tiktok_native_ugc', badgeStyle: 'sticker' },
+    lifestyle: { themeStyle: 'minimal', cardStyle: 'unified_glass', badgeStyle: 'sticker' }
+  };
+
   const THEME_PRESETS = {
     editorial: {
       name: 'Editorial Dark',
@@ -716,36 +732,58 @@
       }
     }
 
+    // Gaya badge mengikuti dropdown; kosong = otomatis (hook -> sticker), sama seperti di Remotion.
+    const badgeVariant = (el.selectBadgeStyle && el.selectBadgeStyle.value) || 'sticker';
+    const accent = theme.accentColor;
+    const accentIsLight = ['#FFFFFF', '#E2FF32', '#FFE600'].includes(accent.toUpperCase());
+    const accentText = accentIsLight ? '#000000' : '#FFFFFF';
+    const dotColor = theme.dotColor || '#FFFFFF';
+
     if (badgeEl) {
+      badgeEl.style.transform = 'none';
+      badgeEl.style.backdropFilter = 'none';
       if (card.shapeClass === 'shape-top_banner') {
         badgeEl.style.background = 'linear-gradient(90deg, #FF0050 0%, #FF2E54 50%, #FF6B00 100%)';
         badgeEl.style.border = 'none';
         badgeEl.style.borderRadius = '12px';
         badgeEl.style.color = '#FFFFFF';
         badgeEl.style.boxShadow = '0 8px 24px rgba(255, 0, 80, 0.35)';
-      } else {
-        badgeEl.style.background = 'rgba(0, 0, 0, 0.75)';
-        badgeEl.style.border = `1.5px solid ${theme.badgeBorder || 'rgba(255, 255, 255, 0.45)'}`;
-        badgeEl.style.borderRadius = '999px';
+      } else if (badgeVariant === 'sticker') {
+        badgeEl.style.background = accent;
+        badgeEl.style.border = '2px solid rgba(0, 0, 0, 0.9)';
+        badgeEl.style.borderRadius = '8px';
+        badgeEl.style.color = accentText;
+        badgeEl.style.boxShadow = '3px 3px 0 rgba(0, 0, 0, 0.88)';
+        badgeEl.style.transform = 'rotate(-2.5deg)';
+      } else if (badgeVariant === 'alert') {
+        badgeEl.style.background = 'rgba(8, 8, 12, 0.9)';
+        badgeEl.style.border = '1.5px solid rgba(255, 255, 255, 0.22)';
+        badgeEl.style.borderRadius = '10px';
         badgeEl.style.color = '#FFFFFF';
+        badgeEl.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.4)';
+      } else if (badgeVariant === 'marker') {
+        badgeEl.style.background = accent;
+        badgeEl.style.border = 'none';
+        badgeEl.style.borderRadius = '5px';
+        badgeEl.style.color = accentText;
+        badgeEl.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.35)';
+        badgeEl.style.transform = 'skewX(-6deg)';
+      } else {
+        badgeEl.style.background = theme.badgeBg || 'rgba(0, 0, 0, 0.75)';
+        badgeEl.style.border = theme.badgeBorder || '1.5px solid rgba(255, 255, 255, 0.45)';
+        badgeEl.style.borderRadius = '999px';
+        badgeEl.style.color = theme.badgeColor || '#FFFFFF';
         badgeEl.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.4)';
       }
     }
 
     if (dotEl) {
-      if (card.shapeClass === 'shape-top_banner') {
-        dotEl.style.background = '#FFE600';
-        dotEl.style.color = '#FFE600';
-        dotEl.style.boxShadow = '0 0 10px #FFE600';
-      } else if (card.shapeClass === 'shape-tiktok_ugc') {
-        dotEl.style.background = '#FF0050';
-        dotEl.style.color = '#FF0050';
-        dotEl.style.boxShadow = '0 0 10px #FF0050';
-      } else {
-        dotEl.style.background = theme.dotColor || '#FFFFFF';
-        dotEl.style.color = theme.dotColor || '#FFFFFF';
-        dotEl.style.boxShadow = `0 0 8px ${theme.dotColor || '#FFFFFF'}`;
-      }
+      const showDot = card.shapeClass === 'shape-top_banner' || badgeVariant === 'alert' || badgeVariant === 'glass';
+      dotEl.style.display = showDot ? '' : 'none';
+      const dot = card.shapeClass === 'shape-top_banner' ? '#FFE600' : badgeVariant === 'alert' ? '#FF2E54' : dotColor;
+      dotEl.style.background = dot;
+      dotEl.style.color = dot;
+      dotEl.style.boxShadow = `0 0 8px ${dot}`;
     }
 
     // Ambil teks headline aktif dari input form bila ada
@@ -755,7 +793,11 @@
 
     if (badgeText) {
       if (card.shapeClass === 'shape-top_banner') {
-        badgeText.innerHTML = `<span>⚡ ${escapeHtml(curBadge || 'PROMO KERANJANG KUNING')}</span><span style="font-size:9.5px; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:999px; color:#FFE600; font-weight:800; margin-left: auto;">LIMITED</span>`;
+        const curTag = el.inputUrgencyTag ? el.inputUrgencyTag.value.trim() : '';
+        const tagHtml = curTag
+          ? `<span style="font-size:9.5px; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:999px; color:#FFE600; font-weight:800; margin-left: auto;">${escapeHtml(curTag.toUpperCase())}</span>`
+          : '';
+        badgeText.innerHTML = `<span>⚡ ${escapeHtml(curBadge || 'CEK KERANJANG KUNING')}</span>${tagHtml}`;
       } else {
         badgeText.textContent = curBadge || 'IBU-IBU WAJIB TAU';
       }
@@ -770,6 +812,8 @@
 
     if (highlightEl) {
       highlightEl.textContent = curHighlight || 'Lemari Bebas Apek Seharian!';
+      highlightEl.style.fontSize = '21px'; // baris sorotan lebih besar dari baris pertama, seperti di video
+      if (line1El) line1El.style.fontSize = '13px';
       if (card.shapeClass === 'shape-tiktok_ugc') {
         highlightEl.style.backgroundColor = '#FFE600';
         highlightEl.style.color = '#000000';
@@ -783,7 +827,7 @@
         highlightEl.style.borderRadius = '0';
         highlightEl.style.boxShadow = 'none';
         highlightEl.style.color = theme.highlightColor || theme.accentColor;
-        highlightEl.style.textShadow = '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)';
+        highlightEl.style.textShadow = '-1px 0 0 rgba(0,0,0,.85), 1px 0 0 rgba(0,0,0,.85), 0 -1px 0 rgba(0,0,0,.85), 0 1px 0 rgba(0,0,0,.85), 0 3px 12px rgba(0,0,0,.65)';
       }
     }
 
@@ -858,6 +902,15 @@
 
     v.themeStyle = el.selectThemeStyle.value;
     v.cardStyle = el.selectCardStyle.value;
+    // Field opsional: dihapus dari JSON jika kosong agar tidak muncul di video.
+    const setOptional = (key, value) => {
+      const val = (value || '').trim();
+      if (val) v[key] = val; else delete v[key];
+    };
+    setOptional('preset', el.selectPreset?.value);
+    setOptional('badgeStyle', el.selectBadgeStyle?.value);
+    setOptional('ctaLabel', el.inputCtaLabel?.value);
+    setOptional('urgencyTag', el.inputUrgencyTag?.value);
     v.voiceOver = el.selectVoiceOver.value;
     if (el.selectBgmTrack) v.bgmTrack = el.selectBgmTrack.value || undefined;
     v.voiceOverDelaySec = parseFloat(el.inputVoiceOverDelay.value) || 0;
@@ -1167,14 +1220,37 @@
     if (inp) inp.addEventListener('input', updateThemeVisualPreview);
   });
 
+  // Mengubah tema / tata letak manual berarti keluar dari preset (menjadi "Kustom").
   el.selectThemeStyle?.addEventListener('change', () => {
+    if (el.selectPreset) el.selectPreset.value = '';
     syncFormToVariant();
     updateThemeVisualPreview();
   });
 
   el.selectCardStyle?.addEventListener('change', () => {
+    if (el.selectPreset) el.selectPreset.value = '';
     syncFormToVariant();
     updateThemeVisualPreview();
+  });
+
+  el.selectPreset?.addEventListener('change', () => {
+    const preset = DESIGN_PRESETS[el.selectPreset.value];
+    if (preset) {
+      el.selectThemeStyle.value = preset.themeStyle;
+      el.selectCardStyle.value = preset.cardStyle;
+      if (el.selectBadgeStyle) el.selectBadgeStyle.value = preset.badgeStyle;
+    }
+    syncFormToVariant();
+    updateThemeVisualPreview();
+  });
+
+  el.selectBadgeStyle?.addEventListener('change', () => {
+    syncFormToVariant();
+    updateThemeVisualPreview();
+  });
+
+  [el.inputCtaLabel, el.inputUrgencyTag].forEach(inp => {
+    if (inp) inp.addEventListener('input', updateThemeVisualPreview);
   });
 
   el.selectProduct.addEventListener('change', () => {
@@ -1221,6 +1297,7 @@
           title: 'Problem-Solution (Pastel)',
           themeStyle: 'pastel',
           cardStyle: 'creator_aesthetic',
+          badgeStyle: 'sticker',
           voiceOver: vo1,
           voiceOverDelaySec: 0,
           watermarkText: el.inputWatermark.value || state.defaultWatermark || '',
@@ -1243,6 +1320,7 @@
           title: 'Value & Quality (Minimal)',
           themeStyle: 'minimal',
           cardStyle: 'editorial_minimal',
+          badgeStyle: 'alert',
           voiceOver: vo2,
           voiceOverDelaySec: 0,
           watermarkText: el.inputWatermark.value || state.defaultWatermark || '',

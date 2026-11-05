@@ -49,12 +49,13 @@
       ],
       "voiceOver": "voiceover_v1.mp3",
       "watermarkText": "@inanikma_ | @spillbyna_",
-      "watermarkPosition": "floating"
+      "watermarkPosition": "floating",
+      "badgeStyle": "sticker"
     },
     "v2": {
       "title": "First Impression & Nilai Formula",
       "themeStyle": "minimal",
-      "cardStyle": "top_banner_promo",
+      "cardStyle": "editorial_minimal",
       "sfxPreset": "minimal",
       "ctaSound": "kaching",
       "enableSfx": true,
@@ -98,7 +99,8 @@
       ],
       "voiceOver": "voiceover_v2.mp3",
       "watermarkText": "video milik @inanikma_",
-      "watermarkPosition": "floating"
+      "watermarkPosition": "floating",
+      "badgeStyle": "alert"
     }
   },
   "videoSource": "video_1.MOV"

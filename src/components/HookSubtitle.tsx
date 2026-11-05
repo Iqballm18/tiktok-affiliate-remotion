@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import { useCurrentFrame, useVideoConfig, spring, interpolate, Easing } from 'remotion';
 import { Caption, createTikTokStyleCaptions } from '@remotion/captions';
 import { ThemeDefinition } from '../theme';
 
@@ -16,6 +16,10 @@ export interface HookSubtitleProps {
     durationInFrames: number;
     theme: ThemeDefinition;
     karaokeHighlight?: boolean;
+    /** Frame (relatif ke Sequence caption) saat caption mulai naik, mis. awal babak CTA. */
+    liftFromFrame?: number;
+    /** Seberapa jauh (px) caption naik mulai liftFromFrame. */
+    liftPx?: number;
 }
 
 interface ProcessedChunk {
@@ -102,7 +106,8 @@ const SubtitleCard: React.FC<{
     durationFrames: number;
     theme: ThemeDefinition;
     karaokeHighlight: boolean;
-}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight }) => {
+    extraBottom?: number;
+}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight, extraBottom = 0 }) => {
     const { fps } = useVideoConfig();
 
     const activeColor = getKaraokeColor(theme);
@@ -127,7 +132,7 @@ const SubtitleCard: React.FC<{
         <div
             style={{
                 position: 'absolute',
-                bottom: 460, // Posisi aman di atas caption TikTok, jauh di bawah headline
+                bottom: 460 + extraBottom, // Posisi aman di atas caption TikTok, jauh di bawah headline
                 left: 48,
                 right: 48,
                 display: 'flex',
@@ -141,8 +146,8 @@ const SubtitleCard: React.FC<{
         >
             <div
                 style={{
-                    backgroundColor: 'rgba(10, 9, 16, 0.80)',
-                    backdropFilter: 'blur(20px)',
+                    // Tanpa backdropFilter (mahal saat render 60 fps); latar dibuat sedikit lebih pekat.
+                    backgroundColor: 'rgba(10, 9, 16, 0.86)',
                     border: '1.5px solid rgba(255, 255, 255, 0.18)',
                     borderRadius: 26,
                     padding: '16px 34px',
@@ -199,16 +204,28 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
     durationInFrames,
     theme,
     karaokeHighlight = true,
+    liftFromFrame,
+    liftPx = 0,
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
+
+    const extraBottom =
+        liftFromFrame !== undefined && liftPx > 0
+            ? liftPx *
+              interpolate(frame, [liftFromFrame, liftFromFrame + Math.round(0.25 * fps)], [0, 1], {
+                  easing: Easing.out(Easing.cubic),
+                  extrapolateLeft: 'clamp',
+                  extrapolateRight: 'clamp',
+              })
+            : 0;
 
     // 0. JIKA MENGGUNAKAN CAPTIONS WHISPER AI (Word-level millisecond timestamps)
     const tikTokPages = React.useMemo(() => {
         if (!captions || captions.length === 0) return null;
         return createTikTokStyleCaptions({
             captions,
-            combineTokensWithinMilliseconds: 1500,
+            combineTokensWithinMilliseconds: 1000,
             breakOnSilenceAfterMilliseconds: 700,
         }).pages;
     }, [captions]);
@@ -302,6 +319,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
                 durationFrames={(activePage.durationMs / 1000) * fps}
                 theme={theme}
                 karaokeHighlight={karaokeHighlight}
+                extraBottom={extraBottom}
             />
         );
     }
@@ -339,6 +357,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
             durationFrames={chunkDuration}
             theme={theme}
             karaokeHighlight={karaokeHighlight}
+            extraBottom={extraBottom}
         />
     );
 };

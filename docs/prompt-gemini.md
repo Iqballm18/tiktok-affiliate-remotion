@@ -85,6 +85,10 @@ ATURAN TEKS KARTU & BATAS KARAKTER (WAJIB DIPATUHI - ANTI OVERFLOW):
 - badgeText, demoBadge, specBadge: 2-4 kata (HURUF BESAR / KAPITAL ringkas).
 - Line 1 & Highlight: MAKSIMAL 38 KARAKTER per baris (hitung setiap huruf dan spasi agar pas di safe zone HP).
 - ctaText: MAKSIMAL 38 KARAKTER (fokus ajakan klik ke arah kiri bawah layar tempat tombol Keranjang Kuning TikTok berada).
+- preset (opsional): pilih satu dari "skincare", "gadget", "flash_sale", "lifestyle" sesuai kategori produk. Preset mengisi themeStyle, cardStyle, dan badgeStyle; hanya isi themeStyle/cardStyle jika perlu menimpa.
+- badgeStyle (opsional): "sticker", "alert", "marker", atau "glass". Untuk A/B test, beri v1 dan v2 badgeStyle berbeda dengan cardStyle yang SAMA agar hasilnya bisa dibandingkan. Catatan: cardStyle "top_banner_promo" tidak memakai badge.
+- ctaLabel (opsional): label kecil di atas ctaText, mis. "PROMO 11.11". HANYA isi jika promo benar-benar aktif dan diberikan user. Jika tidak ada, jangan tulis field ini.
+- urgencyTag (opsional): tag di strip top_banner_promo, mis. "STOK TERBATAS". HANYA isi jika klaimnya benar. Jangan mengarang urgensi; klaim palsu bisa melanggar kebijakan iklan TikTok.
 
 ATURAN NASKAH VOICE OVER (VO ELEVENLABS):
 - Bahasa kasual, mengalir, natural seperti teman curhat ("kalian", "banget", "coba deh", "parah sih").

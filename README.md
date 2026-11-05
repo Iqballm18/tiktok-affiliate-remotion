@@ -86,8 +86,7 @@ Contoh konfigurasi produk (`products/blackmores.json`):
   "videoSource": "blackmores.mp4",
   "variants": {
     "v1": {
-      "themeStyle": "pastel",
-      "cardStyle": "creator_aesthetic",
+      "preset": "skincare",
       "voiceOver": "voiceover_v1.mp3",
       "badgeText": "BLACKMORES PREGNANCY",
       "hookLine1": "Lagi cari vitamin bumil busui?",
@@ -107,6 +106,21 @@ Contoh konfigurasi produk (`products/blackmores.json`):
   }
 }
 ```
+
+### Field desain & opsional
+
+| Field | Keterangan |
+| --- | --- |
+| `preset` | `skincare`, `gadget`, `flash_sale`, atau `lifestyle`. Mengisi `themeStyle`, `cardStyle`, `badgeStyle` yang kosong. |
+| `themeStyle`, `cardStyle`, `badgeStyle` | Opsional. Jika diisi, menimpa preset. `badgeStyle`: `sticker`, `alert`, `marker`, `glass`. |
+| `ctaLabel` | Label kecil di atas teks CTA (mis. `PROMO 11.11`). Kosong = tidak tampil. |
+| `urgencyTag` | Tag di strip `top_banner_promo` (mis. `STOK TERBATAS`). Kosong = tidak tampil. |
+
+Isi `ctaLabel` dan `urgencyTag` hanya jika klaimnya benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.
+
+Untuk A/B test badge, beri v1 dan v2 `badgeStyle` berbeda dengan `cardStyle` yang sama. Gaya `top_banner_promo` tidak memakai badge.
+
+Untuk draf cepat, render dengan `npm run render:fast` (30 fps).
 
 ---
 

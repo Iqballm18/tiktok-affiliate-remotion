@@ -204,7 +204,33 @@
                 </div>
               </div>
 
-              <!-- Theme Row -->
+              <!-- Preset + Gaya Badge -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="selectPreset">Preset Desain</label>
+                  <select class="input" id="selectPreset">
+                    <option value="">Kustom (atur manual di bawah)</option>
+                    <option value="skincare">Skincare — pastel lembut, badge stabilo</option>
+                    <option value="gadget">Gadget — editorial gelap, badge LIVE</option>
+                    <option value="flash_sale">Flash Sale — merah-emas, highlight kuning</option>
+                    <option value="lifestyle">Lifestyle — monokrom bersih</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="selectBadgeStyle">Gaya Badge</label>
+                  <select class="input" id="selectBadgeStyle">
+                    <option value="">Otomatis (hook: sticker, demo &amp; spec: glass)</option>
+                    <option value="sticker">Sticker (label miring, paling menahan scroll)</option>
+                    <option value="alert">Alert (kapsul gelap + titik LIVE)</option>
+                    <option value="marker">Marker (stabilo tersapu)</option>
+                    <option value="glass">Glass (chip kaca tenang)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Pengaturan lanjutan: tema & tata letak (override preset) -->
+              <details class="advanced-design" id="advancedDesign">
+                <summary style="cursor: pointer; font-size: 12px; color: var(--text-faint); margin-bottom: 8px;">Pengaturan lanjutan: tema &amp; tata letak teks (menimpa preset)</summary>
               <div class="form-row">
                 <div class="form-group">
                   <label class="form-label" for="selectThemeStyle">Tema Visual</label>
@@ -227,13 +253,14 @@
                   </select>
                 </div>
               </div>
+              </details>
 
               <!-- Live Highlight Preview Box for Tema & Gaya Kartu -->
               <div id="themeLivePreviewWrap" class="theme-live-preview-wrap">
                 <div class="theme-live-preview-top">
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <span class="preview-badge-pill">👁️ Pratinjau Tampilan di Video</span>
-                    <span style="font-size: 10px; color: var(--text-faint);">(Sesuai Render Remotion Asli)</span>
+                    <span style="font-size: 10px; color: var(--text-faint);">(Perkiraan kasar — klik <strong>Lihat Frame</strong> untuk hasil render asli)</span>
                   </div>
                   <span class="preview-theme-tag" id="livePreviewTag">Editorial • Unified Glass</span>
                 </div>
@@ -476,6 +503,17 @@
                       <label class="form-label" for="inputCtaText">Teks CTA (Keranjang Kuning)</label>
                       <input class="input" type="text" id="inputCtaText" value="Cek Promo di Keranjang Kuning">
                     </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label class="form-label" for="inputCtaLabel">Label CTA (opsional)</label>
+                        <input class="input" type="text" id="inputCtaLabel" placeholder="mis. PROMO 11.11 — kosongkan jika tidak ada promo">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="inputUrgencyTag">Tag Urgensi Banner (opsional)</label>
+                        <input class="input" type="text" id="inputUrgencyTag" placeholder="mis. STOK TERBATAS — hanya jika benar">
+                      </div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-faint);">Isi hanya klaim yang benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
                   </div>
                 </div>
 

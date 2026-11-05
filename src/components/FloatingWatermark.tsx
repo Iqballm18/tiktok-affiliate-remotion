@@ -117,9 +117,7 @@ function renderWatermarkBadge(
                 gap: 8,
                 padding: '6px 14px',
                 borderRadius: 999,
-                background: 'rgba(12, 10, 18, 0.70)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
+                background: 'rgba(12, 10, 18, 0.78)',
                 border: '1px solid rgba(255, 255, 255, 0.25)',
                 boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
             }}

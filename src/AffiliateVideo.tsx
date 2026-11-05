@@ -17,6 +17,7 @@ import { TikTokSafeZone } from './components/TikTokSafeZone';
 import { FloatingWatermark } from './components/FloatingWatermark';
 import { HookSubtitle } from './components/HookSubtitle';
 import { HookBadge, resolveBadgeVariant } from './components/HookBadge';
+import { resolvePreset } from './presets';
 import { loadThemeFonts } from './load-theme-fonts';
 import { Caption } from '@remotion/captions';
 
@@ -49,6 +50,9 @@ export const clipItemSchema = z.object({
 });
 
 export const affiliateSchema = z.object({
+    // Preset desain: skincare | gadget | flash_sale | lifestyle. Mengisi themeStyle, cardStyle,
+    // dan badgeStyle yang kosong. Field eksplisit di bawah selalu menang atas preset.
+    preset: z.string().optional(),
     themeStyle: z.string().optional(),
     cardStyle: z.string().optional(),
     // Gaya badge: sticker | alert | marker | glass. Kosong = otomatis (hook: sticker, demo & spec: glass).
@@ -87,6 +91,11 @@ export const affiliateSchema = z.object({
     specLine1: z.string(),
     specHighlight: z.string(),
     ctaText: z.string(),
+    // Label kecil di atas teks CTA (mis. "PROMO 11.11"). Kosong = tidak ditampilkan.
+    // Isi hanya jika klaimnya benar; klaim promo palsu bisa melanggar kebijakan iklan TikTok.
+    ctaLabel: z.string().optional(),
+    // Tag di ujung kanan strip top_banner_promo (mis. "STOK TERBATAS"). Kosong = tidak ditampilkan.
+    urgencyTag: z.string().optional(),
     clips: z.array(clipItemSchema),
 });
 
@@ -618,6 +627,32 @@ const HookTransitionOverlay: React.FC<{
 // 5. "tiktok_native_ugc": TikTok / CapCut native subtitle (teks putih + highlight kuning stabilo FYP)
 // 6. "top_banner_promo" : Promo flash sale banner strip di atas (mengunci FOMO & hemat ruang layar)
 // ==========================================
+// Outline gelap 8 arah + bayangan lembut untuk teks berwarna aksen (lime, kuning, putih).
+// Tanpa ini teks aksen hanya ditopang bayangan dan kontrasnya lemah di footage terang.
+const outlineShadow = (px: number, color = 'rgba(0, 0, 0, 0.85)'): string =>
+    [
+        [-px, 0],
+        [px, 0],
+        [0, -px],
+        [0, px],
+        [-px, -px],
+        [px, -px],
+        [-px, px],
+        [px, px],
+    ]
+        .map(([x, y]) => `${x}px ${y}px 0 ${color}`)
+        .join(', ');
+
+const HIGHLIGHT_SHADOW = `${outlineShadow(2.5)}, 0 4px 20px rgba(0, 0, 0, 0.65)`;
+
+// Hierarki teks: baris pertama sengaja lebih kecil agar mata jatuh ke baris sorotan.
+const LINE1_SIZE = 40;
+const HIGHLIGHT_SIZE_HOOK = 62;
+const HIGHLIGHT_SIZE_SOLUTION = 56;
+
+// Caption naik sekian px pada babak CTA (kartu CTA berakhir ~449px dari bawah, caption di 460px).
+const CAPTION_LIFT_IN_CTA = 150;
+
 type CardStyleMode =
     | 'unified_glass'
     | 'editorial_minimal'
@@ -655,6 +690,7 @@ const EditorialHeadline: React.FC<{
     theme: ThemeDefinition;
     cardStyle?: string;
     badgeStyle?: string;
+    urgencyTag?: string;
 }> = ({
     badge,
     line1,
@@ -664,6 +700,7 @@ const EditorialHeadline: React.FC<{
     theme,
     cardStyle = 'unified_glass',
     badgeStyle,
+    urgencyTag,
 }) => {
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
@@ -693,6 +730,7 @@ const EditorialHeadline: React.FC<{
         const breatheY = Math.sin(frame / (fps * 0.5)) * 2.5;
 
         const isHook = variant === 'hook';
+        const highlightSize = isHook ? HIGHLIGHT_SIZE_HOOK : HIGHLIGHT_SIZE_SOLUTION;
 
         // Staggered Entrance: Memberi jeda waktu agar penonton menangkap visual footage terlebih dahulu
         // Di Babak Hook: jeda 4 frame (~0.06s) agar pattern interrupt footage terlihat pertama
@@ -767,23 +805,26 @@ const EditorialHeadline: React.FC<{
                                     textTransform: 'uppercase',
                                 }}
                             >
-                                {badge || 'PROMO KERANJANG KUNING'}
+                                {badge || 'CEK KERANJANG KUNING'}
                             </span>
                         </div>
-                        <span
-                            style={{
-                                backgroundColor: 'rgba(0, 0, 0, 0.35)',
-                                color: '#FFE600',
-                                fontFamily: theme.fonts.mono,
-                                fontSize: 18,
-                                fontWeight: 800,
-                                padding: '4px 14px',
-                                borderRadius: 999,
-                                letterSpacing: 0.5,
-                            }}
-                        >
-                            LIMITED
-                        </span>
+                        {urgencyTag ? (
+                            <span
+                                style={{
+                                    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                                    color: '#FFE600',
+                                    fontFamily: theme.fonts.mono,
+                                    fontSize: 18,
+                                    fontWeight: 800,
+                                    padding: '4px 14px',
+                                    borderRadius: 999,
+                                    letterSpacing: 0.5,
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {urgencyTag}
+                            </span>
+                        ) : null}
                     </div>
 
                     {/* Floating Text (Tanpa background box yang menutupi video) */}
@@ -803,7 +844,7 @@ const EditorialHeadline: React.FC<{
                                     style={{
                                         display: 'inline-block',
                                         fontFamily: theme.fonts.display,
-                                        fontSize: 44,
+                                        fontSize: LINE1_SIZE,
                                         fontWeight: 800,
                                         letterSpacing: -0.8,
                                         lineHeight: 1.22,
@@ -830,14 +871,13 @@ const EditorialHeadline: React.FC<{
                         <span
                             style={{
                                 fontFamily: theme.fonts.display,
-                                fontSize: 46,
+                                fontSize: highlightSize,
                                 fontWeight: 900,
-                                letterSpacing: -0.8,
-                                lineHeight: 1.18,
+                                letterSpacing: -1.0,
+                                lineHeight: 1.12,
                                 display: 'inline-block',
                                 color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                textShadow:
-                                    '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)',
+                                textShadow: HIGHLIGHT_SHADOW,
                             }}
                         >
                             {highlightLine}
@@ -892,7 +932,7 @@ const EditorialHeadline: React.FC<{
                                     style={{
                                         display: 'inline-block',
                                         fontFamily: theme.fonts.display,
-                                        fontSize: 48,
+                                        fontSize: LINE1_SIZE,
                                         fontWeight: 800,
                                         letterSpacing: -0.8,
                                         lineHeight: 1.22,
@@ -919,9 +959,9 @@ const EditorialHeadline: React.FC<{
                         <span
                             style={{
                                 fontFamily: theme.fonts.display,
-                                fontSize: 44,
+                                fontSize: highlightSize,
                                 fontWeight: 900,
-                                letterSpacing: -0.6,
+                                letterSpacing: -0.8,
                                 lineHeight: 1.15,
                                 display: 'inline-block',
                                 backgroundColor: '#FFE600',
@@ -990,9 +1030,9 @@ const EditorialHeadline: React.FC<{
                                 style={{
                                     display: 'inline-block',
                                     fontFamily: theme.fonts.display,
-                                    fontSize: 48,
+                                    fontSize: LINE1_SIZE,
                                     fontWeight: 800,
-                                    letterSpacing: -1.0,
+                                    letterSpacing: -0.8,
                                     lineHeight: 1.25,
                                     color: '#FFFFFF',
                                     textShadow:
@@ -1018,14 +1058,13 @@ const EditorialHeadline: React.FC<{
                     <span
                         style={{
                             fontFamily: theme.fonts.display,
-                            fontSize: 50,
+                            fontSize: highlightSize,
                             fontWeight: 900,
-                            letterSpacing: -1.2,
-                            lineHeight: 1.18,
+                            letterSpacing: -1.4,
+                            lineHeight: 1.12,
                             display: 'inline-block',
                             color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                            textShadow:
-                                '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)',
+                            textShadow: HIGHLIGHT_SHADOW,
                         }}
                     >
                         {highlightLine}
@@ -1040,9 +1079,10 @@ const EditorialHeadline: React.FC<{
 // ==========================================
 const EditorialCTA: React.FC<{
     text: string;
+    label?: string;
     durationInFrames: number;
     theme: ThemeDefinition;
-}> = ({ text, durationInFrames, theme }) => {
+}> = ({ text, label, durationInFrames, theme }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
@@ -1087,7 +1127,6 @@ const EditorialCTA: React.FC<{
             <div
                 style={{
                     background: theme.colors.ctaBg || theme.colors.surface,
-                    backdropFilter: 'blur(24px)',
                     border: `1.5px solid ${theme.colors.surfaceBorder}`,
                     borderRadius: 28,
                     padding: '22px 28px',
@@ -1126,18 +1165,20 @@ const EditorialCTA: React.FC<{
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span
-                        style={{
-                            fontFamily: theme.fonts.mono,
-                            fontSize: 20,
-                            fontWeight: 700,
-                            letterSpacing: 1.8,
-                            color: theme.colors.ctaSubtext,
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        ⚡ PROMO AKTIF HARI INI
-                    </span>
+                    {label ? (
+                        <span
+                            style={{
+                                fontFamily: theme.fonts.mono,
+                                fontSize: 20,
+                                fontWeight: 700,
+                                letterSpacing: 1.8,
+                                color: theme.colors.ctaSubtext,
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            {label}
+                        </span>
+                    ) : null}
                     <span
                         style={{
                             fontFamily: theme.fonts.display,
@@ -1161,9 +1202,10 @@ const EditorialCTA: React.FC<{
 // MAIN COMPOSITION (5-LAYER STACK)
 // ==========================================
 export const AffiliateVideo: React.FC<AffiliateProps> = ({
-    themeStyle,
-    cardStyle,
-    badgeStyle,
+    preset: presetKey,
+    themeStyle: themeStyleProp,
+    cardStyle: cardStyleProp,
+    badgeStyle: badgeStyleProp,
     showProgressBar,
     enableSfx,
     sfxPreset,
@@ -1198,9 +1240,16 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     specLine1,
     specHighlight,
     ctaText,
+    ctaLabel,
+    urgencyTag,
     clips,
 }) => {
     const { fps } = useVideoConfig();
+    // Preset mengisi yang kosong; field eksplisit selalu menang.
+    const preset = resolvePreset(presetKey);
+    const themeStyle = themeStyleProp ?? preset?.themeStyle;
+    const cardStyle = cardStyleProp ?? preset?.cardStyle;
+    const badgeStyle = badgeStyleProp ?? preset?.badgeStyle;
     const theme = getTheme(themeStyle);
     let accumulatedFrames = 0;
 
@@ -1247,6 +1296,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             : unmuteHook
                 ? hookDuration
                 : 0;
+
+    const ctaStartFrame = hookDuration + demoDuration + specDuration;
 
     const totalClipsSec = clips.reduce(
         (acc, c) => acc + Math.max(0, c.endSec - c.startSec),
@@ -1491,6 +1542,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         theme={theme}
                         cardStyle={cardStyle}
                         badgeStyle={badgeStyle}
+                        urgencyTag={urgencyTag}
                     />
                 )}
                 {(hookCaptions || hookSubtitle || (hookSubtitles && hookSubtitles.length > 0)) && (
@@ -1516,6 +1568,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     theme={theme}
                     cardStyle={cardStyle}
                     badgeStyle={badgeStyle}
+                    urgencyTag={urgencyTag}
                 />
             </Sequence>
 
@@ -1530,6 +1583,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     theme={theme}
                     cardStyle={cardStyle}
                     badgeStyle={badgeStyle}
+                    urgencyTag={urgencyTag}
                 />
             </Sequence>
 
@@ -1540,6 +1594,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             >
                 <EditorialCTA
                     text={ctaText}
+                    label={ctaLabel}
                     durationInFrames={ctaDuration}
                     theme={theme}
                 />
@@ -1563,6 +1618,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         )}
                         theme={theme}
                         karaokeHighlight={karaokeHighlight}
+                        // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
+                        liftFromFrame={ctaStartFrame - voStartFrame}
+                        liftPx={CAPTION_LIFT_IN_CTA}
                     />
                 </Sequence>
             )}
