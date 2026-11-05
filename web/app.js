@@ -646,24 +646,24 @@
 
   const CARD_SHAPE_INFO = {
     unified_glass: {
-      name: 'Unified Glass',
+      name: 'Unified Clean',
       shapeClass: 'shape-glass',
-      descSuffix: 'Format kartu kaca satu pulau (Apple dynamic island style) dengan rounded sudut luas dan frosted backdrop blur.'
+      descSuffix: 'Tipografi mengambang bersih langsung di atas video dengan aksen highlight bercahaya, tanpa kotak latar yang menutupi video.'
     },
     editorial_minimal: {
       name: 'Editorial Minimal',
       shapeClass: 'shape-two_tier',
-      descSuffix: 'Format 2-tier terpisah proporsional: badge pill mengambang independen di atas kartu teks naskah.'
+      descSuffix: 'Tipografi editorial tajam berbayangan pekat, 100% terbaca jelas di atas adegan terang maupun gelap.'
     },
     creator_aesthetic: {
       name: 'Creator Aesthetic',
       shapeClass: 'shape-floating',
-      descSuffix: 'Gaya konten kreator organik dengan kartu berbingkai difusi halus tipis tanpa kesan kaku AI-generated.'
+      descSuffix: 'Gaya konten kreator organik dengan teks floating putih bersih berbayangan lembut sinematik.'
     },
     clean_capsule: {
-      name: 'Clean Capsule',
+      name: 'Clean Modern',
       shapeClass: 'shape-capsule',
-      descSuffix: 'Bentuk kapsul pill melengkung penuh, sangat ringkas dan menyisakan banyak area visual untuk footage produk.'
+      descSuffix: 'Tipografi ringkas modern tanpa kotak latar, menyisakan 100% area visual untuk rekaman produk.'
     },
     tiktok_native_ugc: {
       name: 'TikTok Native UGC',
@@ -704,90 +704,47 @@
     if (containerEl) {
       containerEl.className = 'theme-mockup-container ' + card.shapeClass;
 
-      if (card.shapeClass === 'shape-two_tier') {
-        // 2-Tier: Container is transparent, TextBox has the surface card!
-        containerEl.style.background = 'transparent';
-        containerEl.style.border = 'none';
-        containerEl.style.boxShadow = 'none';
+      // Full Floating: Hapus semua kotak latar padat & border tebal yang menutupi video
+      containerEl.style.background = 'transparent';
+      containerEl.style.border = 'none';
+      containerEl.style.boxShadow = 'none';
 
-        if (textBoxEl) {
-          textBoxEl.style.background = theme.cardBg;
-          textBoxEl.style.border = theme.cardBorder;
-          textBoxEl.style.boxShadow = theme.cardShadow;
-        }
-      } else if (card.shapeClass === 'shape-floating' || card.shapeClass === 'shape-tiktok_ugc') {
-        // Floating / TikTok UGC: Text on footage, no card box
-        containerEl.style.background = 'transparent';
-        containerEl.style.border = 'none';
-        containerEl.style.boxShadow = 'none';
-
-        if (textBoxEl) {
-          textBoxEl.style.background = 'transparent';
-          textBoxEl.style.border = 'none';
-          textBoxEl.style.boxShadow = 'none';
-        }
-      } else if (card.shapeClass === 'shape-top_banner') {
-        // Top Banner Strip: Banner at top, TextBox below
-        containerEl.style.background = 'transparent';
-        containerEl.style.border = 'none';
-        containerEl.style.boxShadow = 'none';
-
-        if (textBoxEl) {
-          textBoxEl.style.background = theme.cardBg;
-          textBoxEl.style.border = theme.cardBorder;
-          textBoxEl.style.boxShadow = theme.cardShadow;
-        }
-      } else {
-        // Unified Glass & Clean Capsule: Container has the frosted island card
-        containerEl.style.background = theme.cardBg;
-        containerEl.style.border = theme.cardBorder;
-        containerEl.style.boxShadow = theme.cardShadow;
-
-        if (textBoxEl) {
-          textBoxEl.style.background = 'transparent';
-          textBoxEl.style.border = 'none';
-          textBoxEl.style.boxShadow = 'none';
-        }
+      if (textBoxEl) {
+        textBoxEl.style.background = 'transparent';
+        textBoxEl.style.border = 'none';
+        textBoxEl.style.boxShadow = 'none';
       }
     }
 
     if (badgeEl) {
-      if (card.shapeClass === 'shape-floating') {
-        badgeEl.style.background = 'rgba(0, 0, 0, 0.72)';
-        badgeEl.style.border = '2px solid rgba(255, 255, 255, 0.5)';
-        badgeEl.style.color = '#FFFFFF';
-      } else if (card.shapeClass === 'shape-tiktok_ugc') {
-        badgeEl.style.background = 'rgba(0, 0, 0, 0.78)';
-        badgeEl.style.border = '1.5px solid rgba(255, 255, 255, 0.4)';
-        badgeEl.style.color = '#FFFFFF';
-      } else if (card.shapeClass === 'shape-top_banner') {
+      if (card.shapeClass === 'shape-top_banner') {
         badgeEl.style.background = 'linear-gradient(90deg, #FF0050 0%, #FF2E54 50%, #FF6B00 100%)';
         badgeEl.style.border = 'none';
+        badgeEl.style.borderRadius = '12px';
         badgeEl.style.color = '#FFFFFF';
+        badgeEl.style.boxShadow = '0 8px 24px rgba(255, 0, 80, 0.35)';
       } else {
-        badgeEl.style.background = theme.badgeBg;
-        badgeEl.style.border = theme.badgeBorder;
-        badgeEl.style.color = theme.badgeColor;
+        badgeEl.style.background = 'rgba(0, 0, 0, 0.75)';
+        badgeEl.style.border = `1.5px solid ${theme.badgeBorder || 'rgba(255, 255, 255, 0.45)'}`;
+        badgeEl.style.borderRadius = '999px';
+        badgeEl.style.color = '#FFFFFF';
+        badgeEl.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.4)';
       }
     }
 
     if (dotEl) {
-      if (card.shapeClass === 'shape-floating') {
-        dotEl.style.background = '#FFFFFF';
-        dotEl.style.color = '#FFFFFF';
-        dotEl.style.boxShadow = '0 0 10px #FFFFFF';
+      if (card.shapeClass === 'shape-top_banner') {
+        dotEl.style.background = '#FFE600';
+        dotEl.style.color = '#FFE600';
+        dotEl.style.boxShadow = '0 0 10px #FFE600';
       } else if (card.shapeClass === 'shape-tiktok_ugc') {
         dotEl.style.background = '#FF0050';
         dotEl.style.color = '#FF0050';
         dotEl.style.boxShadow = '0 0 10px #FF0050';
-      } else if (card.shapeClass === 'shape-top_banner') {
-        dotEl.style.background = '#FFE600';
-        dotEl.style.color = '#FFE600';
-        dotEl.style.boxShadow = '0 0 10px #FFE600';
       } else {
-        dotEl.style.background = theme.dotColor;
-        dotEl.style.color = theme.dotColor;
-        dotEl.style.boxShadow = `0 0 8px ${theme.dotColor}`;
+        dotEl.style.background = theme.dotColor || '#FFFFFF';
+        dotEl.style.color = theme.dotColor || '#FFFFFF';
+        dotEl.style.boxShadow = `0 0 8px ${theme.dotColor || '#FFFFFF'}`;
       }
     }
 
@@ -798,7 +755,7 @@
 
     if (badgeText) {
       if (card.shapeClass === 'shape-top_banner') {
-        badgeText.innerHTML = `<span>⚡ ${escapeHtml(curBadge || 'FLASH SALE HARI INI')}</span><span style="font-size:9.5px; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:999px; color:#FFE600; font-weight:800; margin-left: auto;">LIMITED</span>`;
+        badgeText.innerHTML = `<span>⚡ ${escapeHtml(curBadge || 'PROMO KERANJANG KUNING')}</span><span style="font-size:9.5px; background:rgba(0,0,0,0.3); padding:2px 8px; border-radius:999px; color:#FFE600; font-weight:800; margin-left: auto;">LIMITED</span>`;
       } else {
         badgeText.textContent = curBadge || 'IBU-IBU WAJIB TAU';
       }
@@ -806,26 +763,27 @@
 
     if (line1El) {
       line1El.textContent = curLine1 || 'Nyesel baru tahu sekarang...';
-      if (card.shapeClass === 'shape-floating' || card.shapeClass === 'shape-tiktok_ugc') {
-        line1El.style.color = '#FFFFFF';
-        line1El.style.textShadow = '0 2px 8px rgba(0, 0, 0, 0.95), 0 4px 20px rgba(0, 0, 0, 0.75)';
-      } else {
-        line1El.style.color = theme.textColor;
-        line1El.style.textShadow = 'none';
-      }
+      // Teks selalu putih bersih dengan drop shadow tebal agar 100% terbaca di semua tema & footage video
+      line1El.style.color = '#FFFFFF';
+      line1El.style.textShadow = '0 2px 10px rgba(0, 0, 0, 0.95), 0 4px 24px rgba(0, 0, 0, 0.85)';
     }
 
     if (highlightEl) {
       highlightEl.textContent = curHighlight || 'Lemari Bebas Apek Seharian!';
       if (card.shapeClass === 'shape-tiktok_ugc') {
+        highlightEl.style.backgroundColor = '#FFE600';
         highlightEl.style.color = '#000000';
+        highlightEl.style.padding = '4px 14px';
+        highlightEl.style.borderRadius = '6px';
         highlightEl.style.textShadow = 'none';
-      } else if (card.shapeClass === 'shape-floating') {
-        highlightEl.style.color = theme.highlightColor;
-        highlightEl.style.textShadow = '0 3px 14px rgba(0, 0, 0, 0.85)';
+        highlightEl.style.boxShadow = '0 6px 18px rgba(0, 0, 0, 0.35)';
       } else {
-        highlightEl.style.color = theme.highlightColor;
-        highlightEl.style.textShadow = theme.highlightShadow;
+        highlightEl.style.backgroundColor = 'transparent';
+        highlightEl.style.padding = '0';
+        highlightEl.style.borderRadius = '0';
+        highlightEl.style.boxShadow = 'none';
+        highlightEl.style.color = theme.highlightColor || theme.accentColor;
+        highlightEl.style.textShadow = '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)';
       }
     }
 

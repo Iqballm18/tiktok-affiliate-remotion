@@ -16,7 +16,12 @@ import { getTheme, ThemeDefinition } from './theme';
 import { TikTokSafeZone } from './components/TikTokSafeZone';
 import { FloatingWatermark } from './components/FloatingWatermark';
 import { HookSubtitle } from './components/HookSubtitle';
+import { HookBadge, resolveBadgeVariant } from './components/HookBadge';
+import { loadThemeFonts } from './load-theme-fonts';
 import { Caption } from '@remotion/captions';
+
+// Muat Inter + JetBrains Mono sekali saat bundle dibuka (render tetap menunggu via delayRender).
+loadThemeFonts();
 
 export const timedSubtitleSchema = z.object({
     text: z.string(),
@@ -46,6 +51,8 @@ export const clipItemSchema = z.object({
 export const affiliateSchema = z.object({
     themeStyle: z.string().optional(),
     cardStyle: z.string().optional(),
+    // Gaya badge: sticker | alert | marker | glass. Kosong = otomatis (hook: sticker, demo & spec: glass).
+    badgeStyle: z.string().optional(),
     showProgressBar: z.boolean().optional(),
     enableSfx: z.boolean().optional(),
     sfxPreset: z.enum(['viral', 'beauty', 'tech', 'minimal']).optional(),
@@ -647,6 +654,7 @@ const EditorialHeadline: React.FC<{
     variant: 'hook' | 'solution';
     theme: ThemeDefinition;
     cardStyle?: string;
+    badgeStyle?: string;
 }> = ({
     badge,
     line1,
@@ -655,11 +663,16 @@ const EditorialHeadline: React.FC<{
     variant,
     theme,
     cardStyle = 'unified_glass',
+    badgeStyle,
 }) => {
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
 
         const mode = resolveStyleMode(cardStyle);
+        const badgeVariant = resolveBadgeVariant(
+            badgeStyle,
+            variant === 'hook' ? 'sticker' : 'glass'
+        );
 
         const staggerStep = Math.round(0.05 * fps);
         const exitStart = durationInFrames - Math.round(0.22 * fps);
@@ -711,668 +724,7 @@ const EditorialHeadline: React.FC<{
         });
 
         // ==========================================
-        // STYLE 1: UNIFIED GLASS (Apple / Modern Frosted Glass Island)
-        // Satu kesatuan container kaca yang elegan & menyatu
-        // ==========================================
-        if (mode === 'unified_glass') {
-            return (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 190,
-                        left: 56,
-                        right: 56,
-                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                        opacity: 1 - exitProgress,
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: theme.colors.surface,
-                            backdropFilter: 'blur(24px)',
-                            border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                            borderRadius: 28,
-                            padding: '24px 28px',
-                            boxShadow: theme.colors.boxShadow,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'flex-start',
-                            gap: 14,
-                        }}
-                    >
-                        {badge ? (
-                            <div
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 12,
-                                    backgroundColor: theme.colors.badgeBg,
-                                    border: `2px solid ${theme.colors.badgeBorder}`,
-                                    padding: '10px 22px',
-                                    borderRadius: 999,
-                                    boxShadow: `0 8px 24px rgba(0, 0, 0, 0.25), 0 0 16px ${theme.colors.indicatorColor}33`,
-                                    opacity: badgeSpring,
-                                    transform: `translateY(${(1 - badgeSpring) * 12}px) scale(${0.86 + badgeSpring * 0.14})`,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        width: 12,
-                                        height: 12,
-                                        borderRadius: '50%',
-                                        backgroundColor: theme.colors.indicatorColor,
-                                        boxShadow: `0 0 12px ${theme.colors.indicatorColor}`,
-                                    }}
-                                />
-                                <span
-                                    style={{
-                                        fontFamily: theme.fonts.mono,
-                                        fontSize: 24,
-                                        fontWeight: 800,
-                                        letterSpacing: 2.2,
-                                        color: theme.colors.badgeText,
-                                        textTransform: 'uppercase',
-                                    }}
-                                >
-                                    {badge}
-                                </span>
-                            </div>
-                        ) : null}
-
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '8px 12px',
-                            }}
-                        >
-                            {words.map((word, i) => {
-                                const delay = Math.round(0.04 * fps) + i * staggerStep;
-                                const p = spring({
-                                    fps,
-                                    frame: frame - delay,
-                                    config: theme.springs.smooth,
-                                });
-                                const y = interpolate(p, [0, 1], [20, 0], { extrapolateRight: 'clamp' });
-                                const blur = interpolate(p, [0, 1], [5, 0], { extrapolateRight: 'clamp' });
-
-                                return (
-                                    <span
-                                        key={i}
-                                        style={{
-                                            display: 'inline-block',
-                                            fontFamily: theme.fonts.display,
-                                            fontSize: 44,
-                                            fontWeight: 700,
-                                            letterSpacing: -0.8,
-                                            lineHeight: 1.25,
-                                            color: theme.colors.textPrimary,
-                                            opacity: p,
-                                            transform: `translateY(${y}px)`,
-                                            filter: `blur(${blur}px)`,
-                                        }}
-                                    >
-                                        {word}
-                                    </span>
-                                );
-                            })}
-                        </div>
-
-                        <div
-                            style={{
-                                opacity: highlightSpring,
-                                transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                                marginTop: 2,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.display,
-                                    fontSize: 48,
-                                    fontWeight: 900,
-                                    letterSpacing: -1.0,
-                                    lineHeight: 1.18,
-                                    display: 'inline-block',
-                                    color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                    textShadow: '0 2px 12px rgba(0, 0, 0, 0.45)',
-                                }}
-                            >
-                                {highlightLine}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // STYLE 2: EDITORIAL MINIMAL (Two-Tier Clean Editorial)
-        // Dua kartu terpisah namun proporsional & konsisten
-        // ==========================================
-        if (mode === 'editorial_minimal') {
-            return (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 190,
-                        left: 56,
-                        right: 56,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                        opacity: 1 - exitProgress,
-                    }}
-                >
-                    {badge ? (
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                backgroundColor: theme.colors.badgeBg,
-                                backdropFilter: 'blur(20px)',
-                                border: `2px solid ${theme.colors.badgeBorder}`,
-                                padding: '10px 24px',
-                                borderRadius: 999,
-                                boxShadow: `0 10px 28px rgba(0, 0, 0, 0.28), 0 0 18px ${theme.colors.indicatorColor}33`,
-                                opacity: badgeSpring,
-                                transform: `translateY(${(1 - badgeSpring) * 16}px) scale(${0.86 + badgeSpring * 0.14})`,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: '50%',
-                                    backgroundColor: theme.colors.indicatorColor,
-                                    boxShadow: `0 0 12px ${theme.colors.indicatorColor}`,
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.mono,
-                                    fontSize: 25,
-                                    fontWeight: 800,
-                                    letterSpacing: 2.2,
-                                    color: theme.colors.badgeText,
-                                    textTransform: 'uppercase',
-                                }}
-                            >
-                                {badge}
-                            </span>
-                        </div>
-                    ) : null}
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '8px 12px',
-                            backgroundColor: theme.colors.surface,
-                            backdropFilter: 'blur(20px)',
-                            border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                            padding: '18px 26px',
-                            borderRadius: 22,
-                            boxShadow: theme.colors.boxShadow,
-                        }}
-                    >
-                        {words.map((word, i) => {
-                            const delay = Math.round(0.04 * fps) + i * staggerStep;
-                            const p = spring({
-                                fps,
-                                frame: frame - delay,
-                                config: theme.springs.smooth,
-                            });
-                            const y = interpolate(p, [0, 1], [22, 0], { extrapolateRight: 'clamp' });
-                            const blur = interpolate(p, [0, 1], [5, 0], { extrapolateRight: 'clamp' });
-
-                            return (
-                                <span
-                                    key={i}
-                                    style={{
-                                        display: 'inline-block',
-                                        fontFamily: theme.fonts.display,
-                                        fontSize: 44,
-                                        fontWeight: 700,
-                                        letterSpacing: -0.8,
-                                        lineHeight: 1.25,
-                                        color: theme.colors.textPrimary,
-                                        opacity: p,
-                                        transform: `translateY(${y}px)`,
-                                        filter: `blur(${blur}px)`,
-                                    }}
-                                >
-                                    {word}
-                                </span>
-                            );
-                        })}
-                    </div>
-
-                    <div
-                        style={{
-                            opacity: highlightSpring,
-                            transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                            marginTop: 4,
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontFamily: theme.fonts.display,
-                                fontSize: 48,
-                                fontWeight: 900,
-                                letterSpacing: -1.2,
-                                lineHeight: 1.18,
-                                display: 'inline-block',
-                                color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                textShadow: '0 3px 14px rgba(0, 0, 0, 0.65)',
-                            }}
-                        >
-                            {highlightLine}
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // STYLE 3: CREATOR AESTHETIC (Organic Vlog Subtitle - Anti AI-Slop)
-        // Teks putih bersih berbayangan difusi lembut, tanpa stroke tebal / kuning norak
-        // ==========================================
-        if (mode === 'creator_aesthetic') {
-            return (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 210,
-                        left: 56,
-                        right: 56,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                        opacity: 1 - exitProgress,
-                    }}
-                >
-                    {badge ? (
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                backgroundColor: 'rgba(0, 0, 0, 0.68)',
-                                backdropFilter: 'blur(20px)',
-                                border: '2px solid rgba(255, 255, 255, 0.45)',
-                                padding: '10px 22px',
-                                borderRadius: 999,
-                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-                                opacity: badgeSpring,
-                                transform: `translateY(${(1 - badgeSpring) * 12}px) scale(${0.86 + badgeSpring * 0.14})`,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 11,
-                                    height: 11,
-                                    borderRadius: '50%',
-                                    backgroundColor: '#FFFFFF',
-                                    boxShadow: '0 0 12px #FFFFFF',
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.mono,
-                                    fontSize: 24,
-                                    fontWeight: 800,
-                                    letterSpacing: 2.2,
-                                    color: '#FFFFFF',
-                                    textTransform: 'uppercase',
-                                }}
-                            >
-                                {badge}
-                            </span>
-                        </div>
-                    ) : null}
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '6px 12px',
-                        }}
-                    >
-                        {words.map((word, i) => {
-                            const delay = Math.round(0.04 * fps) + i * staggerStep;
-                            const p = spring({
-                                fps,
-                                frame: frame - delay,
-                                config: theme.springs.smooth,
-                            });
-                            const y = interpolate(p, [0, 1], [20, 0], { extrapolateRight: 'clamp' });
-
-                            return (
-                                <span
-                                    key={i}
-                                    style={{
-                                        display: 'inline-block',
-                                        fontFamily: theme.fonts.display,
-                                        fontSize: 48,
-                                        fontWeight: 800,
-                                        letterSpacing: -1.0,
-                                        lineHeight: 1.25,
-                                        color: '#FFFFFF',
-                                        textShadow:
-                                            '0 2px 10px rgba(0, 0, 0, 0.75), 0 4px 24px rgba(0, 0, 0, 0.50)',
-                                        opacity: p,
-                                        transform: `translateY(${y}px)`,
-                                    }}
-                                >
-                                    {word}
-                                </span>
-                            );
-                        })}
-                    </div>
-
-                    <div
-                        style={{
-                            opacity: highlightSpring,
-                            transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                            marginTop: 2,
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontFamily: theme.fonts.display,
-                                fontSize: 48,
-                                fontWeight: 900,
-                                letterSpacing: -1.2,
-                                lineHeight: 1.18,
-                                display: 'inline-block',
-                                color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                textShadow: '0 3px 14px rgba(0, 0, 0, 0.65)',
-                            }}
-                        >
-                            {highlightLine}
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // STYLE 4: CLEAN CAPSULE (Modern Compact Dynamic Capsule)
-        // Desain modern ringkas dengan visual footprint minimal
-        // ==========================================
-        if (mode === 'clean_capsule') {
-            return (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 195,
-                        left: 56,
-                        right: 56,
-                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                        opacity: 1 - exitProgress,
-                    }}
-                >
-                    <div
-                        style={{
-                            backgroundColor: theme.colors.surface,
-                            backdropFilter: 'blur(24px)',
-                            border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                            borderRadius: 36,
-                            padding: '20px 28px',
-                            boxShadow: theme.colors.boxShadow,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 12,
-                        }}
-                    >
-                        {badge ? (
-                            <div
-                                style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 12,
-                                    backgroundColor: theme.colors.badgeBg,
-                                    border: `2px solid ${theme.colors.badgeBorder}`,
-                                    padding: '8px 20px',
-                                    borderRadius: 999,
-                                    boxShadow: `0 8px 20px rgba(0, 0, 0, 0.22), 0 0 14px ${theme.colors.indicatorColor}33`,
-                                    opacity: badgeSpring,
-                                    transform: `translateY(${(1 - badgeSpring) * 10}px) scale(${0.86 + badgeSpring * 0.14})`,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        width: 11,
-                                        height: 11,
-                                        borderRadius: '50%',
-                                        backgroundColor: theme.colors.indicatorColor,
-                                        boxShadow: `0 0 12px ${theme.colors.indicatorColor}`,
-                                    }}
-                                />
-                                <span
-                                    style={{
-                                        fontFamily: theme.fonts.mono,
-                                        fontSize: 23,
-                                        fontWeight: 800,
-                                        letterSpacing: 2.0,
-                                        color: theme.colors.badgeText,
-                                        textTransform: 'uppercase',
-                                    }}
-                                >
-                                    {badge}
-                                </span>
-                            </div>
-                        ) : null}
-
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 8,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexWrap: 'wrap',
-                                    gap: '6px 10px',
-                                }}
-                            >
-                                {words.map((word, i) => {
-                                    const delay = Math.round(0.04 * fps) + i * staggerStep;
-                                    const p = spring({
-                                        fps,
-                                        frame: frame - delay,
-                                        config: theme.springs.smooth,
-                                    });
-                                    const y = interpolate(p, [0, 1], [18, 0], { extrapolateRight: 'clamp' });
-
-                                    return (
-                                        <span
-                                            key={i}
-                                            style={{
-                                                display: 'inline-block',
-                                                fontFamily: theme.fonts.display,
-                                                fontSize: 40,
-                                                fontWeight: 600,
-                                                letterSpacing: -0.6,
-                                                lineHeight: 1.25,
-                                                color: theme.colors.textPrimary,
-                                                opacity: p,
-                                                transform: `translateY(${y}px)`,
-                                            }}
-                                        >
-                                            {word}
-                                        </span>
-                                    );
-                                })}
-                            </div>
-
-                            <div
-                                style={{
-                                    alignSelf: 'flex-start',
-                                    opacity: highlightSpring,
-                                    transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                                    marginTop: 2,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontFamily: theme.fonts.display,
-                                        fontSize: 44,
-                                        fontWeight: 900,
-                                        letterSpacing: -0.8,
-                                        lineHeight: 1.2,
-                                        display: 'inline-block',
-                                        color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                        textShadow: '0 2px 10px rgba(0, 0, 0, 0.45)',
-                                    }}
-                                >
-                                    {highlightLine}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // STYLE 5: TIKTOK NATIVE UGC (CapCut Style / Highlight Kuning Stabilo)
-        // Format paling viral & organik untuk TikTok Affiliate FYP Indonesia
-        // ==========================================
-        if (mode === 'tiktok_native_ugc') {
-            return (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 200,
-                        left: 56,
-                        right: 56,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                        opacity: 1 - exitProgress,
-                    }}
-                >
-                    {badge ? (
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: 'rgba(0, 0, 0, 0.78)',
-                                backdropFilter: 'blur(16px)',
-                                border: '1.5px solid rgba(255, 255, 255, 0.4)',
-                                padding: '8px 20px',
-                                borderRadius: 999,
-                                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
-                                opacity: badgeSpring,
-                                transform: `translateY(${(1 - badgeSpring) * 12}px) scale(${0.86 + badgeSpring * 0.14})`,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: '50%',
-                                    backgroundColor: '#FF0050',
-                                    boxShadow: '0 0 10px #FF0050',
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.mono,
-                                    fontSize: 23,
-                                    fontWeight: 800,
-                                    letterSpacing: 2.0,
-                                    color: '#FFFFFF',
-                                    textTransform: 'uppercase',
-                                }}
-                            >
-                                {badge}
-                            </span>
-                        </div>
-                    ) : null}
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '6px 10px',
-                        }}
-                    >
-                        {words.map((word, i) => {
-                            const delay = Math.round(0.04 * fps) + i * staggerStep;
-                            const p = spring({
-                                fps,
-                                frame: frame - delay,
-                                config: theme.springs.smooth,
-                            });
-                            const y = interpolate(p, [0, 1], [18, 0], { extrapolateRight: 'clamp' });
-
-                            return (
-                                <span
-                                    key={i}
-                                    style={{
-                                        display: 'inline-block',
-                                        fontFamily: theme.fonts.display,
-                                        fontSize: 46,
-                                        fontWeight: 800,
-                                        letterSpacing: -0.8,
-                                        lineHeight: 1.22,
-                                        color: '#FFFFFF',
-                                        textShadow:
-                                            '0 2px 8px rgba(0, 0, 0, 0.95), 0 4px 20px rgba(0, 0, 0, 0.8)',
-                                        opacity: p,
-                                        transform: `translateY(${y}px)`,
-                                    }}
-                                >
-                                    {word}
-                                </span>
-                            );
-                        })}
-                    </div>
-
-                    <div
-                        style={{
-                            opacity: highlightSpring,
-                            transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                            marginTop: 4,
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontFamily: theme.fonts.display,
-                                fontSize: 44,
-                                fontWeight: 900,
-                                letterSpacing: -0.6,
-                                lineHeight: 1.15,
-                                display: 'inline-block',
-                                backgroundColor: '#FFE600',
-                                color: '#000000',
-                                padding: '6px 18px',
-                                borderRadius: 8,
-                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3)',
-                            }}
-                        >
-                            {highlightLine}
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // STYLE 6: TOP BANNER PROMO (Flash Sale Strip + Compact Text)
-        // Format promo banner atas untuk dorongan FOMO & konversi keranjang kuning
+        // STYLE: TOP BANNER PROMO (Flash Sale Strip + Clean Floating Text)
         // ==========================================
         if (mode === 'top_banner_promo') {
             return (
@@ -1384,7 +736,7 @@ const EditorialHeadline: React.FC<{
                         right: 48,
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 14,
+                        gap: 16,
                         transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
                         opacity: 1 - exitProgress,
                     }}
@@ -1434,157 +786,8 @@ const EditorialHeadline: React.FC<{
                         </span>
                     </div>
 
-                    {/* Headline Card */}
-                    <div
-                        style={{
-                            backgroundColor: theme.colors.surface,
-                            backdropFilter: 'blur(24px)',
-                            border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                            borderRadius: 24,
-                            padding: '18px 26px',
-                            boxShadow: theme.colors.boxShadow,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 8,
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
-                                gap: '6px 10px',
-                            }}
-                        >
-                            {words.map((word, i) => {
-                                const delay = Math.round(0.04 * fps) + i * staggerStep;
-                                const p = spring({
-                                    fps,
-                                    frame: frame - delay,
-                                    config: theme.springs.smooth,
-                                });
-                                const y = interpolate(p, [0, 1], [18, 0], { extrapolateRight: 'clamp' });
-
-                                return (
-                                    <span
-                                        key={i}
-                                        style={{
-                                            display: 'inline-block',
-                                            fontFamily: theme.fonts.display,
-                                            fontSize: 40,
-                                            fontWeight: 700,
-                                            letterSpacing: -0.6,
-                                            lineHeight: 1.25,
-                                            color: theme.colors.textPrimary,
-                                            opacity: p,
-                                            transform: `translateY(${y}px)`,
-                                        }}
-                                    >
-                                        {word}
-                                    </span>
-                                );
-                            })}
-                        </div>
-
-                        <div
-                            style={{
-                                opacity: highlightSpring,
-                                transform: `translateY(${highlightY}px) scale(${highlightScale})`,
-                                marginTop: 2,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.display,
-                                    fontSize: 44,
-                                    fontWeight: 900,
-                                    letterSpacing: -0.8,
-                                    lineHeight: 1.2,
-                                    display: 'inline-block',
-                                    color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                    textShadow: '0 2px 10px rgba(0, 0, 0, 0.45)',
-                                }}
-                            >
-                                {highlightLine}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // Fallback default: Unified Glass
-        return (
-            <div
-                style={{
-                    position: 'absolute',
-                    top: 190,
-                    left: 56,
-                    right: 56,
-                    transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
-                    opacity: 1 - exitProgress,
-                }}
-            >
-                <div
-                    style={{
-                        backgroundColor: theme.colors.surface,
-                        backdropFilter: 'blur(24px)',
-                        border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                        borderRadius: 28,
-                        padding: '24px 28px',
-                        boxShadow: theme.colors.boxShadow,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        gap: 14,
-                    }}
-                >
-                    {badge ? (
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                backgroundColor: theme.colors.badgeBg,
-                                backdropFilter: 'blur(20px)',
-                                border: `2px solid ${theme.colors.badgeBorder}`,
-                                padding: '10px 24px',
-                                borderRadius: 999,
-                                boxShadow: `0 10px 28px rgba(0, 0, 0, 0.28), 0 0 18px ${theme.colors.indicatorColor}33`,
-                                opacity: badgeSpring,
-                                transform: `translateY(${(1 - badgeSpring) * 16}px) scale(${0.86 + badgeSpring * 0.14})`,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: '50%',
-                                    backgroundColor: theme.colors.indicatorColor,
-                                    boxShadow: `0 0 12px ${theme.colors.indicatorColor}`,
-                                }}
-                            />
-                            <span
-                                style={{
-                                    fontFamily: theme.fonts.mono,
-                                    fontSize: 25,
-                                    fontWeight: 800,
-                                    letterSpacing: 2.2,
-                                    color: theme.colors.badgeText,
-                                    textTransform: 'uppercase',
-                                }}
-                            >
-                                {badge}
-                            </span>
-                        </div>
-                    ) : null}
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '8px 12px',
-                        }}
-                    >
+                    {/* Floating Text (Tanpa background box yang menutupi video) */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px' }}>
                         {words.map((word, i) => {
                             const delay = Math.round(0.04 * fps) + i * staggerStep;
                             const p = spring({
@@ -1592,7 +795,7 @@ const EditorialHeadline: React.FC<{
                                 frame: frame - delay,
                                 config: theme.springs.smooth,
                             });
-                            const y = interpolate(p, [0, 1], [22, 0], { extrapolateRight: 'clamp' });
+                            const y = interpolate(p, [0, 1], [18, 0], { extrapolateRight: 'clamp' });
 
                             return (
                                 <span
@@ -1601,10 +804,12 @@ const EditorialHeadline: React.FC<{
                                         display: 'inline-block',
                                         fontFamily: theme.fonts.display,
                                         fontSize: 44,
-                                        fontWeight: 700,
+                                        fontWeight: 800,
                                         letterSpacing: -0.8,
-                                        lineHeight: 1.25,
-                                        color: theme.colors.textPrimary,
+                                        lineHeight: 1.22,
+                                        color: '#FFFFFF',
+                                        textShadow:
+                                            '0 2px 10px rgba(0, 0, 0, 0.95), 0 4px 24px rgba(0, 0, 0, 0.85)',
                                         opacity: p,
                                         transform: `translateY(${y}px)`,
                                     }}
@@ -1627,16 +832,204 @@ const EditorialHeadline: React.FC<{
                                 fontFamily: theme.fonts.display,
                                 fontSize: 46,
                                 fontWeight: 900,
-                                letterSpacing: -1.0,
-                                lineHeight: 1.2,
+                                letterSpacing: -0.8,
+                                lineHeight: 1.18,
                                 display: 'inline-block',
                                 color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
-                                textShadow: '0 4px 20px rgba(0, 0, 0, 0.45)',
+                                textShadow:
+                                    '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)',
                             }}
                         >
                             {highlightLine}
                         </span>
                     </div>
+                </div>
+            );
+        }
+
+        // ==========================================
+        // STYLE: TIKTOK NATIVE UGC (CapCut Style / Highlight Kuning Stabilo)
+        // ==========================================
+        if (mode === 'tiktok_native_ugc') {
+            return (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 200,
+                        left: 56,
+                        right: 56,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
+                        opacity: 1 - exitProgress,
+                    }}
+                >
+                    {badge ? (
+                        <HookBadge
+                            text={badge}
+                            variant={badgeVariant}
+                            theme={theme}
+                            delayFrames={cardEntranceDelay}
+                        />
+                    ) : null}
+
+                    {/* Floating Text (Tanpa background box yang menutupi video) */}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px' }}>
+                        {words.map((word, i) => {
+                            const delay = Math.round(0.04 * fps) + i * staggerStep;
+                            const p = spring({
+                                fps,
+                                frame: frame - delay,
+                                config: theme.springs.smooth,
+                            });
+                            const y = interpolate(p, [0, 1], [18, 0], { extrapolateRight: 'clamp' });
+
+                            return (
+                                <span
+                                    key={i}
+                                    style={{
+                                        display: 'inline-block',
+                                        fontFamily: theme.fonts.display,
+                                        fontSize: 48,
+                                        fontWeight: 800,
+                                        letterSpacing: -0.8,
+                                        lineHeight: 1.22,
+                                        color: '#FFFFFF',
+                                        textShadow:
+                                            '0 2px 10px rgba(0, 0, 0, 0.95), 0 4px 24px rgba(0, 0, 0, 0.85)',
+                                        opacity: p,
+                                        transform: `translateY(${y}px)`,
+                                    }}
+                                >
+                                    {word}
+                                </span>
+                            );
+                        })}
+                    </div>
+
+                    <div
+                        style={{
+                            opacity: highlightSpring,
+                            transform: `translateY(${highlightY}px) scale(${highlightScale})`,
+                            marginTop: 4,
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontFamily: theme.fonts.display,
+                                fontSize: 44,
+                                fontWeight: 900,
+                                letterSpacing: -0.6,
+                                lineHeight: 1.15,
+                                display: 'inline-block',
+                                backgroundColor: '#FFE600',
+                                color: '#000000',
+                                padding: '6px 18px',
+                                borderRadius: 8,
+                                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3)',
+                            }}
+                        >
+                            {highlightLine}
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+
+        // ==========================================
+        // ALL OTHER STYLES (Unified, Editorial, Creator, Capsule):
+        // FULL FLOATING TYPOGRAPHY: Tanpa background box / border lebar yang menutupi video!
+        // Teks putih tajam berbayangan pekat + baris highlight warna aksen berkilau
+        // ==========================================
+        return (
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 200,
+                    left: 56,
+                    right: 56,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 12,
+                    transform: `translateY(${breatheY - exitProgress * 28}px) scale(${1 - exitProgress * 0.05})`,
+                    opacity: 1 - exitProgress,
+                }}
+            >
+                {badge ? (
+                    <HookBadge
+                        text={badge}
+                        variant={badgeVariant}
+                        theme={theme}
+                        delayFrames={cardEntranceDelay}
+                    />
+                ) : null}
+
+                {/* Staggered Floating Line 1 (Putih bersih dengan bayangan tajam, 100% terbaca di atas video) */}
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px 12px',
+                    }}
+                >
+                    {words.map((word, i) => {
+                        const delay = Math.round(0.04 * fps) + i * staggerStep;
+                        const p = spring({
+                            fps,
+                            frame: frame - delay,
+                            config: theme.springs.smooth,
+                        });
+                        const y = interpolate(p, [0, 1], [20, 0], { extrapolateRight: 'clamp' });
+
+                        return (
+                            <span
+                                key={i}
+                                style={{
+                                    display: 'inline-block',
+                                    fontFamily: theme.fonts.display,
+                                    fontSize: 48,
+                                    fontWeight: 800,
+                                    letterSpacing: -1.0,
+                                    lineHeight: 1.25,
+                                    color: '#FFFFFF',
+                                    textShadow:
+                                        '0 2px 10px rgba(0, 0, 0, 0.95), 0 4px 24px rgba(0, 0, 0, 0.85)',
+                                    opacity: p,
+                                    transform: `translateY(${y}px)`,
+                                }}
+                            >
+                                {word}
+                            </span>
+                        );
+                    })}
+                </div>
+
+                {/* Floating Highlight Line (Aksen warna tema bersinar, tanpa kotak latar padat yang menutupi video) */}
+                <div
+                    style={{
+                        opacity: highlightSpring,
+                        transform: `translateY(${highlightY}px) scale(${highlightScale})`,
+                        marginTop: 2,
+                    }}
+                >
+                    <span
+                        style={{
+                            fontFamily: theme.fonts.display,
+                            fontSize: 50,
+                            fontWeight: 900,
+                            letterSpacing: -1.2,
+                            lineHeight: 1.18,
+                            display: 'inline-block',
+                            color: isHook ? theme.colors.accent : (theme.colors.indicatorColor || theme.colors.accent),
+                            textShadow:
+                                '0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85)',
+                        }}
+                    >
+                        {highlightLine}
+                    </span>
                 </div>
             </div>
         );
@@ -1770,6 +1163,7 @@ const EditorialCTA: React.FC<{
 export const AffiliateVideo: React.FC<AffiliateProps> = ({
     themeStyle,
     cardStyle,
+    badgeStyle,
     showProgressBar,
     enableSfx,
     sfxPreset,
@@ -2096,6 +1490,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         variant="hook"
                         theme={theme}
                         cardStyle={cardStyle}
+                        badgeStyle={badgeStyle}
                     />
                 )}
                 {(hookCaptions || hookSubtitle || (hookSubtitles && hookSubtitles.length > 0)) && (
@@ -2120,6 +1515,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     variant="solution"
                     theme={theme}
                     cardStyle={cardStyle}
+                    badgeStyle={badgeStyle}
                 />
             </Sequence>
 
@@ -2133,6 +1529,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     variant="solution"
                     theme={theme}
                     cardStyle={cardStyle}
+                    badgeStyle={badgeStyle}
                 />
             </Sequence>
 
