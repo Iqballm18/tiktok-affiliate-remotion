@@ -1909,7 +1909,7 @@
       const parsed = parseTimeInput(inp.value);
       if (field === 'start') v.clips[idx].startSec = parsed;
       if (field === 'end') v.clips[idx].endSec = parsed;
-      v.clips[idx].src = v.clips[idx].src || state.currentProduct.videoSource;
+      v.clips[idx].src = state.currentProduct.videoSource || v.clips[idx].src;
     });
   }
 
@@ -2662,7 +2662,7 @@
         }
         if (Array.isArray(v.clips)) {
           v.clips.forEach((c, idx) => {
-            c.src = c.src || candidate.videoSource;
+            c.src = candidate.videoSource || c.src;
             if (maxDur && c.endSec > maxDur) {
               const desiredLen = Math.max(2, c.endSec - c.startSec);
               c.endSec = Math.floor(maxDur * 10) / 10;

@@ -213,7 +213,15 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
   // Ensure clips src points to valid source video and clamp bounds within video duration
   if (Array.isArray(props.clips)) {
     props.clips = props.clips.map((c, idx) => {
-      let src = c.src || product.videoSource || '';
+      let src = product.videoSource || c.src || '';
+      // Cegah bug klip tertinggal mengarah ke folder produk lain
+      if (c.src && product.videoSource && c.src !== product.videoSource) {
+        const cMatch = String(c.src).match(/products\/([^/]+)\//);
+        const pMatch = String(product.videoSource).match(/products\/([^/]+)\//);
+        if (cMatch && pMatch && cMatch[1] !== pMatch[1]) {
+          src = product.videoSource;
+        }
+      }
       const resolved = resolvePublicPath(src);
       const exists = Boolean(resolved);
       if (resolved) src = resolved.relative;
