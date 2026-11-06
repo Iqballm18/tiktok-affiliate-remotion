@@ -118,19 +118,19 @@
 
             <!-- Panel 1: Konfigurasi Produk & Judul Video Output -->
             <section class="studio-panel">
-              <div class="panel-header">
-                <div>
+              <div class="panel-header product-header">
+                <div class="panel-title-group">
                   <h2 class="panel-title">Pilih &amp; Konfigurasi Produk</h2>
-                  <p class="panel-sub" id="activeProductBreadcrumb">Memuat data produk...</p>
+                  <p class="panel-sub" id="activeProductBreadcrumb" title="Memuat data produk...">Memuat data produk...</p>
                 </div>
-                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                <div class="panel-actions">
                   <button class="btn small" id="btnOpenImportModal" type="button" title="Tempel JSON hasil Gemini untuk membuat / mengisi produk">
-                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Import JSON Gemini
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Import JSON
                   </button>
-                  <button class="btn small" id="btnRefreshProducts" title="Muat ulang daftar file JSON di folder products/"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
-                  <button class="btn small" id="btnNewProduct"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg> Produk Baru</button>
-                  <button class="btn small danger" id="btnDeleteProduct" title="Hapus produk yang aktif saat ini"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Hapus</button>
-                  <button class="btn small primary" id="btnSaveProduct"><svg class="ic" aria-hidden="true"><use href="#i-save"></use></svg> Simpan Produk</button>
+                  <button class="btn small" id="btnRefreshProducts" type="button" title="Muat ulang daftar file JSON di folder products/"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
+                  <button class="btn small" id="btnNewProduct" type="button" title="Tambah Produk Baru"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg> Baru</button>
+                  <button class="btn small danger" id="btnDeleteProduct" type="button" title="Hapus produk yang aktif saat ini"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Hapus</button>
+                  <button class="btn small primary" id="btnSaveProduct" type="button" title="Simpan perubahan produk ke file JSON"><svg class="ic" aria-hidden="true"><use href="#i-save"></use></svg> Simpan Produk</button>
                 </div>
               </div>
 

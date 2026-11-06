@@ -523,7 +523,9 @@
   }
 
   function renderProductToForm(prod) {
-    el.activeProductBreadcrumb.textContent = `${prod.name} · ID: ${prod.id}`;
+    const breadcrumbText = `${prod.name} · ID: ${prod.id}`;
+    el.activeProductBreadcrumb.textContent = breadcrumbText;
+    el.activeProductBreadcrumb.title = breadcrumbText;
     if (el.uploadSubText) {
       el.uploadSubText.innerHTML = `Tarik &amp; lepas file ke workspace: <code>public/products/${escapeHtml(prod.id)}/</code>`;
     }
