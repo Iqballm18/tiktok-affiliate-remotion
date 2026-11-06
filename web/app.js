@@ -5218,6 +5218,15 @@
     el.btnSmartProcessVO.disabled = true;
     el.btnSmartProcessVO.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Memproses VO...`;
 
+    // Lepas lock audio di browser agar Windows tidak memblokir penimpaan file
+    try {
+      if (el.subtitleAudioPlayer) {
+        el.subtitleAudioPlayer.pause();
+        el.subtitleAudioPlayer.removeAttribute('src');
+        el.subtitleAudioPlayer.load();
+      }
+    } catch (_) {}
+
     try {
       const res = await fetch('/api/smart-process-vo', {
         method: 'POST',
@@ -5257,6 +5266,15 @@
     const origHtml = el.btnTrimSilence.innerHTML;
     el.btnTrimSilence.disabled = true;
     el.btnTrimSilence.innerHTML = `${svgIcon('scissors')} Memotong jeda...`;
+
+    // Lepas lock audio di browser agar Windows tidak memblokir penimpaan file
+    try {
+      if (el.subtitleAudioPlayer) {
+        el.subtitleAudioPlayer.pause();
+        el.subtitleAudioPlayer.removeAttribute('src');
+        el.subtitleAudioPlayer.load();
+      }
+    } catch (_) {}
 
     try {
       const res = await fetch('/api/trim-silence', {

@@ -37,19 +37,26 @@ function syncBundlePublic() {
 }
 
 function safeReplaceFile(src, dest) {
-  try {
-    fs.copyFileSync(src, dest);
-    try { if (fs.existsSync(src)) fs.unlinkSync(src); } catch (_) {}
-    return true;
-  } catch (_) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      fs.renameSync(src, dest);
+      fs.copyFileSync(src, dest);
+      try { if (fs.existsSync(src)) fs.unlinkSync(src); } catch (_) {}
       return true;
     } catch (_) {
-      return false;
+      try {
+        fs.renameSync(src, dest);
+        return true;
+      } catch (_) {}
+    }
+    if (attempt < 2) {
+      const start = Date.now();
+      while (Date.now() - start < 100) {}
     }
   }
+  return false;
 }
+
+const broadcastSSE = broadcast;
 
 function resolvePublicFilePath(rel) {
   const normalized = path.normalize(String(rel || '')).replace(/^(\.\.[\/\\])+/, '');
@@ -659,20 +666,39 @@ const server = http.createServer(async (req, res) => {
                   const child = spawn('ffmpeg', ['-y', '-i', inputPath, '-af', filter, '-c:a', 'libmp3lame', '-q:a', '2', tempPath], {
                     windowsHide: true
                   });
-                  child.on('close', code => {
-                    if (code === 0 && fs.existsSync(tempPath)) {
-                      const replaced = safeReplaceFile(tempPath, inputPath);
-          if (!replaced) {
-            appendLog(`[WARN] Tidak dapat menimpa file audio (mungkin sedang dibuka oleh pemutar musik).`);
-          }
-                      syncBundlePublic();
-                      const newDur = getVideoDurationSec(relFilename) || oldDur;
-                      appendLog(`[SMART-VO 1/3] Jeda napas dipotong: ${oldDur.toFixed(1)}s → ${newDur.toFixed(1)}s`);
-                    } else {
-                      try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
-                      appendLog(`[SMART-VO 1/3] Lewati potong napas (FFmpeg selesai dengan kode ${code})`);
-                    }
+                  const timer = setTimeout(() => {
+                    appendLog(`[WARN] FFmpeg potong napas timeout 20s, lanjut ke Whisper.`);
+                    try { child.kill(); } catch (_) {}
                     resolve();
+                  }, 20000);
+
+                  child.on('error', err => {
+                    clearTimeout(timer);
+                    appendLog(`[WARN] FFmpeg error: ${err.message}`);
+                    resolve();
+                  });
+
+                  child.on('close', code => {
+                    clearTimeout(timer);
+                    try {
+                      if (code === 0 && fs.existsSync(tempPath)) {
+                        const replaced = safeReplaceFile(tempPath, inputPath);
+                        if (!replaced) {
+                          appendLog(`[WARN] File audio sedang dipakai browser/aplikasi lain, pemotongan napas dilewati.`);
+                        } else {
+                          syncBundlePublic();
+                          const newDur = getVideoDurationSec(relFilename) || oldDur;
+                          appendLog(`[SMART-VO 1/3] Jeda napas dipotong: ${oldDur.toFixed(1)}s → ${newDur.toFixed(1)}s`);
+                        }
+                      } else {
+                        try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
+                        appendLog(`[SMART-VO 1/3] Lewati potong napas (FFmpeg kode ${code})`);
+                      }
+                    } catch (e) {
+                      appendLog(`[WARN] Potong napas gagal: ${e.message}`);
+                    } finally {
+                      resolve();
+                    }
                   });
                 });
               }
@@ -686,6 +712,12 @@ const server = http.createServer(async (req, res) => {
                 cwd: __dirname,
                 windowsHide: true
               });
+              const timer = setTimeout(() => {
+                appendLog(`[WARN] Whisper AI melebihi batas waktu 120s.`);
+                try { child.kill(); } catch (_) {}
+                resolve();
+              }, 120000);
+
               child.stdout.on('data', chunk => {
                 for (const l of chunk.toString().split('\n')) {
                   const line = l.trim();
@@ -698,7 +730,13 @@ const server = http.createServer(async (req, res) => {
                   if (line) appendLog(`[WHISPER] ${line}`);
                 }
               });
+              child.on('error', err => {
+                clearTimeout(timer);
+                appendLog(`[ERROR] Gagal memanggil Whisper: ${err.message}`);
+                resolve();
+              });
               child.on('close', code => {
+                clearTimeout(timer);
                 if (code === 0) resolve();
                 else reject(new Error(`Whisper gagal dengan kode exit ${code}`));
               });
@@ -730,7 +768,7 @@ const server = http.createServer(async (req, res) => {
               syncBundlePublic();
 
               // Broadcast SSE ke browser agar reload otomatis
-              broadcastSSE('transcribe-done', {
+              broadcast('transcribe-done', {
                 file: relFilename,
                 jsonFile: path.basename(jsonPath),
                 wordsCount
