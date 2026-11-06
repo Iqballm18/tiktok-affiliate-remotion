@@ -36,6 +36,21 @@ function syncBundlePublic() {
   getOrBuildBundle().then(b => syncPublicToBundle(b)).catch(() => {});
 }
 
+function safeReplaceFile(src, dest) {
+  try {
+    fs.copyFileSync(src, dest);
+    try { if (fs.existsSync(src)) fs.unlinkSync(src); } catch (_) {}
+    return true;
+  } catch (_) {
+    try {
+      fs.renameSync(src, dest);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
 function resolvePublicFilePath(rel) {
   const normalized = path.normalize(String(rel || '')).replace(/^(\.\.[\/\\])+/, '');
   let targetPath = path.resolve(PUBLIC_DIR, normalized);
@@ -572,7 +587,10 @@ const server = http.createServer(async (req, res) => {
             return;
           }
 
-          fs.renameSync(tempPath, inputPath);
+          const replaced = safeReplaceFile(tempPath, inputPath);
+          if (!replaced) {
+            appendLog(`[WARN] Tidak dapat menimpa file audio (mungkin sedang dibuka oleh pemutar musik).`);
+          }
           syncBundlePublic();
           const newDuration = getVideoDurationSec(relFilename) || oldDuration;
           const savedSec = Math.max(0, Math.round((oldDuration - newDuration) * 100) / 100);
@@ -643,7 +661,10 @@ const server = http.createServer(async (req, res) => {
                   });
                   child.on('close', code => {
                     if (code === 0 && fs.existsSync(tempPath)) {
-                      fs.renameSync(tempPath, inputPath);
+                      const replaced = safeReplaceFile(tempPath, inputPath);
+          if (!replaced) {
+            appendLog(`[WARN] Tidak dapat menimpa file audio (mungkin sedang dibuka oleh pemutar musik).`);
+          }
                       syncBundlePublic();
                       const newDur = getVideoDurationSec(relFilename) || oldDur;
                       appendLog(`[SMART-VO 1/3] Jeda napas dipotong: ${oldDur.toFixed(1)}s → ${newDur.toFixed(1)}s`);
