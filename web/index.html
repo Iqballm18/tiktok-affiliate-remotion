@@ -4,47 +4,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Affiliate Video Studio — Remotion Node Render Dashboard</title>
+  <title>Affiliate Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wdth,wght@0,75..100,400..700;1,75..100,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/app.css">
 </head>
 
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-film" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <rect width="18" height="18" x="3" y="3" rx="2" /> <path d="M7 3v18" /> <path d="M3 7.5h4" /> <path d="M3 12h18" /> <path d="M3 16.5h4" /> <path d="M17 3v18" /> <path d="M17 7.5h4" /> <path d="M17 16.5h4" /></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M12 19v3" /> <path d="M19 10v2a7 7 0 0 1-14 0v-2" /> <rect x="9" y="2" width="6" height="13" rx="3" /></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" /></symbol>
+  <symbol id="i-frame" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <rect width="18" height="18" x="3" y="3" rx="2" ry="2" /> <circle cx="9" cy="9" r="2" /> <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></symbol>
+  <symbol id="i-scissors" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <circle cx="6" cy="6" r="3" /> <path d="M8.12 8.12 12 12" /> <path d="M20 4 8.12 15.88" /> <circle cx="6" cy="18" r="3" /> <path d="M14.8 14.8 20 20" /></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" /> <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" /> <path d="M7 3v4a1 1 0 0 0 1 1h7" /></symbol>
+  <symbol id="i-wand" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" /> <path d="M20 2v4" /> <path d="M22 4h-4" /> <circle cx="4" cy="20" r="2" /></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z" /></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M12 3v12" /> <path d="m17 8-5-5-5 5" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M12 15V3" /> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /> <path d="m7 10 5 5 5-5" /></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" /></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" /></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M18 6 6 18" /> <path d="m6 6 12 12" /></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M20 6 9 17l-5-5" /></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="m21 21-4.34-4.34" /> <circle cx="11" cy="11" r="8" /></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" /></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M5 12h14" /> <path d="m12 5 7 7-7 7" /></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" /></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z" /> <path d="M16 9a5 5 0 0 1 0 6" /> <path d="M19.364 18.364a9 9 0 0 0 0-12.728" /></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" /></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <polyline points="3.29 7 12 12 20.71 7" /> <path d="m7.5 4.27 9 5.15" /></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" /></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" /></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" /></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" /></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <circle cx="18" cy="5" r="3" /> <circle cx="6" cy="12" r="3" /> <circle cx="18" cy="19" r="3" /> <line x1="8.59" x2="15.42" y1="13.51" y2="17.49" /> <line x1="15.41" x2="8.59" y1="6.51" y2="10.49" /></symbol>
+  <symbol id="i-music" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M21 16V3a1 1 0 0 0-1.28-.96l-10 2.917a1 1 0 0 0-.72.96V19" /> <circle cx="18" cy="16" r="3" /> <circle cx="6" cy="19" r="3" /></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="M16 10a4 4 0 0 1-8 0" /> <path d="M3.103 6.034h17.794" /> <path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" /></symbol>
+  <symbol id="i-frame-play" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC --> <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" /> <rect x="2" y="6" width="14" height="12" rx="2" /></symbol>
+</svg>
   <div class="app-shell">
 
     <!-- Top Master Header -->
     <header class="studio-header">
       <div class="header-left">
         <div class="brand-badge">
-          <div class="brand-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-          </div>
+          <span class="brand-mark" aria-hidden="true"></span>
           <span>Affiliate Studio</span>
-          <span class="pill rose">Remotion Node</span>
         </div>
 
         <!-- Studio Navigation Tabs -->
         <nav class="studio-tabs" id="mainStudioTabs">
           <button class="studio-tab-btn active" data-tab="studio">
-            <span>🎬</span> Studio Produksi
+            <svg class="ic" aria-hidden="true"><use href="#i-film"></use></svg> Studio produksi
           </button>
           <button class="studio-tab-btn" data-tab="subtitles">
-            <span>🎙️</span> Koreksi Subtitle Whisper
+            <svg class="ic" aria-hidden="true"><use href="#i-mic"></use></svg> Koreksi subtitle
           </button>
           <button class="studio-tab-btn" data-tab="public">
-            <span>📂</span> Galeri & Berkas Media (<span class="num" id="headerPublicCount">0</span>)
+            <svg class="ic" aria-hidden="true"><use href="#i-folder"></use></svg> Galeri &amp; berkas <span class="tab-count num" id="headerPublicCount">0</span>
           </button>
         </nav>
       </div>
 
       <div class="header-right">
-        <span class="pill emerald" id="renderStatusPill">● Siap</span>
+        <span class="pill emerald status-dot" id="renderStatusPill">Siap</span>
         <button class="btn small" id="btnOpenGDriveModal" type="button" title="Buka atau atur link folder Google Drive">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
@@ -66,6 +96,9 @@
             <polyline points="21 15 16 10 5 21"></polyline>
           </svg>
           Lihat Frame
+        </button>
+        <button class="btn small" id="btnOpenBatchModal" title="Antrean Render Multi-Produk sekaligus">
+          📚 Antrean Batch
         </button>
         <button class="btn small primary" id="btnStartRender">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -101,7 +134,9 @@
                   <p class="panel-sub" id="activeProductBreadcrumb">Memuat data produk...</p>
                 </div>
                 <div style="display: flex; gap: 8px;">
+                  <button class="btn small" id="btnRefreshProducts" title="Muat ulang daftar file JSON di folder products/">🔄 Segarkan</button>
                   <button class="btn small" id="btnNewProduct">+ Produk Baru</button>
+                  <button class="btn small danger" id="btnDeleteProduct" title="Hapus produk yang aktif saat ini">🗑️ Hapus</button>
                   <button class="btn small primary" id="btnSaveProduct">Simpan Produk</button>
                 </div>
               </div>
@@ -133,7 +168,7 @@
                   </div>
                   <div class="form-group">
                     <label class="form-label" for="inputWatermark">Teks Watermark</label>
-                    <input class="input" type="text" id="inputWatermark" value="video milik @inanikma_">
+                    <input class="input" type="text" id="inputWatermark" value="@inanikma_ | @spillbyna_">
                   </div>
                   <div class="form-group">
                     <label class="form-label" for="selectWatermarkPosition">Posisi Watermark</label>
@@ -178,12 +213,17 @@
                 <div class="form-group" style="flex: 2;">
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                     <label class="form-label" for="selectVoiceOver" style="margin: 0;">
-                      <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">🎙️ Voice Over untuk Variasi 1 (v1)</span>
+                      <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">Voice over untuk Variasi 1 (v1)</span>
                       <span id="pillVoiceOverStatus" class="pill emerald" style="cursor: pointer;" title="Klik untuk membuka & mengedit transkrip subtitle">Memeriksa...</span>
                     </label>
-                    <button class="btn small" id="btnJumpToSubtitle" type="button" title="Langsung buka tab koreksi subtitle untuk file audio ini">
-                      🎙️ Edit Subtitle Audio Ini
-                    </button>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      <button class="btn small" id="btnTrimSilence" type="button" title="Pangkas jeda hening/napas panjang pada audio ini via FFmpeg">
+                        ✂️ Potong Jeda Napas
+                      </button>
+                      <button class="btn small" id="btnJumpToSubtitle" type="button" title="Langsung buka tab koreksi subtitle untuk file audio ini">
+                        <svg class="ic" aria-hidden="true"><use href="#i-mic"></use></svg> Edit subtitle audio ini
+                      </button>
+                    </div>
                   </div>
                   <select class="input" id="selectVoiceOver">
                     <!-- Populated dynamically from public/*.mp3 -->
@@ -207,7 +247,7 @@
               <!-- AI Design Reason banner (if provided by Gemini) -->
               <div id="designReasonBox" class="design-reason-box" style="display: none; margin-bottom: 12px; padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 8px; font-size: 12px; color: #93c5fd;">
                 <div style="font-weight: 600; margin-bottom: 2px; display: flex; align-items: center; gap: 6px;">
-                  <span>💡 Alasan Desain AI (designReason):</span>
+                  <svg class="ic" aria-hidden="true"><use href="#i-note"></use></svg><span>Alasan desain dari Gemini</span>
                 </div>
                 <div id="designReasonText" style="line-height: 1.4; color: #e2e8f0;"></div>
               </div>
@@ -287,41 +327,52 @@
               </div>
               </details>
 
-              <!-- Live Highlight Preview Box for Tema & Gaya Kartu -->
-              <div id="themeLivePreviewWrap" class="theme-live-preview-wrap">
-                <div class="theme-live-preview-top">
-                  <div style="display: flex; align-items: center; gap: 8px;">
-                    <span class="preview-badge-pill">👁️ Pratinjau Tampilan di Video</span>
-                    <span style="font-size: 10px; color: var(--text-faint);">(Perkiraan kasar — klik <strong>Lihat Frame</strong> untuk hasil render asli)</span>
+              <!-- Pratinjau langsung: frame dirender oleh Remotion yang sama dengan render akhir -->
+              <section class="live-preview" id="livePreview" aria-label="Pratinjau langsung">
+                <header class="live-preview-head">
+                  <div class="seg-mini" id="liveMoments" role="group" aria-label="Momen yang dipratinjau">
+                    <button type="button" data-moment="hook" class="active">Hook</button>
+                    <button type="button" data-moment="subtitle">Subtitle</button>
+                    <button type="button" data-moment="demo">Demo</button>
+                    <button type="button" data-moment="spec">Spec</button>
+                    <button type="button" data-moment="cta">CTA</button>
                   </div>
-                  <span class="preview-theme-tag" id="livePreviewTag">Editorial • Unified Glass</span>
-                </div>
-                <div class="theme-mockup-stage" id="livePreviewStage">
-                  <!-- Simulated video footage background layer -->
-                  <div class="theme-mockup-bg-layer" id="livePreviewBgLayer"></div>
-                  <div class="theme-mockup-scrim-layer"></div>
+                  <div class="live-preview-actions">
+                    <label class="check-inline" title="Render ulang otomatis sesaat setelah Anda berhenti mengetik">
+                      <input type="checkbox" id="chkLiveAuto" checked>
+                      <span>Otomatis</span>
+                    </label>
+                    <button class="btn small" id="btnLiveRefresh" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> Segarkan</button>
+                  </div>
+                </header>
+                <div class="live-preview-body">
+                  <div class="live-stage" id="livePreviewStage" data-state="idle">
+                    <img id="livePreviewImg" alt="Frame pratinjau 9:16">
+                    <div class="live-status" id="livePreviewStatus" role="status">Tekan Segarkan untuk melihat frame pertama.</div>
+                  </div>
+                  <div class="live-side">
+                    <p class="live-meta num" id="livePreviewMeta">Belum dirender</p>
+                    <p class="live-note">Gambar ini dirender oleh komposisi Remotion yang sama dengan video akhir, termasuk footage, font, dan animasinya. Setiap perubahan butuh sekitar 2 detik.</p>
 
-                  <div class="theme-mockup-container" id="livePreviewContainer">
-                    <div class="theme-mockup-badge" id="livePreviewBadge">
-                      <span class="theme-mockup-dot" id="livePreviewDot"></span>
-                      <span id="livePreviewBadgeText">IBU-IBU WAJIB TAU</span>
+                    <div class="live-field" id="liveSubtitleControls" hidden>
+                      <label class="form-label" for="liveSubtitleSlider">Kata yang ditampilkan</label>
+                      <input type="range" id="liveSubtitleSlider" min="0" max="0" value="0" step="1">
+                      <p class="live-excerpt" id="liveSubtitleExcerpt"></p>
                     </div>
-                    <div class="theme-mockup-textbox" id="livePreviewTextBox">
-                      <div class="theme-mockup-line1" id="livePreviewLine1">Nyesel baru tahu sekarang...</div>
-                      <div class="theme-mockup-highlight" id="livePreviewHighlight">Lemari Bebas Apek Seharian!</div>
+
+                    <div class="live-field">
+                      <span class="form-label">Gaya subtitle</span>
+                      <div class="seg-mini" id="liveCaptionStyles" role="group" aria-label="Gaya subtitle"></div>
                     </div>
                   </div>
                 </div>
-                <div class="theme-live-preview-desc" id="livePreviewDesc">
-                  Kombinasi warna gelap dengan aksen Acid Lime neon & kartu kaca elegan. Sangat kontras dan memiliki stopping power tinggi.
-                </div>
-              </div>
+              </section>
 
               <!-- Storyboard Cards View: Satuan Adegan (Naskah & Klip Terpadu) -->
               <div class="form-group" style="margin-top: 6px;">
                 <label class="form-label">
-                  <span style="font-weight: 700; color: #fff;">🎬 Storyboard Adegan (Naskah & Klip Terpadu)</span>
-                  <span style="font-size: 11px; color: var(--text-faint);">Format waktu detik (<code>8</code>) atau mm:ss (<code>01:38</code>)</span>
+                  <span class="section-label">Storyboard</span>
+                  <span class="form-hint">Waktu dalam detik (<code>8</code>) atau mm:ss (<code>01:38</code>)</span>
                 </label>
 
                 <!-- Visual Timeline Strip Overview -->
@@ -343,7 +394,7 @@
                       <div class="storyboard-actions">
                         <span class="storyboard-dur-badge" id="clipDur_0">5.0s</span>
                         <button class="btn small btn-preview-babak" data-clip="0" type="button" title="Pratinjau frame detik 1 tanpa repot">
-                          📸 Pratinjau Babak
+                          <svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg> Pratinjau babak
                         </button>
                       </div>
                     </div>
@@ -360,37 +411,27 @@
                       </div>
                     </div>
 
+                    <!-- Bank hook: kalimat pembuka yang bisa diterapkan sekali klik -->
+                    <div class="bank" id="hookBank">
+                      <div class="bank-head">
+                        <span class="section-label">Bank hook</span>
+                        <div class="seg-mini" id="hookBankMode" role="group" aria-label="Isi yang diterapkan">
+                          <button type="button" data-mode="paket" class="active">Paket lengkap</button>
+                          <button type="button" data-mode="badge">Badge saja</button>
+                        </div>
+                      </div>
+                      <div class="bank-tabs" id="hookBankTabs" role="group" aria-label="Kategori hook"></div>
+                      <p class="bank-hint" id="hookBankHint"></p>
+                      <div class="bank-list" id="hookBankList"></div>
+                    </div>
+
                     <!-- Naskah & Copywriting Inputs -->
                     <div style="display: flex; flex-direction: column; gap: 8px;">
                       <div class="form-group">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
                           <label class="form-label" for="inputBadgeText" style="margin: 0;">Badge Utama (Babak 1)</label>
-                          <span style="font-size: 11px; color: var(--text-faint);">Klik preset atau ketik manual:</span>
                         </div>
                         <input class="input" type="text" id="inputBadgeText" placeholder="CONTOH: PROMO 11.11 HARI INI">
-                        <!-- Quick Preset Badge Chips (Kategori Formula Hook Viral TikTok) -->
-                        <div class="badge-quick-chips">
-                          <!-- Target Audiens -->
-                          <button type="button" class="badge-chip audience" data-badge="IBU-IBU WAJIB TAU" title="Formula Call-out Target Audiens">⚠️ Ibu-Ibu Wajib Tau</button>
-                          <button type="button" class="badge-chip audience" data-badge="ANAK KOS SIMPAN INI" title="Formula Call-out Target Audiens">🚨 Anak Kos Simpan Ini</button>
-                          <button type="button" class="badge-chip audience" data-badge="SPILL RACUN TIKTOK" title="Formula Creator Spill">👀 Spill Racun TikTok</button>
-
-                          <!-- Curiosity Gap / Larangan -->
-                          <button type="button" class="badge-chip curiosity" data-badge="JANGAN BELI DULU!" title="Formula Larangan (High Curiosity)">❌ Jangan Beli Dulu!</button>
-                          <button type="button" class="badge-chip curiosity" data-badge="NYESEL BARU TAHU" title="Formula FOMO / Regret">⛔ Nyesel Baru Tahu</button>
-                          <button type="button" class="badge-chip curiosity" data-badge="RAHASIA LEMARI WANGI" title="Formula Rahasia / Lifehack">🤫 Rahasia Lemari Wangi</button>
-
-                          <!-- Social Proof -->
-                          <button type="button" class="badge-chip social" data-badge="TERJUAL 50RB+ PCS" title="Formula Bukti Penjualan Masif">🔥 Terjual 50rb+ Pcs</button>
-                          <button type="button" class="badge-chip social" data-badge="RATING 4.9 DI TIKTOK" title="Formula Reputasi Bintang 5">⭐ Rating 4.9 TikTok</button>
-                          <button type="button" class="badge-chip social" data-badge="PALING BANYAK DICARI" title="Formula Rekomendasi Populer">🏆 Paling Banyak Dicari</button>
-
-                          <!-- Event Promo & Urgensi -->
-                          <button type="button" class="badge-chip event" data-badge="FLASH SALE HARI INI" title="Formula Urgensi Waktu">⚡ Flash Sale Hari Ini</button>
-                          <button type="button" class="badge-chip event" data-badge="PROMO TANGGAL KEMBAR" title="Formula Event Tanggal Kembar">🏷️ Tanggal Kembar</button>
-                          <button type="button" class="badge-chip event" data-badge="DISKON BESAR HARI INI" title="Formula Diskon">💥 Diskon Hari Ini</button>
-                          <button type="button" class="badge-chip event" data-badge="GRATIS ONGKIR XTRA" title="Formula Gratis Ongkir">🚚 Gratis Ongkir Xtra</button>
-                        </div>
                       </div>
                       <div class="form-row">
                         <div class="form-group">
@@ -421,7 +462,7 @@
                       <div class="storyboard-actions">
                         <span class="storyboard-dur-badge" id="clipDur_1">7.0s</span>
                         <button class="btn small btn-preview-babak" data-clip="1" type="button" title="Pratinjau frame Babak 2">
-                          📸 Pratinjau Babak
+                          <svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg> Pratinjau babak
                         </button>
                       </div>
                     </div>
@@ -467,7 +508,7 @@
                       <div class="storyboard-actions">
                         <span class="storyboard-dur-badge" id="clipDur_2">7.0s</span>
                         <button class="btn small btn-preview-babak" data-clip="2" type="button" title="Pratinjau frame Babak 3">
-                          📸 Pratinjau Babak
+                          <svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg> Pratinjau babak
                         </button>
                       </div>
                     </div>
@@ -513,7 +554,7 @@
                       <div class="storyboard-actions">
                         <span class="storyboard-dur-badge" id="clipDur_3">5.0s</span>
                         <button class="btn small btn-preview-babak" data-clip="3" type="button" title="Pratinjau frame Babak 4">
-                          📸 Pratinjau Babak
+                          <svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg> Pratinjau babak
                         </button>
                       </div>
                     </div>
@@ -530,22 +571,53 @@
                       </div>
                     </div>
 
+                    <!-- Pilihan CTA -->
+                    <div class="bank" id="ctaBank">
+                      <div class="bank-head">
+                        <span class="section-label">Pilihan CTA</span>
+                      </div>
+                      <div class="bank-tabs" id="ctaBankTabs" role="group" aria-label="Kategori CTA"></div>
+                      <div class="bank-list" id="ctaBankList"></div>
+                    </div>
+
                     <!-- Naskah CTA Input -->
                     <div class="form-group">
-                      <label class="form-label" for="inputCtaText">Teks CTA (Keranjang Kuning)</label>
+                      <label class="form-label" for="inputCtaText">
+                        <span>Teks CTA</span>
+                        <span class="char-counter" id="countCtaText">0/34</span>
+                      </label>
                       <input class="input" type="text" id="inputCtaText" value="Cek Promo di Keranjang Kuning">
                     </div>
                     <div class="form-row">
                       <div class="form-group">
                         <label class="form-label" for="inputCtaLabel">Label CTA (opsional)</label>
                         <input class="input" type="text" id="inputCtaLabel" placeholder="mis. PROMO 11.11 — kosongkan jika tidak ada promo">
+                        <div class="bank-chips" id="ctaLabelChips"></div>
                       </div>
                       <div class="form-group">
                         <label class="form-label" for="inputUrgencyTag">Tag Urgensi Banner (opsional)</label>
                         <input class="input" type="text" id="inputUrgencyTag" placeholder="mis. STOK TERBATAS — hanya jika benar">
                       </div>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-faint);">Isi hanya klaim yang benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
+                    <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 12px;">Isi hanya klaim yang benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
+
+                    <!-- Paket Siap Posting: Caption TikTok + Hashtag Otomatis -->
+                    <div class="form-group" style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px; margin-top: 8px;">
+                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                        <label class="form-label" for="inputTiktokCaption" style="margin: 0; font-weight: 600; color: #fff;">
+                          📱 Caption &amp; Hashtag Siap Posting TikTok
+                        </label>
+                        <div style="display: flex; gap: 6px;">
+                          <button class="btn small" id="btnAutoGenCaption" type="button" title="Rangkai otomatis dari Hook, Spesifikasi, dan CTA varian ini">
+                            ✨ Buat Otomatis
+                          </button>
+                          <button class="btn small primary" id="btnCopyTiktokCaption" type="button" title="Salin caption & hashtag ke clipboard">
+                            📋 Salin Caption
+                          </button>
+                        </div>
+                      </div>
+                      <textarea class="input" id="inputTiktokCaption" rows="3" placeholder="Caption pendek memancing komentar + 5 hashtag relevan untuk langsung di-paste saat upload TikTok..." style="resize: vertical; font-size: 12px; line-height: 1.45;"></textarea>
+                    </div>
                   </div>
                 </div>
 
@@ -609,10 +681,10 @@
                     <button class="player-size-btn" data-size="lg" type="button" title="Ukuran Besar / Bioskop (400px)">L</button>
                   </div>
                   <button class="btn small" id="btnToggleSafeArea" type="button" title="Tampilkan panduan zona aman TikTok (ikon Like, komen, keranjang kuning)">
-                    👁️ Safe Area TikTok
+                    <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Safe area TikTok
                   </button>
                   <button class="btn small" id="btnUploadToGDrive" type="button" style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);" title="Unggah video ini langsung ke Google Drive secara otomatis">
-                    <span>⚡</span> Upload ke Drive
+                    <svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg> Upload ke Drive
                   </button>
                   <a class="btn small" id="btnOpenExternal" href="#" target="_blank" style="display: none;">
                     Buka Tab
@@ -651,11 +723,11 @@
 
                 <div id="gdriveUploadSuccessActions" style="display: none; margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
                   <span style="font-size: 11px; color: #34d399; display: flex; align-items: center; gap: 4px;">
-                    <span>✓</span> Tersimpan di Google Drive
+                    <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg> Tersimpan di Google Drive
                   </span>
                   <div style="display: flex; gap: 6px;">
                     <a id="btnGdriveViewUploaded" class="btn small primary" href="#" target="_blank" style="font-size: 11px; padding: 0 10px; height: 26px;">
-                      🔗 Buka Video
+                      <svg class="ic" aria-hidden="true"><use href="#i-link"></use></svg> Buka video
                     </a>
                     <button id="btnGdriveDismissProgress" class="btn small" type="button" style="font-size: 11px; padding: 0 8px; height: 26px;">
                       Tutup
@@ -669,7 +741,7 @@
                   <video id="videoPreview" controls playsinline loop></video>
                   <img id="playerStillImage" style="display: none; width: 100%; height: 100%; object-fit: contain; background: #000;" alt="Pratinjau Frame">
                   <button class="btn small" id="btnExitStillView" style="display: none; position: absolute; top: 12px; left: 12px; z-index: 25; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.25); font-size: 11px; height: 24px; padding: 0 8px;">
-                    ✕ Putar Video
+                    <svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg> Putar video
                   </button>
                   <div class="player-empty" id="playerEmptyMsg">Pilih video dari daftar atau klik Pratinjau Babak</div>
 
@@ -698,41 +770,41 @@
                     <div class="tt-right-actions">
                       <div class="tt-action-item">
                         <div class="tt-avatar-box">
-                          👤
+                          <svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg>
                           <div class="tt-plus-badge">+</div>
                         </div>
                       </div>
                       <div class="tt-action-item">
-                        <span class="tt-action-icon">❤️</span>
+                        <span class="tt-action-icon"><svg class="ic" aria-hidden="true"><use href="#i-heart"></use></svg></span>
                         <span class="tt-action-count">42.8K</span>
                       </div>
                       <div class="tt-action-item">
-                        <span class="tt-action-icon">💬</span>
+                        <span class="tt-action-icon"><svg class="ic" aria-hidden="true"><use href="#i-message"></use></svg></span>
                         <span class="tt-action-count">824</span>
                       </div>
                       <div class="tt-action-item">
-                        <span class="tt-action-icon">🔖</span>
+                        <span class="tt-action-icon"><svg class="ic" aria-hidden="true"><use href="#i-bookmark"></use></svg></span>
                         <span class="tt-action-count">5,190</span>
                       </div>
                       <div class="tt-action-item">
-                        <span class="tt-action-icon">↗️</span>
+                        <span class="tt-action-icon"><svg class="ic" aria-hidden="true"><use href="#i-share"></use></svg></span>
                         <span class="tt-action-count">1.4K</span>
                       </div>
                       <div class="tt-action-item">
-                        <div class="tt-disc-rotate">💿</div>
+                        <div class="tt-disc-rotate"><svg class="ic" aria-hidden="true"><use href="#i-music"></use></svg></div>
                       </div>
                     </div>
 
                     <!-- Bottom Area: Yellow Cart & Caption -->
                     <div class="tt-bottom-area">
                       <div class="tt-yellow-cart">
-                        <span>🛍️</span>
+                        <span><svg class="ic" aria-hidden="true"><use href="#i-bag"></use></svg></span>
                         <span>Cek Promo Keranjang Kuning</span>
                       </div>
-                      <div class="tt-username">@affiliate_creator ✓</div>
+                      <div class="tt-username">@affiliate_creator</div>
                       <div class="tt-caption">Racun produk viral wajib punya hari ini! #tiktokaffiliate #fyp</div>
                       <div class="tt-sound">
-                        <span>♫</span>
+                        <span><svg class="ic" aria-hidden="true"><use href="#i-music"></use></svg></span>
                         <span>Suara Asli - Creator Studio</span>
                       </div>
                     </div>
@@ -742,7 +814,7 @@
                 <!-- Player Controls Bar: Loop & Speed Selector -->
                 <div class="player-tools-bar">
                   <button class="btn small player-tool-btn active" id="btnToggleLoop" type="button" title="Aktifkan/nonaktifkan looping video otomatis">
-                    <span>🔁</span> Loop Aktif
+                    <svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Loop aktif
                   </button>
                   <div class="speed-selector-group">
                     <span class="speed-label">Speed:</span>
@@ -762,12 +834,18 @@
               <div class="panel-header">
                 <div>
                   <h2 class="panel-title">Unggah Media Langsung</h2>
-                  <p class="panel-sub">Tarik & lepas file ke folder <code>public/</code></p>
+                  <p class="panel-sub" id="uploadSubText">Tarik &amp; lepas file ke workspace produk (<code>public/products/&lt;id&gt;/</code>)</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                    <input type="checkbox" id="chkUploadToProductFolder" checked>
+                    <span>Simpan ke folder produk ini</span>
+                  </label>
                 </div>
               </div>
 
               <div class="dropzone" id="fileDropzone">
-                <div class="dropzone-icon">📁</div>
+                <div class="dropzone-icon"><svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg></div>
                 <div class="dropzone-title">Klik untuk pilih file atau seret file ke sini</div>
                 <div class="dropzone-sub">Mendukung video MP4/MOV dan audio MP3/WAV</div>
                 <input type="file" id="fileUploadInput" accept="video/mp4,video/quicktime,audio/mpeg,audio/wav"
@@ -792,8 +870,8 @@
               <p class="panel-sub">Perbaiki salah dengar, sesuaikan timing, atau satukan kata yang terpotong (misal "kera" + "njang" → "keranjang").</p>
             </div>
             <div style="display: flex; gap: 8px;">
-              <button class="btn small" id="btnTranscribeCurrentVO">⚡ Auto-Transkrip VO Aktif</button>
-              <button class="btn small primary" id="btnSaveSubtitles">💾 Simpan Perubahan Subtitle</button>
+              <button class="btn small" id="btnTranscribeCurrentVO"><svg class="ic" aria-hidden="true"><use href="#i-wand"></use></svg> Transkrip otomatis</button>
+              <button class="btn small primary" id="btnSaveSubtitles"><svg class="ic" aria-hidden="true"><use href="#i-save"></use></svg> Simpan perubahan</button>
             </div>
           </div>
 
@@ -817,15 +895,15 @@
           <div style="background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 14px; display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <label class="form-label" for="inputReferenceScript" style="font-weight: 600; color: #fff; margin: 0;">
-                <span>✨ Naskah Narasi Acuan (Script Gemini / Ground-Truth)</span>
+                <span>Naskah narasi acuan (dari Gemini)</span>
                 <span class="pill emerald">Anti-Salah Dengar Whisper</span>
               </label>
               <div style="display: flex; gap: 8px;">
                 <button class="btn small" id="btnClearReferenceScript" type="button" title="Kosongkan naskah acuan">
-                  🗑️ Kosongkan
+                  <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Kosongkan
                 </button>
                 <button class="btn small primary" id="btnAutoCorrectSubtitles">
-                  ✨ Auto-Correct Subtitle via Naskah
+                  <svg class="ic" aria-hidden="true"><use href="#i-wand"></use></svg> Auto-correct dari naskah
                 </button>
               </div>
             </div>
@@ -835,9 +913,9 @@
 
           <!-- Helpful Instruction Banner -->
           <div class="feedback-banner warn">
-            <strong>💡 Fitur Koreksi Subtitle:</strong>
+            <strong>Cara koreksi:</strong>
             Klik timestamp <strong>Mulai / Selesai</strong> untuk mendengarkan audio pada detik tersebut.
-            Gunakan tombol <strong>[🔗 Gabung Bawah]</strong> untuk menyatukan kata yang terpotong oleh Whisper AI ke kata berikutnya.
+            Gunakan tombol <strong>Gabung ke bawah</strong> untuk menyatukan kata yang terpotong oleh Whisper AI ke kata berikutnya.
           </div>
 
           <!-- High-Density Subtitle Table -->
@@ -889,7 +967,7 @@
                 Buka Folder public/
               </button>
               <button class="btn small primary" id="btnRefreshPublicBrowser" type="button">
-                🔄 Segarkan
+                <svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> Segarkan
               </button>
             </div>
           </div>
@@ -916,11 +994,11 @@
 
             <div id="gdriveGalleryUploadSuccessActions" style="display: none; margin-top: 8px; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 8px;">
               <span style="font-size: 11px; color: #34d399; display: flex; align-items: center; gap: 4px;">
-                <span>✓</span> Tersimpan di Google Drive
+                <svg class="ic" aria-hidden="true"><use href="#i-check"></use></svg> Tersimpan di Google Drive
               </span>
               <div style="display: flex; gap: 6px;">
                 <a id="btnGdriveGalleryViewUploaded" class="btn small primary" href="#" target="_blank" style="font-size: 11px; padding: 0 10px; height: 26px;">
-                  🔗 Buka Video di Drive
+                  <svg class="ic" aria-hidden="true"><use href="#i-link"></use></svg> Buka video di Drive
                 </a>
                 <button id="btnGdriveGalleryDismissProgress" class="btn small" type="button" style="font-size: 11px; padding: 0 8px; height: 26px;">
                   Tutup
@@ -932,16 +1010,16 @@
           <!-- Segmented Filter View Switcher -->
           <div style="display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px; flex-wrap: wrap;">
             <button class="btn small primary public-view-filter active" data-view="videos">
-              🎬 Video Hasil Render (<span id="countPublicVideos">0</span>)
+              Video hasil render (<span id="countPublicVideos">0</span>)
             </button>
             <button class="btn small public-view-filter" data-view="previews">
-              📸 Pratinjau Frame (<span id="countPublicPreviews">0</span>)
+              Pratinjau frame (<span id="countPublicPreviews">0</span>)
             </button>
             <button class="btn small public-view-filter" data-view="media">
-              📦 Berkas Media Produk (<span id="countPublicMedia">0</span>)
+              Berkas media (<span id="countPublicMedia">0</span>)
             </button>
             <button class="btn small public-view-filter" data-view="sfx">
-              🔊 Efek Suara SFX (<span id="countPublicSfx">0</span>)
+              Efek suara (<span id="countPublicSfx">0</span>)
             </button>
           </div>
 
@@ -952,7 +1030,7 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
             <input type="text" class="input" id="inputPublicSearch" placeholder="Cari cepat video, frame, rekaman suara, atau SFX...">
-            <button id="btnClearPublicSearch" class="public-search-clear" type="button" title="Bersihkan pencarian" style="display: none;">✕</button>
+            <button id="btnClearPublicSearch" class="public-search-clear" type="button" title="Bersihkan pencarian" style="display: none;"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
           </div>
 
           <!-- Sub-view 1: Video Render (out/) Table (Default Active) -->
@@ -1032,7 +1110,7 @@
     <div class="modal-dialog large">
       <div class="modal-header">
         <h3>Import Copywriting & Klip dari Prompt Gemini</h3>
-        <button class="btn small icon-only modal-close-btn" id="btnCloseImportModal" type="button" title="Tutup Modal">✕</button>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseImportModal" type="button" title="Tutup" aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
       </div>
       <div class="modal-body">
         <p style="font-size: 13px; color: var(--text-muted); line-height: 19px;">
@@ -1066,9 +1144,9 @@
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <h3>Pratinjau Frame Video (Still Frame)</h3>
-          <span class="pill emerald" id="stillModalStatusPill">● Siap</span>
+          <span class="pill emerald status-dot" id="stillModalStatusPill">Siap</span>
         </div>
-        <button class="btn small icon-only modal-close-btn" id="btnCloseStillModal" type="button" title="Tutup Modal">✕</button>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseStillModal" type="button" title="Tutup" aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
       </div>
       <div class="modal-body" style="align-items: center; text-align: center;">
         <!-- Control Bar -->
@@ -1081,7 +1159,7 @@
             <option value="1440">Detik 24 (CTA Glow)</option>
           </select>
           <button class="btn small primary" id="btnRefreshStill">
-            <span id="btnRefreshStillIcon">📸</span>
+            <span id="btnRefreshStillIcon"><svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg></span>
             <span id="btnRefreshStillText">Render Frame</span>
           </button>
         </div>
@@ -1098,7 +1176,7 @@
 
           <!-- Progress Bar Fill -->
           <div class="progress-bar-bg" style="height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.06); overflow: hidden; margin-bottom: 6px;">
-            <div id="stillProgressBarFill" style="height: 100%; width: 15%; background: linear-gradient(90deg, var(--accent-rose), var(--accent-gold)); transition: width 250ms ease;"></div>
+            <div id="stillProgressBarFill" style="height: 100%; width: 15%; background: var(--signal); transition: width 250ms ease;"></div>
           </div>
 
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint);">
@@ -1173,18 +1251,18 @@
             <p class="panel-sub" style="margin: 0; font-size: 11px;">Kirim video hasil render langsung ke Google Drive dengan 1-klik</p>
           </div>
         </div>
-        <button class="btn small icon-only modal-close-btn" id="btnCloseGDriveModal" type="button" title="Tutup Modal">✕</button>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseGDriveModal" type="button" title="Tutup" aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
       </div>
 
       <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
         <!-- Status Box -->
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-control); padding: 12px; font-size: 12px; line-height: 1.5; color: #cbd5e1;">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <strong style="color: #6ee7b7;">⚡ Status Fitur Upload Otomatis (Solusi 2):</strong>
-            <span class="pill emerald" id="pillGDriveStatus">● Terhubung</span>
+            <strong>Upload otomatis ke Google Drive</strong>
+            <span class="pill emerald status-dot" id="pillGDriveStatus">Terhubung</span>
           </div>
           <p style="margin: 0; color: #cbd5e1;">
-            Video dapat langsung diunggah secara otomatis ke folder Google Drive Anda melalui tombol <strong>⚡ Upload ke Drive</strong> tanpa repot drag & drop!
+            Video dapat langsung diunggah secara otomatis ke folder Google Drive Anda melalui tombol <strong>Upload ke Drive</strong> tanpa repot drag & drop!
           </p>
         </div>
 
@@ -1216,7 +1294,7 @@
 
       <div class="modal-footer" style="justify-content: space-between;">
         <button class="btn small" id="btnTestGDriveLink" type="button" title="Buka tautan folder ini di tab browser baru untuk memastikan URL benar">
-          🔗 Buka Folder Drive
+          <svg class="ic" aria-hidden="true"><use href="#i-link"></use></svg> Buka folder Drive
         </button>
         <div style="display: flex; gap: 8px;">
           <button class="btn small" id="btnCloseGDriveModal2" type="button">Tutup</button>
@@ -1241,7 +1319,7 @@
             <p class="panel-sub" style="margin: 0; font-size: 11px;">Pilih variasi video yang ingin diproduksi</p>
           </div>
         </div>
-        <button class="btn small icon-only modal-close-btn" id="btnCloseRenderConfirmModal" type="button" title="Tutup Modal">✕</button>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseRenderConfirmModal" type="button" title="Tutup" aria-label="Tutup"><svg class="ic" aria-hidden="true"><use href="#i-x"></use></svg></button>
       </div>
 
       <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
@@ -1342,8 +1420,67 @@
       <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle); padding: 12px 18px;">
         <button class="btn small" id="btnCancelRenderConfirm" type="button">Batal</button>
         <button class="btn small primary" id="btnExecuteRenderConfirm" type="button" style="background: var(--accent-rose); border-color: var(--accent-rose); font-weight: 600; padding: 0 16px; height: 32px;">
-          ▷ Mulai Render
+          <svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg> Mulai render
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Antrean Render Multi-Produk (Batch Render Queue) -->
+  <div class="modal-backdrop" id="modalBatchRender" style="display: none; z-index: 260;">
+    <div class="modal-box" style="max-width: 560px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <span>📚 Antrean Render Multi-Produk (Batch Queue)</span>
+          </h3>
+          <p class="panel-sub" style="margin-top: 2px;">Pilih produk yang ingin dirender berurutan secara otomatis</p>
+        </div>
+        <button class="btn small" id="btnCloseBatchModal" type="button">✕</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; color: var(--text-muted);">Daftar Produk di <code>products/</code>:</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn small" id="btnBatchSelectAll" type="button" style="font-size: 11px; height: 24px;">Pilih Semua</button>
+            <button class="btn small" id="btnBatchSelectNone" type="button" style="font-size: 11px; height: 24px;">Kosongkan</button>
+          </div>
+        </div>
+
+        <div id="batchProductList" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 8px; display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.2);">
+          <!-- Diisi dinamis oleh app.js -->
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="selectBatchVariants">Varian yang Dirender</label>
+            <select class="input" id="selectBatchVariants">
+              <option value="both">Semua Variasi (V1 + V2)</option>
+              <option value="v1">Hanya Variasi 1 (V1)</option>
+              <option value="v2">Hanya Variasi 2 (V2)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="selectBatchFps">Frame Rate (FPS)</label>
+            <select class="input" id="selectBatchFps">
+              <option value="60">60 FPS (Cinema)</option>
+              <option value="30">30 FPS (Fast Mode)</option>
+            </select>
+          </div>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #e2e8f0; cursor: pointer; padding: 8px 10px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px;">
+          <input type="checkbox" id="chkBatchUploadGdrive">
+          <span>☁️ Otomatis unggah setiap video ke Google Drive setelah selesai dirender</span>
+        </label>
+
+        <div id="batchQueueStatus" class="feedback-banner info" style="display: none; font-size: 12px;"></div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-subtle); padding: 12px 18px;">
+        <button class="btn small" id="btnCancelBatchModal" type="button">Tutup</button>
+        <button class="btn small primary" id="btnStartBatchRender" type="button">🚀 Mulai Render Antrean</button>
       </div>
     </div>
   </div>

@@ -4,6 +4,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { exec, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,7 @@ import {
   listProducts,
   loadProduct,
   saveProduct,
+  deleteProduct,
   validateProduct,
   getVideoDurationSec,
 } from './scripts/product-helper.mjs';
@@ -22,11 +24,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const config = loadConfig();
+
+// Pratinjau langsung: antrean render satu-per-satu + cache hasil (maks 24 frame terakhir).
+const LIVE_CACHE_MAX = 24;
+const liveCache = new Map();
+let liveChain = Promise.resolve();
 const PORT = parseInt(process.env.PORT || config.webPort || '3100', 10);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 function syncBundlePublic() {
   getOrBuildBundle().then(b => syncPublicToBundle(b)).catch(() => {});
+}
+
+function resolvePublicFilePath(rel) {
+  const normalized = path.normalize(String(rel || '')).replace(/^(\.\.[\/\\])+/, '');
+  let targetPath = path.resolve(PUBLIC_DIR, normalized);
+  if (!targetPath.startsWith(PUBLIC_DIR)) {
+    throw new Error('Akses di luar folder public ditolak');
+  }
+  if (!fs.existsSync(targetPath)) {
+    const fallback = path.resolve(PUBLIC_DIR, path.basename(normalized));
+    if (fallback.startsWith(PUBLIC_DIR) && fs.existsSync(fallback)) {
+      targetPath = fallback;
+    }
+  }
+  return targetPath;
 }
 const OUT_DIR = path.join(__dirname, 'out');
 const WEB_DIR = path.join(__dirname, 'web');
@@ -227,6 +249,11 @@ const server = http.createServer(async (req, res) => {
       try {
         const productData = JSON.parse(body);
         const saved = saveProduct(id, productData);
+        // Pastikan folder aset khusus produk di public/products/<id> juga tersedia
+        const productDir = path.join(PUBLIC_DIR, 'products', saved.id);
+        if (!fs.existsSync(productDir)) {
+          fs.mkdirSync(productDir, { recursive: true });
+        }
         appendLog(`[PRODUK] Berhasil menyimpan produk '${productData.name || id}' (${saved.filePath})`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, id: saved.id }));
@@ -235,6 +262,21 @@ const server = http.createServer(async (req, res) => {
         res.end(JSON.stringify({ error: err.message }));
       }
     });
+    return;
+  }
+
+  if (pathname.startsWith('/api/products/') && req.method === 'DELETE') {
+    const id = pathname.replace('/api/products/', '');
+    const deleteAssets = urlObj.searchParams.get('deleteAssets') === 'true';
+    try {
+      const result = deleteProduct(id, deleteAssets);
+      appendLog(`[PRODUK] Berhasil menghapus produk '${id}' (hapus aset: ${deleteAssets ? 'Ya' : 'Tidak'})`);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(result));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
     return;
   }
 
@@ -265,42 +307,71 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 6. API: Get Available Assets in public/
+  // 6. API: Get Available Assets in public/ (Mendukung filter productId)
   if (pathname === '/api/assets' && req.method === 'GET') {
     try {
-      const files = fs.existsSync(PUBLIC_DIR) ? fs.readdirSync(PUBLIC_DIR) : [];
+      const productId = urlObj.searchParams.get('productId') || '';
+      const safeProductId = productId.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+
       const voiceOvers = [];
       const videos = [];
       const transcripts = [];
 
-      for (const f of files) {
-        const ext = path.extname(f).toLowerCase();
-        if (ext === '.mp3' || ext === '.wav') {
-          const jsonName = f.replace(/\.[^/.]+$/, '.json');
-          const jsonPath = path.join(PUBLIC_DIR, jsonName);
-          let wordsCount = 0;
-          if (fs.existsSync(jsonPath)) {
-            try {
-              const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-              if (Array.isArray(data)) wordsCount = data.length;
-            } catch {}
+      // Helper untuk scan folder dan mengisi daftar aset
+      const scanDir = (dirPath, relPrefix = '', scopeLabel = '') => {
+        if (!fs.existsSync(dirPath)) return;
+        const entries = fs.readdirSync(dirPath);
+        for (const f of entries) {
+          const fullPath = path.join(dirPath, f);
+          const stat = fs.statSync(fullPath);
+          if (stat.isDirectory()) continue;
+
+          const relName = relPrefix ? `${relPrefix}/${f}` : f;
+          const ext = path.extname(f).toLowerCase();
+
+          if (ext === '.mp3' || ext === '.wav') {
+            const jsonName = relName.replace(/\.[^/.]+$/, '.json');
+            const jsonPath = path.join(PUBLIC_DIR, jsonName);
+            let wordsCount = 0;
+            if (fs.existsSync(jsonPath)) {
+              try {
+                const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+                if (Array.isArray(data)) wordsCount = data.length;
+              } catch {}
+            }
+            voiceOvers.push({
+              name: relName,
+              displayName: scopeLabel ? `[${scopeLabel}] ${f}` : f,
+              scope: scopeLabel || 'global',
+              wordsCount,
+              hasTranscript: fs.existsSync(jsonPath),
+            });
+          } else if (ext === '.mp4' || ext === '.mov') {
+            const dur = getVideoDurationSec(relName);
+            videos.push({
+              name: relName,
+              displayName: scopeLabel ? `[${scopeLabel}] ${f}` : f,
+              scope: scopeLabel || 'global',
+              durationSec: dur ? Math.round(dur * 10) / 10 : null,
+            });
+          } else if (ext === '.json') {
+            transcripts.push({
+              name: relName,
+              displayName: scopeLabel ? `[${scopeLabel}] ${f}` : f,
+              scope: scopeLabel || 'global',
+            });
           }
-          voiceOvers.push({
-            name: f,
-            displayName: f,
-            wordsCount,
-            hasTranscript: fs.existsSync(jsonPath),
-          });
-        } else if (ext === '.mp4' || ext === '.mov') {
-          const dur = getVideoDurationSec(f);
-          videos.push({
-            name: f,
-            durationSec: dur ? Math.round(dur * 10) / 10 : null,
-          });
-        } else if (ext === '.json') {
-          transcripts.push({ name: f });
         }
+      };
+
+      // 1. Scan folder khusus produk jika productId diberikan
+      if (safeProductId) {
+        const productDir = path.join(PUBLIC_DIR, 'products', safeProductId);
+        scanDir(productDir, `products/${safeProductId}`, 'Produk');
       }
+
+      // 2. Scan root public/ (aset umum / legacy)
+      scanDir(PUBLIC_DIR, '', safeProductId ? 'Umum' : '');
 
       // Scan BGM files (in public/ or public/bgm/)
       const bgms = [];
@@ -316,7 +387,7 @@ const server = http.createServer(async (req, res) => {
       }
       for (const vo of voiceOvers) {
         if (/bgm|music|backsound|soundtrack|instrumental/i.test(vo.name)) {
-          bgms.push({ name: vo.name, displayName: vo.name });
+          bgms.push({ name: vo.name, displayName: vo.displayName || vo.name });
         }
       }
 
@@ -329,23 +400,37 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 7. API: Upload File Directly to public/ (Streaming)
+  // 7. API: Upload File (Mendukung upload ke folder produk: public/products/<productId>/)
   if (pathname === '/api/upload' && req.method === 'POST') {
     const rawFilename = urlObj.searchParams.get('filename') || 'upload.mp4';
+    const productId = urlObj.searchParams.get('productId') || '';
     const safeFilename = path.basename(rawFilename).replace(/[^\w.-]/g, '_');
-    const targetPath = path.join(PUBLIC_DIR, safeFilename);
 
-    appendLog(`[UPLOAD] Menerima unggahan file: public/${safeFilename}...`);
+    let targetDir = PUBLIC_DIR;
+    let relPath = safeFilename;
+
+    if (productId) {
+      const safeProductId = productId.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      targetDir = path.join(PUBLIC_DIR, 'products', safeProductId);
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+      relPath = `products/${safeProductId}/${safeFilename}`;
+    }
+
+    const targetPath = path.join(targetDir, safeFilename);
+
+    appendLog(`[UPLOAD] Menerima unggahan file: public/${relPath}...`);
     const writeStream = fs.createWriteStream(targetPath);
 
     req.pipe(writeStream);
     writeStream.on('finish', () => {
       const stat = fs.statSync(targetPath);
       const sizeMB = (stat.size / (1024 * 1024)).toFixed(1);
-      appendLog(`[UPLOAD] File tersimpan: public/${safeFilename} (${sizeMB} MB)`);
+      appendLog(`[UPLOAD] File tersimpan: public/${relPath} (${sizeMB} MB)`);
       syncBundlePublic();
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: true, filename: safeFilename, sizeMB }));
+      res.end(JSON.stringify({ success: true, filename: relPath, sizeMB }));
     });
     writeStream.on('error', (err) => {
       appendLog(`[ERROR] Gagal menyimpan unggahan: ${err.message}`);
@@ -368,14 +453,20 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const inputPath = path.join(PUBLIC_DIR, path.basename(filename));
+        // Cari file secara path relatif langsung atau di root public/
+        let inputPath = path.join(PUBLIC_DIR, filename);
+        let relFilename = filename;
+        if (!fs.existsSync(inputPath)) {
+          inputPath = path.join(PUBLIC_DIR, path.basename(filename));
+          relFilename = path.basename(filename);
+        }
         if (!fs.existsSync(inputPath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `File public/${filename} tidak ditemukan` }));
           return;
         }
 
-        appendLog(`[WHISPER] Memulai auto-transcribe: public/${filename}...`);
+        appendLog(`[WHISPER] Memulai auto-transcribe: public/${relFilename}...`);
         const whisperModel = model || 'small';
         const child = spawn('node', ['scripts/transcribe.mjs', inputPath, '--model', whisperModel, '--force'], {
           cwd: __dirname,
@@ -397,8 +488,8 @@ const server = http.createServer(async (req, res) => {
         });
 
         child.on('close', code => {
-          const jsonFile = filename.replace(/\.[^/.]+$/, '.json');
-          const jsonPath = path.join(PUBLIC_DIR, jsonFile);
+          const jsonFile = relFilename.replace(/\.[^/.]+$/, '.json');
+          const jsonPath = path.join(path.dirname(inputPath), path.basename(jsonFile));
           let wordsCount = 0;
           if (fs.existsSync(jsonPath)) {
             try {
@@ -406,11 +497,83 @@ const server = http.createServer(async (req, res) => {
             } catch {}
           }
           appendLog(`[WHISPER] Transkripsi selesai (code ${code}). Kata tersinkron: ${wordsCount}`);
-          broadcast('transcribe-done', { filename, jsonFile, wordsCount });
+          broadcast('transcribe-done', { filename: relFilename, jsonFile, wordsCount });
         });
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Transkripsi dimulai di latar belakang' }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 8b. API: Auto-Cut Jeda Napas (Silence Remover via FFmpeg)
+  if (pathname === '/api/trim-silence' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { filename } = JSON.parse(body);
+        if (!filename) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Parameter filename wajib diisi' }));
+          return;
+        }
+
+        let inputPath = path.join(PUBLIC_DIR, filename);
+        let relFilename = filename;
+        if (!fs.existsSync(inputPath)) {
+          inputPath = path.join(PUBLIC_DIR, path.basename(filename));
+          relFilename = path.basename(filename);
+        }
+        if (!fs.existsSync(inputPath)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `File public/${filename} tidak ditemukan` }));
+          return;
+        }
+
+        const oldDuration = getVideoDurationSec(relFilename) || 0;
+        const ext = path.extname(inputPath) || '.mp3';
+        const tempPath = path.join(path.dirname(inputPath), `_trim_${Date.now()}${ext}`);
+
+        appendLog(`[AUDIO-TRIM] Memotong jeda napas pada public/${relFilename} (durasi awal: ${oldDuration.toFixed(1)}s)...`);
+
+        const afFilter = 'silenceremove=start_periods=1:start_silence=0.05:start_threshold=-40dB,silenceremove=stop_periods=-1:stop_duration=0.22:stop_threshold=-40dB';
+        const child = spawn('ffmpeg', ['-y', '-i', inputPath, '-af', afFilter, tempPath], {
+          cwd: __dirname,
+          windowsHide: true,
+        });
+
+        let errLog = '';
+        child.stderr.on('data', d => { errLog += d.toString(); });
+
+        child.on('close', code => {
+          if (code !== 0 || !fs.existsSync(tempPath)) {
+            try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
+            appendLog(`[ERROR] Gagal memotong jeda napas: code ${code}`);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `FFmpeg gagal (code ${code}): ${errLog.slice(-200)}` }));
+            return;
+          }
+
+          fs.renameSync(tempPath, inputPath);
+          syncBundlePublic();
+          const newDuration = getVideoDurationSec(relFilename) || oldDuration;
+          const savedSec = Math.max(0, Math.round((oldDuration - newDuration) * 100) / 100);
+
+          appendLog(`[AUDIO-TRIM] Selesai! Durasi: ${oldDuration.toFixed(1)}s → ${newDuration.toFixed(1)}s (hemat ${savedSec}s)`);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            filename: relFilename,
+            oldDuration: Math.round(oldDuration * 10) / 10,
+            newDuration: Math.round(newDuration * 10) / 10,
+            savedSec,
+          }));
+        });
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
@@ -529,44 +692,39 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/public-files' && req.method === 'GET') {
     try {
       if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR, { recursive: true });
-      const files = fs.readdirSync(PUBLIC_DIR);
       const fileList = [];
 
-      for (const f of files) {
-        const fullPath = path.join(PUBLIC_DIR, f);
-        const stat = fs.statSync(fullPath);
-        if (stat.isDirectory()) {
-          // Check inside subdir (like sfx or bgm)
-          try {
-            const subFiles = fs.readdirSync(fullPath);
-            for (const sf of subFiles) {
-              const subStat = fs.statSync(path.join(fullPath, sf));
-              fileList.push({
-                name: `${f}/${sf}`,
-                category: f === 'sfx' ? 'SFX Audio' : 'BGM Music',
-                size: subStat.size,
-                mtime: subStat.mtimeMs,
-                url: `/public/${f}/${encodeURIComponent(sf)}`,
-              });
-            }
-          } catch {}
-          continue;
+      const walkDir = (dir, prefix = '') => {
+        const entries = fs.readdirSync(dir);
+        for (const f of entries) {
+          const fullPath = path.join(dir, f);
+          const stat = fs.statSync(fullPath);
+          const relPath = prefix ? `${prefix}/${f}` : f;
+          if (stat.isDirectory()) {
+            walkDir(fullPath, relPath);
+            continue;
+          }
+
+          const ext = path.extname(f).toLowerCase();
+          let category = 'Dokumen Lain';
+          if (prefix === 'sfx') category = 'SFX Audio';
+          else if (prefix === 'bgm') category = 'BGM Music';
+          else if (prefix.startsWith('products/')) category = 'Aset Produk';
+          else if (ext === '.mp4' || ext === '.mov') category = 'Video Mentah';
+          else if (ext === '.mp3' || ext === '.wav') category = 'Audio Voiceover';
+          else if (ext === '.json') category = 'Transkrip Subtitle';
+
+          fileList.push({
+            name: relPath,
+            category,
+            size: stat.size,
+            mtime: stat.mtimeMs,
+            url: `/public/${encodeURI(relPath)}`,
+          });
         }
+      };
 
-        const ext = path.extname(f).toLowerCase();
-        let category = 'Dokumen Lain';
-        if (ext === '.mp4' || ext === '.mov') category = 'Video Mentah';
-        else if (ext === '.mp3' || ext === '.wav') category = 'Audio Voiceover';
-        else if (ext === '.json') category = 'Transkrip Subtitle';
-
-        fileList.push({
-          name: f,
-          category,
-          size: stat.size,
-          mtime: stat.mtimeMs,
-          url: `/public/${encodeURIComponent(f)}`,
-        });
-      }
+      walkDir(PUBLIC_DIR);
 
       fileList.sort((a, b) => b.mtime - a.mtime);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1117,7 +1275,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+    const filePath = resolvePublicFilePath(filename);
     if (!fs.existsSync(filePath)) {
       res.writeHead(404, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: `File ${filename} tidak ditemukan` }));
@@ -1149,7 +1307,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+        const filePath = resolvePublicFilePath(filename);
         fs.writeFileSync(filePath, JSON.stringify(words, null, 2), 'utf8');
         appendLog(`[TRANSKRIPSI] Menyimpan ${words.length} kata ke public/${filename}`);
         syncBundlePublic();
@@ -1171,7 +1329,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const { filename, index } = JSON.parse(body);
-        const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+        const filePath = resolvePublicFilePath(filename);
         if (!fs.existsSync(filePath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `File ${filename} tidak ditemukan` }));
@@ -1216,7 +1374,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const { filename, index, part1, part2 } = JSON.parse(body);
-        const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+        const filePath = resolvePublicFilePath(filename);
         const words = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const idx = parseInt(index, 10);
         if (idx < 0 || idx >= words.length) {
@@ -1263,7 +1421,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const { filename, index } = JSON.parse(body);
-        const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+        const filePath = resolvePublicFilePath(filename);
         const words = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const idx = parseInt(index, 10);
         if (idx < 0 || idx >= words.length) {
@@ -1300,7 +1458,7 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const filePath = path.join(PUBLIC_DIR, path.basename(filename));
+        const filePath = resolvePublicFilePath(filename);
         if (!fs.existsSync(filePath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `File ${filename} tidak ditemukan` }));
@@ -1397,6 +1555,84 @@ const server = http.createServer(async (req, res) => {
         });
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 12b. API: Pratinjau Langsung (renderStill, diantrekan + di-cache)
+  // Dipakai panel "Pratinjau Langsung" di Web Studio. Gambar yang dikembalikan dirender oleh
+  // komposisi Remotion yang sama dengan render akhir, jadi tampilannya identik dengan video.
+  if (pathname === '/api/preview-live' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      const sendJson = (code, obj) => {
+        res.writeHead(code, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(obj));
+      };
+      try {
+        if (renderState.isRendering) {
+          return sendJson(409, { error: 'Render video sedang berjalan. Pratinjau dilanjutkan setelah render selesai.' });
+        }
+        const { productData, variantKey, frame } = JSON.parse(body);
+        if (!productData) return sendJson(400, { error: 'productData wajib diisi.' });
+        const targetFrame = Math.max(0, parseInt(frame, 10) || 0);
+        const targetVariant = variantKey || 'v1';
+
+        // Kunci cache menyertakan waktu ubah file JSON transkrip di public/, sehingga hasil lama
+        // otomatis tidak dipakai setelah subtitle dikoreksi.
+        let transcriptStamp = 0;
+        try {
+          const checkStamp = (dir) => {
+            if (!fs.existsSync(dir)) return;
+            for (const f of fs.readdirSync(dir)) {
+              const fp = path.join(dir, f);
+              const st = fs.statSync(fp);
+              if (st.isDirectory()) {
+                checkStamp(fp);
+              } else if (f.toLowerCase().endsWith('.json')) {
+                transcriptStamp = Math.max(transcriptStamp, st.mtimeMs);
+              }
+            }
+          };
+          checkStamp(PUBLIC_DIR);
+        } catch (_) {}
+
+        const key = crypto
+          .createHash('sha1')
+          .update(JSON.stringify({ productData, targetVariant, targetFrame, transcriptStamp }))
+          .digest('hex');
+
+        if (liveCache.has(key)) {
+          return sendJson(200, { success: true, cached: true, previewUrl: liveCache.get(key) });
+        }
+
+        // Antrean berurutan: Chromium hanya merender satu frame pada satu waktu.
+        const job = liveChain.then(async () => {
+          const result = await renderProductStill({
+            productOrId: productData,
+            variantKey: targetVariant,
+            frame: targetFrame,
+            onLog: () => {},
+            onProgress: () => {},
+          });
+          if (!result.previewPath || !fs.existsSync(result.previewPath)) {
+            throw new Error('Frame pratinjau tidak ditemukan setelah render.');
+          }
+          const dataUrl = `data:image/png;base64,${fs.readFileSync(result.previewPath).toString('base64')}`;
+          try { fs.unlinkSync(result.previewPath); } catch (_) {}
+          return dataUrl;
+        });
+        liveChain = job.catch(() => {});
+
+        const dataUrl = await job;
+        liveCache.set(key, dataUrl);
+        while (liveCache.size > LIVE_CACHE_MAX) liveCache.delete(liveCache.keys().next().value);
+        sendJson(200, { success: true, cached: false, previewUrl: dataUrl });
+      } catch (err) {
+        appendLog(`[PREVIEW-LIVE] ${err.message}`);
+        sendJson(500, { error: err.message });
       }
     });
     return;
@@ -1519,11 +1755,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 17. Static: Public Assets
+  // 17. Static: Public Assets (supports nested public/products/<id>/...)
   if (pathname.startsWith('/public/')) {
-    const filename = path.basename(pathname);
-    const filePath = path.join(PUBLIC_DIR, filename);
-    const ext = path.extname(filename).toLowerCase();
+    const rel = decodeURIComponent(pathname.slice('/public/'.length));
+    const filePath = resolvePublicFilePath(rel);
+    const ext = path.extname(filePath).toLowerCase();
     const mimeMap = {
       '.mp4': 'video/mp4',
       '.mov': 'video/quicktime',

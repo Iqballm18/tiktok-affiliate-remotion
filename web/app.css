@@ -1,48 +1,59 @@
-/* tasteskill / app.css
-   Style: Dark Studio Aesthetic · Kind: Creator Video Studio · TikTok Affiliate Remotion
-   Adhering to anti-slop guidelines and references/app-screens.md */
+/* Affiliate Studio / app.css */
 
+/* Meja edit: grafit hangat, satu warna sinyal (amber ala timecode), dan empat warna babak
+   yang hanya dipakai untuk menandai Hook / Demo / Spec / CTA di timeline dan storyboard.
+   Nama --accent-rose dan --accent-gold dipertahankan sebagai alias agar aturan lama tetap jalan. */
 :root {
-  --bg-ground: #0a0c10;
-  --bg-surface: #12151c;
-  --bg-raised: #181d26;
-  --bg-card: #151922;
-  --bg-active: #202634;
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-rule: rgba(255, 255, 255, 0.05);
-  --border-control: #2b3242;
+  --bg-ground: #131312;
+  --bg-surface: #1a1a18;
+  --bg-raised: #232321;
+  --bg-card: #1e1e1c;
+  --bg-active: #2c2c29;
+  --border-subtle: rgba(236, 232, 222, 0.10);
+  --border-rule: rgba(236, 232, 222, 0.06);
+  --border-control: #3b3b36;
 
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-faint: #64748b;
+  --text-main: #ece8de;
+  --text-muted: #aaa598;
+  --text-faint: #7d786c;
 
-  --accent-rose: #e11d48;
-  --accent-rose-hover: #f43f5e;
-  --accent-rose-soft: rgba(225, 29, 72, 0.15);
-  --accent-rose-ink: #fecdd3;
+  --signal: #f2a93b;
+  --signal-hover: #ffbd5c;
+  --signal-ink: #1c1303;
+  --signal-soft: rgba(242, 169, 59, 0.14);
 
-  --accent-gold: #f59e0b;
-  --accent-gold-soft: rgba(245, 158, 11, 0.15);
-  --accent-gold-ink: #fef3c7;
+  --c-hook: #df6b57;
+  --c-demo: #58a6c4;
+  --c-spec: #9db85e;
+  --c-cta: #f2a93b;
 
-  --accent-emerald: #10b981;
-  --accent-emerald-soft: rgba(16, 185, 129, 0.15);
-  --accent-emerald-ink: #d1fae5;
+  --accent-rose: var(--signal);
+  --accent-rose-hover: var(--signal-hover);
+  --accent-rose-soft: var(--signal-soft);
+  --accent-rose-ink: #ffe2b0;
 
-  --accent-indigo: #6366f1;
-  --accent-indigo-soft: rgba(99, 102, 241, 0.15);
+  --accent-gold: var(--signal);
+  --accent-gold-soft: var(--signal-soft);
+  --accent-gold-ink: #ffe2b0;
 
-  --font: "DM Sans", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --accent-emerald: #6fb88b;
+  --accent-emerald-soft: rgba(111, 184, 139, 0.14);
+  --accent-emerald-ink: #c9ecd6;
 
-  --radius-card: 10px;
-  --radius-control: 6px;
+  --accent-indigo: #8ea2d6;
+  --accent-indigo-soft: rgba(142, 162, 214, 0.14);
+
+  --font: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --radius-card: 6px;
+  --radius-control: 4px;
   --control-height: 34px;
   --pad: 24px;
   --gap: 20px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --t-hover: 150ms;
+  --t-hover: 120ms;
 }
 
 *,
@@ -656,270 +667,6 @@ select {
   color: #fda4af;
 }
 
-/* ==========================================================================
-   Live Highlight Preview Box for Tema Visual & Gaya Kartu
-   ========================================================================== */
-.theme-live-preview-wrap {
-  margin: 12px 0 16px 0;
-  background: rgba(12, 14, 20, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 12px;
-  padding: 12px 14px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
-  transition: all 200ms ease;
-}
-
-.theme-live-preview-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 11px;
-}
-
-.preview-badge-pill {
-  color: var(--text-faint);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 10.5px;
-}
-
-.preview-theme-tag {
-  background: rgba(244, 63, 94, 0.14);
-  color: #fda4af;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.3px;
-}
-
-.theme-mockup-stage {
-  position: relative;
-  border-radius: 12px;
-  padding: 24px 18px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  min-height: 145px;
-  background: #090a0f;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 2px 18px rgba(0, 0, 0, 0.7);
-  transition: all 250ms ease;
-}
-
-/* Simulated video footage backdrop layer */
-.theme-mockup-bg-layer {
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.18) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(244, 63, 94, 0.16) 0%, transparent 55%),
-    linear-gradient(135deg, #111827 0%, #0b0f19 50%, #05070a 100%);
-  background-size: cover;
-  background-position: center;
-  filter: brightness(0.85);
-  pointer-events: none;
-  z-index: 0;
-  transition: background-image 300ms ease;
-}
-
-.theme-mockup-scrim-layer {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(9, 10, 15, 0.35) 0%, rgba(9, 10, 15, 0.15) 50%, rgba(9, 10, 15, 0.55) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.theme-mockup-container {
-  position: relative;
-  z-index: 2;
-  max-width: 94%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  box-sizing: border-box;
-  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Clean Full Floating Typography (Tanpa border/box yang menutupi layar) */
-.theme-mockup-container {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  gap: 10px;
-}
-
-.theme-mockup-textbox {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  width: 100%;
-}
-
-.theme-mockup-line1 {
-  color: #FFFFFF !important;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95), 0 4px 20px rgba(0, 0, 0, 0.8) !important;
-  font-size: 15px;
-  font-weight: 800;
-  line-height: 1.25;
-  margin-bottom: 4px;
-  letter-spacing: -0.2px;
-}
-
-.theme-mockup-highlight {
-  font-size: 17px;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: -0.3px;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 4px 28px rgba(0, 0, 0, 0.85);
-  transition: all 200ms ease;
-}
-
-/* 1. UNIFIED GLASS / 2. EDITORIAL / 3. CREATOR / 4. CAPSULE (Clean Floating Pill) */
-.theme-mockup-container.shape-glass .theme-mockup-badge,
-.theme-mockup-container.shape-two_tier .theme-mockup-badge,
-.theme-mockup-container.shape-capsule .theme-mockup-badge,
-.theme-mockup-container.shape-floating .theme-mockup-badge {
-  background: rgba(0, 0, 0, 0.72) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.45) !important;
-  color: #FFFFFF !important;
-  margin-bottom: 0;
-}
-
-/* 5. TIKTOK NATIVE UGC: Subtitle CapCut teks putih + highlight kuning stabilo FYP */
-.theme-mockup-container.shape-tiktok_ugc {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  gap: 10px;
-}
-
-.theme-mockup-container.shape-tiktok_ugc .theme-mockup-badge {
-  background: rgba(0, 0, 0, 0.78) !important;
-  border: 1.5px solid rgba(255, 255, 255, 0.4) !important;
-  color: #FFFFFF !important;
-  margin-bottom: 0;
-}
-
-.theme-mockup-container.shape-tiktok_ugc .theme-mockup-highlight {
-  display: inline-block;
-  background: #FFE600 !important;
-  color: #000000 !important;
-  padding: 4px 14px !important;
-  border-radius: 6px !important;
-  font-weight: 900 !important;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45) !important;
-  text-shadow: none !important;
-  letter-spacing: -0.3px;
-  margin-top: 2px;
-}
-
-/* 6. TOP BANNER PROMO: Flash sale banner strip di atas + compact card di bawah */
-.theme-mockup-container.shape-top_banner {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  gap: 10px;
-}
-
-.theme-mockup-container.shape-top_banner .theme-mockup-badge {
-  width: 100%;
-  box-sizing: border-box;
-  justify-content: space-between;
-  border-radius: 12px;
-  padding: 8px 14px;
-  background: linear-gradient(90deg, #FF0050 0%, #FF2E54 50%, #FF6B00 100%) !important;
-  border: none !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 8px 24px rgba(255, 0, 80, 0.35) !important;
-  margin-bottom: 2px;
-}
-
-.theme-mockup-container.shape-top_banner .theme-mockup-textbox {
-  border-radius: 18px;
-  padding: 12px 18px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-  box-sizing: border-box;
-  transition: all 250ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.theme-mockup-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  transition: all 200ms ease;
-  flex-shrink: 0;
-}
-
-.theme-mockup-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
-  box-shadow: 0 0 8px currentColor;
-  flex-shrink: 0;
-}
-
-.theme-mockup-textbox {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 100%;
-}
-
-.theme-mockup-line1 {
-  font-size: 14.5px;
-  font-weight: 700;
-  line-height: 1.25;
-  margin-bottom: 4px;
-  letter-spacing: -0.2px;
-  transition: color 200ms ease;
-}
-
-.theme-mockup-highlight {
-  font-size: 16px;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: -0.3px;
-  transition: all 200ms ease;
-}
-
-.theme-live-preview-desc {
-  margin-top: 10px;
-  font-size: 11.5px;
-  color: var(--text-muted);
-  line-height: 1.5;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 8px;
-}
-
 textarea.input {
   height: auto;
   min-height: 80px;
@@ -1100,10 +847,10 @@ tbody tr:hover td {
 }
 
 .player-size-btn.active {
-  background: rgba(244, 63, 94, 0.2);
-  color: #f43f5e;
-  border: 1px solid rgba(244, 63, 94, 0.4);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  background: var(--bg-active);
+  color: var(--signal);
+  border: 1px solid var(--border-control);
+  box-shadow: none;
 }
 
 .phone-bezel {
@@ -2263,89 +2010,6 @@ audio {
 }
 
 /* ----------------------------------------------------------------- */
-/* Quick Preset Badge Chips (Event Tanggal Kembar & Viral Badges)    */
-/* ----------------------------------------------------------------- */
-.badge-quick-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 6px;
-  align-items: center;
-}
-
-.badge-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #94a3b8;
-  cursor: pointer;
-  transition: all 140ms ease;
-  user-select: none;
-  font-family: inherit;
-}
-
-.badge-chip:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-}
-
-.badge-chip:active {
-  transform: translateY(0);
-}
-
-.badge-chip.event {
-  background: rgba(244, 63, 94, 0.1);
-  border-color: rgba(244, 63, 94, 0.3);
-  color: #fda4af;
-}
-.badge-chip.event:hover {
-  background: rgba(244, 63, 94, 0.22);
-  border-color: rgba(244, 63, 94, 0.6);
-  color: #fff;
-}
-
-.badge-chip.audience {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fcd34d;
-}
-.badge-chip.audience:hover {
-  background: rgba(245, 158, 11, 0.22);
-  border-color: rgba(245, 158, 11, 0.6);
-  color: #fff;
-}
-
-.badge-chip.curiosity {
-  background: rgba(167, 139, 250, 0.1);
-  border-color: rgba(167, 139, 250, 0.3);
-  color: #c4b5fd;
-}
-.badge-chip.curiosity:hover {
-  background: rgba(167, 139, 250, 0.22);
-  border-color: rgba(167, 139, 250, 0.6);
-  color: #fff;
-}
-
-.badge-chip.social {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.3);
-  color: #6ee7b7;
-}
-.badge-chip.social:hover {
-  background: rgba(16, 185, 129, 0.22);
-  border-color: rgba(16, 185, 129, 0.6);
-  color: #fff;
-}
-
-/* ----------------------------------------------------------------- */
 /* Live Google Drive Upload Progress Box                             */
 /* ----------------------------------------------------------------- */
 .gdrive-upload-box {
@@ -2453,7 +2117,6 @@ audio {
   height: 15px;
 }
 
-
 /* ===== Toggle Switch (GPU Render) ===== */
 .toggle-switch {
   position: relative;
@@ -2501,7 +2164,6 @@ audio {
   background: rgba(167, 139, 250, 0.06);
 }
 
-
 /* ===== Modal Close Buttons (Dark Theme Consistent) ===== */
 .modal-close,
 .modal-close-btn,
@@ -2540,4 +2202,598 @@ audio {
 .modal-close-btn:active,
 .modal-header .btn.icon-only:active {
   transform: scale(0.96) !important;
+}
+
+/* ==========================================================================
+   LAPISAN DESAIN: meja edit
+   Prinsip: video adalah satu-satunya hal yang berwarna penuh. Antarmuka sekitarnya
+   netral dan datar; warna sinyal (amber) hanya untuk aksi utama, fokus, dan timecode.
+   Empat warna babak (hook, demo, spec, cta) dipakai konsisten di timeline dan storyboard.
+   ========================================================================== */
+
+.ic {
+  width: 1.15em;
+  height: 1.15em;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -0.2em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.num,
+.char-counter,
+.clip-time-input,
+.storyboard-dur-badge,
+.timing-label,
+.live-meta {
+  font-family: var(--font-mono);
+  font-feature-settings: normal;
+}
+
+/* --- Header ------------------------------------------------------------- */
+.studio-header {
+  height: 52px;
+  min-height: 52px;
+  background: var(--bg-ground);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 24px;
+}
+
+.header-left {
+  gap: 28px;
+  align-self: stretch;
+}
+
+.brand-badge {
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.015em;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 10px;
+  height: 10px;
+  background: var(--signal);
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+.studio-tabs {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  gap: 4px;
+}
+
+.studio-tab-btn {
+  height: auto;
+  align-self: stretch;
+  border-radius: 0;
+  padding: 0 12px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-weight: 500;
+}
+
+.studio-tab-btn:hover {
+  background: transparent;
+  color: var(--text-main);
+}
+
+.studio-tab-btn.active {
+  background: transparent;
+  color: var(--text-main);
+  font-weight: 600;
+  border-bottom-color: var(--signal);
+}
+
+.tab-count {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 0 5px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  line-height: 16px;
+}
+
+.studio-main {
+  max-width: 1560px;
+}
+
+/* --- Tombol, pill, input ------------------------------------------------ */
+.btn {
+  border-radius: var(--radius-control);
+  font-weight: 550;
+  background: var(--bg-raised);
+  border-color: var(--border-control);
+}
+
+.btn:hover {
+  background: var(--bg-active);
+  border-color: #55554d;
+}
+
+.btn:active {
+  transform: none;
+  background: var(--bg-surface);
+}
+
+.btn.primary {
+  background: var(--signal);
+  border-color: var(--signal);
+  color: var(--signal-ink);
+  font-weight: 650;
+}
+
+.btn.primary:hover {
+  background: var(--signal-hover);
+  border-color: var(--signal-hover);
+}
+
+.btn.danger {
+  background: transparent;
+  color: #e88a7c;
+  border-color: rgba(223, 107, 87, 0.45);
+}
+
+.btn.danger:hover {
+  background: rgba(223, 107, 87, 0.14);
+  border-color: var(--c-hook);
+}
+
+.pill {
+  border-radius: 3px;
+  padding: 1px 8px;
+  font-weight: 550;
+  letter-spacing: 0;
+}
+
+#renderStatusPill::before,
+#stillModalStatusPill::before,
+#pillGDriveStatus::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.input {
+  background: var(--bg-ground);
+  border-color: var(--border-control);
+  border-radius: var(--radius-control);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-soft);
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.section-label {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-main);
+  letter-spacing: -0.005em;
+}
+
+.char-counter {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.char-counter.warning { color: var(--signal); }
+.char-counter.danger { color: #e88a7c; }
+
+/* --- Panel datar -------------------------------------------------------- */
+.studio-panel {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+/* --- Segmen kecil & kotak centang -------------------------------------- */
+.seg-mini {
+  display: inline-flex;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  background: var(--bg-ground);
+}
+
+.seg-mini button {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid var(--border-control);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.seg-mini button:last-child { border-right: 0; }
+.seg-mini button:hover { color: var(--text-main); background: var(--bg-raised); }
+
+.seg-mini button.active {
+  background: var(--bg-active);
+  color: var(--text-main);
+  box-shadow: inset 0 -2px 0 var(--signal);
+}
+
+.segmented {
+  border-radius: var(--radius-control);
+  background: var(--bg-ground);
+}
+
+.segmented button { border-radius: 2px; }
+
+.segmented button.active {
+  background: var(--bg-active);
+  color: var(--text-main);
+  box-shadow: inset 0 -2px 0 var(--signal);
+}
+
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-inline input {
+  accent-color: var(--signal);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+}
+
+/* --- Timeline & storyboard: warna = babak -------------------------------- */
+.timeline-strip {
+  height: 6px;
+  border-radius: 1px;
+  gap: 2px;
+  background: transparent;
+}
+
+.timeline-segment { border-radius: 1px; }
+.timeline-segment.hook { background: var(--c-hook); }
+.timeline-segment.demo { background: var(--c-demo); }
+.timeline-segment.spec { background: var(--c-spec); }
+.timeline-segment.cta { background: var(--c-cta); }
+
+.storyboard-card {
+  --rail: var(--border-control);
+  background: var(--bg-card);
+  border-radius: var(--radius-control);
+  border-left: 3px solid var(--rail);
+}
+
+.storyboard-card:hover {
+  border-color: var(--border-subtle);
+  border-left-color: var(--rail);
+  box-shadow: none;
+}
+
+.storyboard-card.hook { --rail: var(--c-hook); border-left: 3px solid var(--rail); }
+.storyboard-card.demo { --rail: var(--c-demo); border-left: 3px solid var(--rail); }
+.storyboard-card.spec { --rail: var(--c-spec); border-left: 3px solid var(--rail); }
+.storyboard-card.cta { --rail: var(--c-cta); border-left: 3px solid var(--rail); }
+
+.storyboard-card .storyboard-num-badge {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--rail);
+}
+
+.storyboard-title { color: var(--text-main); font-weight: 650; }
+
+/* --- Bank hook & CTA ------------------------------------------------------ */
+.bank {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-ground);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+
+.bank-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bank-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  border-bottom: 1px solid var(--border-rule);
+}
+
+.bank-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 550;
+  padding: 4px 0 6px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.bank-tabs button:hover { color: var(--text-main); }
+.bank-tabs button.active { color: var(--text-main); border-bottom-color: var(--signal); }
+
+.bank-hint {
+  font-size: 11.5px;
+  line-height: 17px;
+  color: var(--text-faint);
+  min-height: 17px;
+}
+
+.bank-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.bank-list[data-mode="badge"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.bank-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 8px 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.bank-item:hover { border-color: var(--signal); background: var(--bg-raised); }
+
+.bank-item-main { font-size: 13px; font-weight: 600; line-height: 18px; }
+.bank-item-sub { font-size: 12.5px; color: var(--signal); line-height: 17px; }
+
+.bank-item-tag {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.bank-item-warn {
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #e88a7c;
+}
+
+.bank-item.compact { padding: 7px 10px; }
+
+.bank-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.bank-chip {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-control);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.bank-chip:hover { color: var(--text-main); border-color: var(--signal); }
+.bank-chip.muted { border-style: dashed; font-family: var(--font); }
+
+/* --- Pratinjau langsung --------------------------------------------------- */
+.live-preview {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--bg-ground);
+}
+
+.live-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-rule);
+}
+
+.live-preview-actions { display: flex; align-items: center; gap: 12px; }
+
+.live-preview-body {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px 12px 16px;
+}
+
+.live-stage {
+  position: relative;
+  width: 216px;
+  aspect-ratio: 9 / 16;
+  background: #000;
+  border: 1px solid var(--border-control);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.live-stage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 160ms linear;
+}
+
+.live-stage img:not([src]) { visibility: hidden; }
+
+.live-status {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--text-main);
+  background: rgba(19, 19, 18, 0.88);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.live-stage[data-state="ready"] .live-status { display: none; }
+
+.live-stage[data-state="idle"] .live-status,
+.live-stage[data-state="blocked"] .live-status {
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  padding: 20px;
+}
+
+.live-stage[data-state="loading-stale"] img,
+.live-stage[data-state="stale"] img { opacity: 0.45; }
+
+.live-stage[data-state="error"] .live-status { color: #f0a094; }
+
+.live-stage[data-state="loading"] .live-status::before,
+.live-stage[data-state="loading-stale"] .live-status::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border: 2px solid var(--border-control);
+  border-top-color: var(--signal);
+  border-radius: 50%;
+  vertical-align: -1px;
+  animation: spin 0.8s linear infinite;
+}
+
+.live-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.live-meta {
+  font-size: 12px;
+  color: var(--signal);
+  min-height: 18px;
+}
+
+.live-note {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--text-faint);
+  max-width: 52ch;
+}
+
+.live-field { display: flex; flex-direction: column; gap: 6px; }
+.live-field[hidden] { display: none; }
+.live-field input[type="range"] { width: 100%; accent-color: var(--signal); }
+
+.live-excerpt {
+  font-size: 13px;
+  color: var(--text-main);
+  min-height: 20px;
+}
+
+/* --- Pemutar, safe area, dropzone, toast --------------------------------- */
+.phone-bezel { border-radius: 22px; }
+
+.tt-action-icon .ic,
+.tt-disc-rotate .ic { width: 26px; height: 26px; }
+.tt-avatar-box .ic { width: 20px; height: 20px; }
+
+.dropzone { border-radius: var(--radius-card); border-style: dashed; }
+.dropzone-icon { display: flex; justify-content: center; color: var(--text-faint); }
+.dropzone-icon .ic { width: 28px; height: 28px; }
+
+.toast-icon .ic { width: 18px; height: 18px; }
+.toast-close .ic { width: 14px; height: 14px; }
+.custom-select-check .ic { width: 14px; height: 14px; }
+
+.progress-bar-fill,
+.upload-progress-fill,
+#stillProgressBarFill,
+.toast-progress-fill {
+  background: var(--signal) !important;
+}
+
+.toast-progress-fill { border-radius: 1px !important; }
+.progress-bar-bg, .upload-progress-track { border-radius: 1px; }
+
+/* --- Pengurangan gerak ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .live-preview-body { grid-template-columns: 1fr; justify-items: center; }
+  .bank-list, .bank-list[data-mode="badge"] { grid-template-columns: 1fr; }
 }

@@ -17,11 +17,13 @@ const videoDurationCache = new Map();
  */
 export function getVideoDurationSec(filename) {
   if (!filename) return null;
-  const filePath = path.isAbsolute(filename) ? filename : path.join(PUBLIC_DIR, path.basename(filename));
+  const filePath = path.isAbsolute(filename) ? filename : path.join(PUBLIC_DIR, filename);
   if (!fs.existsSync(filePath)) return null;
 
-  if (videoDurationCache.has(filePath)) {
-    return videoDurationCache.get(filePath);
+  const stat = fs.statSync(filePath);
+  const cacheKey = `${filePath}:${stat.mtimeMs}`;
+  if (videoDurationCache.has(cacheKey)) {
+    return videoDurationCache.get(cacheKey);
   }
 
   try {
@@ -31,10 +33,10 @@ export function getVideoDurationSec(filename) {
     ).toString().trim();
     const sec = parseFloat(stdout);
     if (!isNaN(sec) && sec > 0) {
-      videoDurationCache.set(filePath, sec);
+      videoDurationCache.set(cacheKey, sec);
       return sec;
     }
-  } catch {}
+  } catch { }
   return null;
 }
 
@@ -50,7 +52,7 @@ export function loadConfig() {
     }
   }
   return {
-    defaultWatermark: 'video milik @inanikma_',
+    defaultWatermark: '@inanikma_ | @spillbyna_',
     webPort: 3100,
     defaultFps: 60,
     defaultTheme: 'pastel',
@@ -60,6 +62,7 @@ export function loadConfig() {
 
 /**
  * List all available products in products/ directory
+ * Diurutkan berdasarkan waktu modifikasi terbaru (file baru otomatis di paling atas).
  */
 export function listProducts() {
   if (!fs.existsSync(PRODUCTS_DIR)) {
@@ -71,8 +74,11 @@ export function listProducts() {
   for (const f of files) {
     try {
       const fullPath = path.join(PRODUCTS_DIR, f);
+      const stat = fs.statSync(fullPath);
       const data = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
-      const id = data.id || path.basename(f, '.json');
+      // Selalu gunakan base nama file sebagai ID kanonik untuk mencegah mismatch loadProduct
+      const fileId = path.basename(f, '.json');
+      const id = fileId;
       products.push({
         id,
         filename: f,
@@ -80,11 +86,14 @@ export function listProducts() {
         videoSource: data.videoSource || '',
         variantKeys: Object.keys(data.variants || {}),
         variantsCount: Object.keys(data.variants || {}).length,
+        mtime: stat.mtimeMs,
       });
     } catch (e) {
       console.warn(`[WARN] Gagal membaca produk ${f}:`, e.message);
     }
   }
+  // Sort descending: file produk paling baru ditambahkan/dimodifikasi ada di awal
+  products.sort((a, b) => (b.mtime || 0) - (a.mtime || 0));
   return products;
 }
 
@@ -100,13 +109,33 @@ export function loadProduct(idOrPath) {
     targetPath = path.join(PRODUCTS_DIR, path.basename(targetPath));
   }
   if (!fs.existsSync(targetPath)) {
+    // Coba cari case-insensitive atau cari di dalam file data.id
+    const files = fs.existsSync(PRODUCTS_DIR) ? fs.readdirSync(PRODUCTS_DIR) : [];
+    const lower = path.basename(idOrPath, '.json').toLowerCase();
+    const matched = files.find(f => path.basename(f, '.json').toLowerCase() === lower);
+    if (matched) {
+      targetPath = path.join(PRODUCTS_DIR, matched);
+    } else {
+      // Fallback: cari file yang didalamnya terdapat data.id === idOrPath
+      for (const f of files) {
+        if (!f.endsWith('.json')) continue;
+        try {
+          const d = JSON.parse(fs.readFileSync(path.join(PRODUCTS_DIR, f), 'utf8'));
+          if (d.id === idOrPath) {
+            targetPath = path.join(PRODUCTS_DIR, f);
+            break;
+          }
+        } catch (_) { }
+      }
+    }
+  }
+  if (!fs.existsSync(targetPath)) {
     throw new Error(`File produk tidak ditemukan: ${targetPath}`);
   }
   const raw = fs.readFileSync(targetPath, 'utf8');
   const data = JSON.parse(raw);
-  if (!data.id) {
-    data.id = path.basename(targetPath, '.json');
-  }
+  // Selalu pastikan data.id konsisten dengan nama file
+  data.id = path.basename(targetPath, '.json');
   return data;
 }
 
@@ -125,6 +154,31 @@ export function saveProduct(id, productData) {
 }
 
 /**
+ * Delete product JSON and optionally its associated public folder (products/<id>)
+ */
+export function deleteProduct(id, deleteAssets = false) {
+  const safeId = path.basename(id, '.json').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  const filePath = path.join(PRODUCTS_DIR, `${safeId}.json`);
+  let deletedFile = false;
+  let deletedAssets = false;
+
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+    deletedFile = true;
+  }
+
+  if (deleteAssets) {
+    const productAssetsDir = path.join(PUBLIC_DIR, 'products', safeId);
+    if (fs.existsSync(productAssetsDir)) {
+      fs.rmSync(productAssetsDir, { recursive: true, force: true });
+      deletedAssets = true;
+    }
+  }
+
+  return { success: true, id: safeId, deletedFile, deletedAssets };
+}
+
+/**
  * Resolve full Remotion inputProps for a variant
  */
 export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
@@ -139,17 +193,30 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
 
   // Merge default watermark if absent
   if (!props.watermarkText) {
-    props.watermarkText = config.defaultWatermark || 'video milik @inanikma_';
+    props.watermarkText = config.defaultWatermark || '@inanikma_ | @spillbyna_';
   }
   if (!props.watermarkPosition) {
     props.watermarkPosition = variant.watermarkPosition || 'floating';
   }
 
+  // Helper cari file aset di public/ (mendukung path relatif langsung atau fallback di root public/)
+  const resolvePublicPath = (filename) => {
+    if (!filename) return null;
+    const directPath = path.join(PUBLIC_DIR, filename);
+    if (fs.existsSync(directPath)) return { relative: filename, full: directPath };
+    const baseName = path.basename(filename);
+    const rootPath = path.join(PUBLIC_DIR, baseName);
+    if (fs.existsSync(rootPath)) return { relative: baseName, full: rootPath };
+    return null;
+  };
+
   // Ensure clips src points to valid source video and clamp bounds within video duration
   if (Array.isArray(props.clips)) {
     props.clips = props.clips.map((c, idx) => {
-      const src = c.src || product.videoSource || '';
-      const exists = src && fs.existsSync(path.join(PUBLIC_DIR, src));
+      let src = c.src || product.videoSource || '';
+      const resolved = resolvePublicPath(src);
+      const exists = Boolean(resolved);
+      if (resolved) src = resolved.relative;
       let startSec = c.startSec || 0;
       let endSec = c.endSec || (startSec + 5);
 
@@ -180,12 +247,13 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
   // Resolve Voice Over & Captions (Selalu baca data terbaru dari folder public/)
   delete props.voiceOverCaptions;
   if (props.voiceOver) {
-    const voPath = path.join(PUBLIC_DIR, props.voiceOver);
-    if (!fs.existsSync(voPath)) {
+    const voResolved = resolvePublicPath(props.voiceOver);
+    if (!voResolved) {
       console.warn(`[WARNING] File audio public/${props.voiceOver} tidak ditemukan! Voice over dinonaktifkan.`);
       delete props.voiceOver;
     } else {
-      const voBase = props.voiceOver.replace(/\.[^/.]+$/, '');
+      props.voiceOver = voResolved.relative;
+      const voBase = voResolved.relative.replace(/\.[^/.]+$/, '');
       const voJsonPath = path.join(PUBLIC_DIR, `${voBase}.json`);
       if (fs.existsSync(voJsonPath)) {
         try {
@@ -202,15 +270,17 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
 
   // Resolve Background Music (BGM)
   if (props.bgmTrack) {
-    const bgmPath = path.join(PUBLIC_DIR, props.bgmTrack);
-    if (!fs.existsSync(bgmPath)) {
+    const bgmResolved = resolvePublicPath(props.bgmTrack);
+    if (!bgmResolved) {
       console.warn(`[WARNING] File audio BGM public/${props.bgmTrack} tidak ditemukan! BGM dinonaktifkan.`);
       delete props.bgmTrack;
+    } else {
+      props.bgmTrack = bgmResolved.relative;
     }
   } else if (config.defaultBgmTrack) {
-    const defaultBgm = path.join(PUBLIC_DIR, config.defaultBgmTrack);
-    if (fs.existsSync(defaultBgm)) {
-      props.bgmTrack = config.defaultBgmTrack;
+    const defaultBgm = resolvePublicPath(config.defaultBgmTrack);
+    if (defaultBgm) {
+      props.bgmTrack = defaultBgm.relative;
     }
   } else if (fs.existsSync(path.join(PUBLIC_DIR, 'bgm.mp3'))) {
     props.bgmTrack = 'bgm.mp3';
@@ -220,7 +290,7 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
       if (bgmFiles.length > 0) {
         props.bgmTrack = `bgm/${bgmFiles[0]}`;
       }
-    } catch {}
+    } catch { }
   }
   if (props.bgmTrack && props.bgmVolume === undefined) {
     props.bgmVolume = config.defaultBgmVolume ?? 0.12;

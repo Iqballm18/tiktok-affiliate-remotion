@@ -17,7 +17,7 @@ interface Waypoint {
 }
 
 export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
-    text = 'video milik @inanikma_',
+    text = '@inanikma_ | @spillbyna_',
     opacity = 0.7,
     position = 'floating',
 }) => {

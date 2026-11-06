@@ -20,6 +20,7 @@ import { HookBadge, resolveBadgeVariant } from './components/HookBadge';
 import { HeadlineLayout, resolveHookLayout } from './components/HookLayouts';
 import { resolvePreset } from './presets';
 import { loadThemeFonts } from './load-theme-fonts';
+import { FONT } from './load-hook-fonts';
 import { Caption } from '@remotion/captions';
 
 // Muat Inter + JetBrains Mono sekali saat bundle dibuka (render tetap menunggu via delayRender).
@@ -115,7 +116,7 @@ export const defaultAffiliateProps: AffiliateProps = {
     showProgressBar: true,
     enableSfx: true,
     showSafeZoneGuide: false,
-    watermarkText: 'video milik @inanikma_',
+    watermarkText: '@inanikma_ | @spillbyna_',
     showWatermark: true,
     watermarkOpacity: 0.70,
     unmuteHook: false,
@@ -241,6 +242,49 @@ const CinematicOverlays: React.FC<{ theme: ThemeDefinition }> = ({ theme }) => {
 // ==========================================
 // LAYER 2: FOOTAGE DENGAN SUBTLE KEN BURNS & TRANSISI DINAMIS
 // ==========================================
+// ==========================================
+// DYNAMIC KEYWORD PUNCH-IN ZOOM HELPER
+// ==========================================
+const KEYWORD_PUNCH_REGEX = /(\d+|wajib|parah|diskon|promo|hemat|murah|gratis|ampuh|solusi|nyesel|racun|viral|keranjang|habis|terbukti|langsung|praktis|awet|wangi|bersih|glowing|kuat|bebas|cepat|instan|asli|resmi|bpom)/i;
+
+function computeKeywordPunchScale(
+    globalFrame: number,
+    fps: number,
+    voStartFrame: number,
+    captions?: Caption[]
+): number {
+    if (!captions || captions.length === 0 || globalFrame < voStartFrame) {
+        return 1.0;
+    }
+    const currentMs = ((globalFrame - voStartFrame) / fps) * 1000;
+
+    // Pilih kata kunci pemicu dengan jeda minimal 2400ms agar tidak berkedip terlalu rapat
+    let lastTriggerMs = -9999;
+    for (const c of captions) {
+        const cleanWord = (c.text || '').trim();
+        if (!cleanWord) continue;
+        if (c.startMs - lastTriggerMs < 2400) continue;
+
+        if (KEYWORD_PUNCH_REGEX.test(cleanWord)) {
+            lastTriggerMs = c.startMs;
+            const elapsed = currentMs - c.startMs;
+            const punchDurationMs = 620;
+            if (elapsed >= 0 && elapsed <= punchDurationMs) {
+                return interpolate(
+                    elapsed,
+                    [0, 140, 380, punchDurationMs],
+                    [1.0, 1.055, 1.05, 1.0],
+                    {
+                        extrapolateLeft: 'clamp',
+                        extrapolateRight: 'clamp',
+                    }
+                );
+            }
+        }
+    }
+    return 1.0;
+}
+
 const FootageClip: React.FC<{
     clip: ClipItem;
     durationInFrames: number;
@@ -248,6 +292,9 @@ const FootageClip: React.FC<{
     isHookClip?: boolean;
     isFirstProductClip?: boolean;
     hookTransition?: 'zoom_flash' | 'whip_pan' | 'light_leak' | 'none';
+    clipStartFrame?: number;
+    voStartFrame?: number;
+    captions?: Caption[];
 }> = ({
     clip,
     durationInFrames,
@@ -255,6 +302,9 @@ const FootageClip: React.FC<{
     isHookClip,
     isFirstProductClip,
     hookTransition = 'zoom_flash',
+    clipStartFrame = 0,
+    voStartFrame = 0,
+    captions,
 }) => {
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
@@ -414,6 +464,15 @@ const FootageClip: React.FC<{
                 extrapolateRight: 'clamp',
             });
         }
+
+        // Dynamic Keyword Punch-In Zoom saat kata kunci penting diucapkan oleh Voice Over
+        const keywordPunch = computeKeywordPunchScale(
+            clipStartFrame + frame,
+            fps,
+            voStartFrame,
+            captions
+        );
+        snapScale *= keywordPunch;
 
         // Default: muted: true jika tidak didefinisikan (agar rekaman b-roll produk hening tanpa noise),
         // atau muted: false jika klip memiliki suara penting (seperti klip podcast/YouTube sebagai hook)
@@ -1099,14 +1158,15 @@ const EditorialHeadline: React.FC<{
     };
 
 // ==========================================
-// EDITORIAL LOWER-THIRD CTA (Bukan Tombol Murahan)
+// EDITORIAL LOWER-THIRD CTA (Selaras Layout Hook + Panah Keranjang Kuning)
 // ==========================================
 const EditorialCTA: React.FC<{
     text: string;
     label?: string;
     durationInFrames: number;
     theme: ThemeDefinition;
-}> = ({ text, label, durationInFrames, theme }) => {
+    cardStyle?: string;
+}> = ({ text, label, durationInFrames, theme, cardStyle }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
@@ -1130,9 +1190,290 @@ const EditorialCTA: React.FC<{
     });
 
     // Gerakan panah diagonal halus menunjuk Keranjang Kuning TikTok di kiri bawah
-    const arrowNudge = Math.sin(frame / (fps * 0.22)) * 8;
-    const pulseGlow = Math.sin(frame / (fps * 0.18)) * 10 + 18;
+    const arrowNudge = Math.sin(frame / (fps * 0.20)) * 9;
     const y = interpolate(enter, [0, 1], [45, 0]);
+    const subLabel = label || 'KLIK IKON DI KIRI BAWAH';
+
+    // Panah Penunjuk Keranjang Kuning TikTok (Kiri Bawah)
+    const renderYellowBasketPointer = () => (
+        <div
+            style={{
+                marginTop: 18,
+                marginLeft: 14,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
+            }}
+        >
+            <div
+                style={{
+                    backgroundColor: '#FFE600',
+                    color: '#0B0C10',
+                    border: '2.5px solid #0B0C10',
+                    borderRadius: 999,
+                    padding: '10px 22px',
+                    fontFamily: FONT.grotesk,
+                    fontSize: 24,
+                    fontWeight: 800,
+                    letterSpacing: -0.3,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
+                }}
+            >
+                <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
+                <span>KERANJANG KUNING DI SINI</span>
+            </div>
+        </div>
+    );
+
+    let cardContent: React.ReactNode;
+
+    if (cardStyle === 'sticky_note') {
+        // Gaya Catatan Tempel Fisik
+        cardContent = (
+            <div
+                style={{
+                    position: 'relative',
+                    backgroundColor: '#FEF08A',
+                    color: '#18181B',
+                    padding: '28px 34px',
+                    borderRadius: 6,
+                    transform: 'rotate(-1.2deg)',
+                    boxShadow: '0 18px 36px rgba(0,0,0,0.42), 0 3px 8px rgba(0,0,0,0.2)',
+                    maxWidth: 860,
+                }}
+            >
+                {/* Selotip atas */}
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: -15,
+                        left: '38%',
+                        width: 140,
+                        height: 32,
+                        backgroundColor: 'rgba(255,255,255,0.58)',
+                        transform: 'rotate(1.8deg)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    }}
+                />
+                <div
+                    style={{
+                        fontFamily: FONT.hand,
+                        fontSize: 34,
+                        fontWeight: 700,
+                        color: '#DC2626',
+                        marginBottom: 4,
+                    }}
+                >
+                    {subLabel}
+                </div>
+                <div
+                    style={{
+                        fontFamily: FONT.grotesk,
+                        fontSize: 44,
+                        fontWeight: 800,
+                        letterSpacing: -1,
+                        lineHeight: 1.12,
+                        color: '#111827',
+                    }}
+                >
+                    {text}
+                </div>
+            </div>
+        );
+    } else if (cardStyle === 'receipt') {
+        // Gaya Struk Thermal Belanja
+        cardContent = (
+            <div
+                style={{
+                    backgroundColor: '#FAF8F3',
+                    color: '#111111',
+                    padding: '22px 28px',
+                    borderRadius: 4,
+                    borderTop: '4px dashed #111111',
+                    borderBottom: '4px dashed #111111',
+                    boxShadow: '0 18px 40px rgba(0,0,0,0.48)',
+                    maxWidth: 860,
+                }}
+            >
+                <div
+                    style={{
+                        fontFamily: FONT.mono,
+                        fontSize: 20,
+                        fontWeight: 500,
+                        letterSpacing: 1.5,
+                        color: '#52525B',
+                        marginBottom: 8,
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    *** {subLabel} ***
+                </div>
+                <div
+                    style={{
+                        backgroundColor: '#111111',
+                        color: '#FAF8F3',
+                        padding: '14px 20px',
+                        fontFamily: FONT.grotesk,
+                        fontSize: 40,
+                        fontWeight: 800,
+                        letterSpacing: -0.8,
+                        lineHeight: 1.15,
+                    }}
+                >
+                    {text}
+                </div>
+            </div>
+        );
+    } else if (cardStyle === 'label_tape') {
+        // Gaya Pita Emboss Dymo
+        cardContent = (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+                <div
+                    style={{
+                        backgroundColor: theme.colors.accent,
+                        color: theme.colors.accentText,
+                        padding: '6px 16px',
+                        fontFamily: FONT.mono,
+                        fontSize: 20,
+                        fontWeight: 700,
+                        letterSpacing: 2,
+                        textTransform: 'uppercase',
+                        transform: 'rotate(-0.8deg)',
+                        boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+                    }}
+                >
+                    {subLabel}
+                </div>
+                <div
+                    style={{
+                        backgroundColor: '#111215',
+                        color: '#FFFFFF',
+                        padding: '18px 28px',
+                        border: '1.5px solid rgba(255,255,255,0.22)',
+                        fontFamily: FONT.grotesk,
+                        fontSize: 42,
+                        fontWeight: 800,
+                        letterSpacing: -0.8,
+                        lineHeight: 1.15,
+                        boxShadow: '0 14px 32px rgba(0,0,0,0.55)',
+                    }}
+                >
+                    {text}
+                </div>
+            </div>
+        );
+    } else if (cardStyle === 'quiet_serif') {
+        // Gaya Editorial Luxury Serif
+        cardContent = (
+            <div
+                style={{
+                    backgroundColor: 'rgba(12, 12, 16, 0.84)',
+                    borderTop: `2px solid ${theme.colors.accent}`,
+                    padding: '24px 32px',
+                    borderRadius: 12,
+                    boxShadow: '0 18px 42px rgba(0,0,0,0.5)',
+                    maxWidth: 880,
+                }}
+            >
+                <div
+                    style={{
+                        fontFamily: FONT.grotesk,
+                        fontSize: 19,
+                        fontWeight: 600,
+                        letterSpacing: 2.5,
+                        color: theme.colors.accent,
+                        textTransform: 'uppercase',
+                        marginBottom: 6,
+                    }}
+                >
+                    {subLabel}
+                </div>
+                <div
+                    style={{
+                        fontFamily: FONT.serifItalic,
+                        fontSize: 52,
+                        fontStyle: 'italic',
+                        color: '#FFFFFF',
+                        lineHeight: 1.08,
+                    }}
+                >
+                    {text}
+                </div>
+            </div>
+        );
+    } else {
+        // Default / Chat Thread / Type Stack / Floating Clean
+        cardContent = (
+            <div
+                style={{
+                    background: 'rgba(12, 14, 20, 0.90)',
+                    border: `2px solid ${theme.colors.accent}`,
+                    borderRadius: 24,
+                    padding: '20px 28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 20,
+                    boxShadow: '0 18px 40px rgba(0, 0, 0, 0.55)',
+                }}
+            >
+                <div
+                    style={{
+                        width: 68,
+                        height: 68,
+                        borderRadius: 18,
+                        backgroundColor: theme.colors.accent,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transform: `scale(${badgeEnter})`,
+                        flexShrink: 0,
+                    }}
+                >
+                    <span
+                        style={{
+                            fontSize: 38,
+                            fontWeight: 900,
+                            color: theme.colors.accentText,
+                            transform: `translate(${-arrowNudge * 0.5}px, ${arrowNudge * 0.5}px)`,
+                            display: 'inline-block',
+                        }}
+                    >
+                        ↙
+                    </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <span
+                        style={{
+                            fontFamily: FONT.mono,
+                            fontSize: 19,
+                            fontWeight: 700,
+                            letterSpacing: 1.6,
+                            color: theme.colors.accent,
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        {subLabel}
+                    </span>
+                    <span
+                        style={{
+                            fontFamily: FONT.grotesk,
+                            fontSize: 40,
+                            fontWeight: 800,
+                            letterSpacing: -1,
+                            color: '#FFFFFF',
+                            lineHeight: 1.15,
+                        }}
+                    >
+                        {text}
+                    </span>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -1148,76 +1489,8 @@ const EditorialCTA: React.FC<{
                 transform: `translateY(${y + exit * 30}px) scale(${0.95 + enter * 0.05})`,
             }}
         >
-            <div
-                style={{
-                    background: theme.colors.ctaBg || theme.colors.surface,
-                    border: `1.5px solid ${theme.colors.surfaceBorder}`,
-                    borderRadius: 28,
-                    padding: '22px 28px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 22,
-                    boxShadow: `0 0 ${pulseGlow}px ${theme.colors.accent}55, ${theme.colors.boxShadow}`,
-                }}
-            >
-                {/* Kotak Ikon Panah Interaktif */}
-                <div
-                    style={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: 20,
-                        backgroundColor: theme.colors.accent,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transform: `scale(${badgeEnter})`,
-                        flexShrink: 0,
-                        boxShadow: '0 6px 16px rgba(0, 0, 0, 0.25)',
-                    }}
-                >
-                    <span
-                        style={{
-                            fontSize: 40,
-                            fontWeight: 900,
-                            color: theme.colors.accentText,
-                            transform: `translate(${-arrowNudge}px, ${arrowNudge}px)`,
-                            display: 'inline-block',
-                        }}
-                    >
-                        ↙
-                    </span>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {label ? (
-                        <span
-                            style={{
-                                fontFamily: theme.fonts.mono,
-                                fontSize: 20,
-                                fontWeight: 700,
-                                letterSpacing: 1.8,
-                                color: theme.colors.ctaSubtext,
-                                textTransform: 'uppercase',
-                            }}
-                        >
-                            {label}
-                        </span>
-                    ) : null}
-                    <span
-                        style={{
-                            fontFamily: theme.fonts.display,
-                            fontSize: 40,
-                            fontWeight: 800,
-                            letterSpacing: -1,
-                            color: theme.colors.ctaText,
-                            lineHeight: 1.15,
-                            textShadow: '0 2px 8px rgba(0, 0, 0, 0.35)',
-                        }}
-                    >
-                        {text}
-                    </span>
-                </div>
-            </div>
+            {cardContent}
+            {renderYellowBasketPointer()}
         </div>
     );
 };
@@ -1366,6 +1639,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             isHookClip={idx === 0}
                             isFirstProductClip={idx === 1}
                             hookTransition={hookTransition}
+                            clipStartFrame={fromFrame}
+                            voStartFrame={voStartFrame}
+                            captions={voiceOverCaptions as Caption[] | undefined}
                         />
                     </Sequence>
                 );
@@ -1624,6 +1900,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     label={ctaLabel}
                     durationInFrames={ctaDuration}
                     theme={theme}
+                    cardStyle={cardStyle}
                 />
             </Sequence>
 
