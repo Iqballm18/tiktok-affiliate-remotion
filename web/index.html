@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Affiliate Studio</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -1222,11 +1223,7 @@
     <div class="modal-dialog small confirm-dialog-box">
       <div class="confirm-dialog-body">
         <div class="confirm-icon-wrap" id="confirmDialogIcon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
+          <svg class="ic" aria-hidden="true" style="width: 22px; height: 22px;"><use href="#i-alert"></use></svg>
         </div>
         <div class="confirm-text-wrap">
           <h3 id="confirmDialogTitle" class="confirm-title">Konfirmasi Aksi</h3>
@@ -1237,6 +1234,26 @@
       <div class="confirm-dialog-actions">
         <button class="btn small" id="btnConfirmCancel" type="button">Batal</button>
         <button class="btn small danger" id="btnConfirmOk" type="button">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3b: Dialog Input Kustom (Pengganti prompt() browser) -->
+  <div class="modal-backdrop" id="modalPromptDialog" style="display: none;">
+    <div class="modal-dialog small confirm-dialog-box" style="max-width: 440px;">
+      <div class="confirm-dialog-body" style="align-items: flex-start;">
+        <div class="confirm-icon-wrap" style="color: var(--signal); background: rgba(245, 158, 11, 0.12);">
+          <svg class="ic" aria-hidden="true" style="width: 20px; height: 20px;"><use href="#i-sparkles"></use></svg>
+        </div>
+        <div class="confirm-text-wrap" style="flex: 1;">
+          <h3 id="promptDialogTitle" class="confirm-title" style="margin-bottom: 6px;">Input Data</h3>
+          <div id="promptDialogMessage" class="confirm-msg" style="margin-bottom: 12px; font-size: 13px;">Silakan masukkan nilai:</div>
+          <input type="text" id="promptDialogInput" class="input" style="width: 100%; box-sizing: border-box;" autocomplete="off">
+        </div>
+      </div>
+      <div class="confirm-dialog-actions" style="margin-top: 14px;">
+        <button class="btn small" id="btnPromptCancel" type="button">Batal</button>
+        <button class="btn small primary" id="btnPromptOk" type="button">Simpan</button>
       </div>
     </div>
   </div>

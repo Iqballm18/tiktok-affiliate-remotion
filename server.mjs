@@ -43,9 +43,30 @@ function resolvePublicFilePath(rel) {
     throw new Error('Akses di luar folder public ditolak');
   }
   if (!fs.existsSync(targetPath)) {
-    const fallback = path.resolve(PUBLIC_DIR, path.basename(normalized));
+    const baseName = path.basename(normalized);
+    const fallback = path.resolve(PUBLIC_DIR, baseName);
     if (fallback.startsWith(PUBLIC_DIR) && fs.existsSync(fallback)) {
       targetPath = fallback;
+    } else {
+      // Cari rekursif di subfolder public/ (misalnya public/products/<productId>/...)
+      function searchDir(dir) {
+        if (!fs.existsSync(dir)) return null;
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const full = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            const found = searchDir(full);
+            if (found) return found;
+          } else if (entry.name.toLowerCase() === baseName.toLowerCase()) {
+            return full;
+          }
+        }
+        return null;
+      }
+      const foundInSub = searchDir(PUBLIC_DIR);
+      if (foundInSub) {
+        targetPath = foundInSub;
+      }
     }
   }
   return targetPath;
@@ -453,13 +474,9 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        // Cari file secara path relatif langsung atau di root public/
-        let inputPath = path.join(PUBLIC_DIR, filename);
-        let relFilename = filename;
-        if (!fs.existsSync(inputPath)) {
-          inputPath = path.join(PUBLIC_DIR, path.basename(filename));
-          relFilename = path.basename(filename);
-        }
+        // Cari file secara path relatif langsung, atau lewat resolvePublicFilePath yang mendukung subfolder produk
+        let inputPath = resolvePublicFilePath(filename);
+        let relFilename = path.relative(PUBLIC_DIR, inputPath).replace(/\\/g, '/');
         if (!fs.existsSync(inputPath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `File public/${filename} tidak ditemukan` }));
@@ -523,12 +540,8 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        let inputPath = path.join(PUBLIC_DIR, filename);
-        let relFilename = filename;
-        if (!fs.existsSync(inputPath)) {
-          inputPath = path.join(PUBLIC_DIR, path.basename(filename));
-          relFilename = path.basename(filename);
-        }
+        let inputPath = resolvePublicFilePath(filename);
+        let relFilename = path.relative(PUBLIC_DIR, inputPath).replace(/\\/g, '/');
         if (!fs.existsSync(inputPath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: `File public/${filename} tidak ditemukan` }));
@@ -1784,6 +1797,10 @@ const server = http.createServer(async (req, res) => {
   }
   if (pathname === '/app.js') {
     serveStaticFile(req, res, path.join(WEB_DIR, 'app.js'), 'application/javascript; charset=utf-8');
+    return;
+  }
+  if (pathname === '/favicon.svg' || pathname === '/favicon.ico') {
+    serveStaticFile(req, res, path.join(WEB_DIR, 'favicon.svg'), 'image/svg+xml');
     return;
   }
 

@@ -509,7 +509,7 @@
       // Refresh asset options to prioritize current product assets
       await loadAssets();
     } catch (err) {
-      alert(err.message);
+      showToast({ type: 'error', title: 'Error', message: err.message });
     }
   }
 
@@ -1427,6 +1427,7 @@
         if (el.barClip2) el.barClip2.style.width = `${(clipDurations[2] / totalSec) * 100}%`;
         if (el.barClip3) el.barClip3.style.width = `${(clipDurations[3] / totalSec) * 100}%`;
       }
+      triggerAutoSave();
     }
   });
 
@@ -1638,6 +1639,10 @@
   });
 
   const autoSyncInputs = [
+    el.inputProductName,
+    el.inputCustomOutputName,
+    el.inputVoiceOverDelay,
+    el.inputWatermark,
     el.inputBadgeText,
     el.inputHookLine1,
     el.inputHookHighlight,
@@ -1665,12 +1670,14 @@
     if (el.selectPreset) el.selectPreset.value = '';
     syncFormToVariant();
     updateThemeVisualPreview();
+    triggerAutoSave();
   });
 
   el.selectCardStyle?.addEventListener('change', () => {
     if (el.selectPreset) el.selectPreset.value = '';
     syncFormToVariant();
     updateThemeVisualPreview();
+    triggerAutoSave();
   });
 
   el.selectPreset?.addEventListener('change', () => {
@@ -1683,6 +1690,7 @@
     }
     syncFormToVariant();
     updateThemeVisualPreview();
+    triggerAutoSave();
   });
 
   el.selectCaptionStyle?.addEventListener('change', () => {
@@ -1695,10 +1703,26 @@
   el.selectBadgeStyle?.addEventListener('change', () => {
     syncFormToVariant();
     updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectBgmTrack?.addEventListener('change', () => {
+    syncFormToVariant();
+    triggerAutoSave();
+  });
+
+  el.selectWatermarkPosition?.addEventListener('change', () => {
+    syncFormToVariant();
+    triggerAutoSave();
   });
 
   [el.inputCtaLabel, el.inputUrgencyTag].forEach(inp => {
-    if (inp) inp.addEventListener('input', updateThemeVisualPreview);
+    if (inp) {
+      inp.addEventListener('input', () => {
+        updateThemeVisualPreview();
+        triggerAutoSave();
+      });
+    }
   });
 
   el.selectProduct.addEventListener('change', () => {
@@ -1715,6 +1739,7 @@
           v.clips.forEach(c => { c.src = el.selectProductVideo.value; });
         }
       });
+      triggerAutoSave();
     }
   });
 
@@ -1726,6 +1751,7 @@
       checkDurationMatch(v);
     }
     updateVoiceOverStatusPill(el.selectVoiceOver.value);
+    triggerAutoSave();
   });
 
   // Refresh Products List
@@ -1738,7 +1764,7 @@
   // Delete Product Action
   el.btnDeleteProduct?.addEventListener('click', async () => {
     if (!state.activeProductId || !state.currentProduct) {
-      alert('Pilih produk yang ingin dihapus terlebih dahulu.');
+      showToast({ type: 'warn', title: 'Peringatan', message: 'Pilih produk yang ingin dihapus terlebih dahulu.' });
       return;
     }
     const pid = state.activeProductId;
@@ -1766,13 +1792,19 @@
       try { localStorage.removeItem('studio_active_product'); } catch (_) {}
       await loadProductsList();
     } catch (err) {
-      alert('Gagal menghapus produk: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Menghapus', message: err.message });
     }
   });
 
   // New Product Action
-  el.btnNewProduct.addEventListener('click', () => {
-    const name = prompt('Masukkan nama produk baru:');
+  el.btnNewProduct.addEventListener('click', async () => {
+    const name = await showPromptDialog({
+      title: 'Tambah Produk Baru',
+      message: 'Masukkan nama produk yang ingin dibuat:',
+      placeholder: 'Contoh: Botol Minum Tumbler 750ml',
+      confirmText: 'Buat Produk',
+      cancelText: 'Batal'
+    });
     if (!name) return;
     const safeId = name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
     const vo1 = state.assets.voiceOvers.find(vo => vo.name.includes('v1'))?.name || state.assets.voiceOvers[0]?.name || '';
@@ -1844,7 +1876,7 @@
     const id = state.activeProductId || 'product';
     try {
       el.btnSaveProduct.disabled = true;
-      el.btnSaveProduct.textContent = 'Menyimpan...';
+      el.btnSaveProduct.innerHTML = `${svgIcon('save')} Menyimpan...`;
       const res = await fetch(`/api/products/${id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1856,10 +1888,10 @@
       await loadProductsList();
       el.selectProduct.value = id;
     } catch (err) {
-      alert('Gagal menyimpan produk: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Menyimpan', message: err.message });
     } finally {
       el.btnSaveProduct.disabled = false;
-      el.btnSaveProduct.textContent = 'Simpan Produk';
+      el.btnSaveProduct.innerHTML = `${svgIcon('save')} Simpan Produk`;
     }
   });
 
@@ -1879,7 +1911,7 @@
   el.btnValidateJson.addEventListener('click', async () => {
     const raw = el.textareaGeminiJson.value.trim();
     if (!raw) {
-      alert('Silakan tempelkan JSON dari Gemini terlebih dahulu.');
+      showToast({ type: 'warn', title: 'JSON Kosong', message: 'Silakan tempelkan JSON dari Gemini terlebih dahulu.' });
       return;
     }
     try {
@@ -1984,7 +2016,7 @@
 
     if (clampedCount > 0) {
       appendLog(`[AUTO-CLAMP] ${clampedCount} klip otomatis disesuaikan agar tidak melebihi durasi video (${maxDur}s)`, true);
-      alert(`Catatan: ${clampedCount} klip dari Gemini memiliki detik yang melebihi panjang asli video (${maxDur}s). Studio telah otomatis menyesuaikannya ke akhir video agar render tidak freeze.`);
+      showToast({ type: 'info', title: 'Auto-Clamp Klip', message: `${clampedCount} klip otomatis disesuaikan dengan durasi video (${maxDur}s).`, duration: 6000 });
     } else {
       appendLog(`[IMPORT] Berhasil menerapkan copywriting & klip Gemini untuk '${candidate.name}'`, true);
     }
@@ -2140,6 +2172,73 @@
   }
 
   // -------------------------------------------------------------
+  // Custom In-App Input Prompt Dialog (Replaces native prompt())
+  // -------------------------------------------------------------
+  function showPromptDialog({
+    title = 'Input Data',
+    message = 'Silakan masukkan nilai:',
+    defaultValue = '',
+    placeholder = '',
+    confirmText = 'Simpan',
+    cancelText = 'Batal'
+  }) {
+    return new Promise(resolve => {
+      const modal = $('modalPromptDialog');
+      const titleEl = $('promptDialogTitle');
+      const msgEl = $('promptDialogMessage');
+      const inputEl = $('promptDialogInput');
+      const okBtn = $('btnPromptOk');
+      const cancelBtn = $('btnPromptCancel');
+
+      if (!modal || !inputEl) {
+        resolve(window.prompt(message, defaultValue));
+        return;
+      }
+
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      inputEl.value = defaultValue || '';
+      inputEl.placeholder = placeholder || '';
+      if (okBtn) okBtn.textContent = confirmText;
+      if (cancelBtn) cancelBtn.textContent = cancelText;
+
+      function cleanup(val) {
+        modal.style.display = 'none';
+        okBtn?.removeEventListener('click', onOk);
+        cancelBtn?.removeEventListener('click', onCancel);
+        modal.removeEventListener('click', onBackdrop);
+        document.removeEventListener('keydown', onKey);
+        resolve(val);
+      }
+
+      function onOk() {
+        cleanup(inputEl.value.trim());
+      }
+      function onCancel() {
+        cleanup(null);
+      }
+      function onBackdrop(e) {
+        if (e.target === modal) cleanup(null);
+      }
+      function onKey(e) {
+        if (e.key === 'Escape') cleanup(null);
+        if (e.key === 'Enter') cleanup(inputEl.value.trim());
+      }
+
+      okBtn?.addEventListener('click', onOk);
+      cancelBtn?.addEventListener('click', onCancel);
+      modal.addEventListener('click', onBackdrop);
+      document.addEventListener('keydown', onKey);
+
+      modal.style.display = 'flex';
+      setTimeout(() => {
+        inputEl.focus();
+        inputEl.select();
+      }, 50);
+    });
+  }
+
+  // -------------------------------------------------------------
   // Modal 2: Instant Frame Preview (renderStill) with Rich Progress & Notifications
   // -------------------------------------------------------------
   let stillTimerInterval = null;
@@ -2151,7 +2250,7 @@
       // Button states
       if (el.btnRefreshStill) {
         el.btnRefreshStill.disabled = true;
-        if (el.btnRefreshStillIcon) el.btnRefreshStillIcon.textContent = '⏳';
+        if (el.btnRefreshStillIcon) el.btnRefreshStillIcon.innerHTML = svgIcon('refresh');
         if (el.btnRefreshStillText) el.btnRefreshStillText.textContent = 'Merender...';
       }
       if (el.btnPreviewStill) {
@@ -2380,7 +2479,7 @@
     if (!el.btnSaveGDriveLink) return;
     try {
       el.btnSaveGDriveLink.disabled = true;
-      el.btnSaveGDriveLink.textContent = 'Menyimpan...';
+      el.btnSaveGDriveLink.innerHTML = `${svgIcon('save')} Menyimpan...`;
 
       let inputUrl = el.inputGDriveUrl?.value.trim() || '';
       if (!inputUrl) inputUrl = 'https://drive.google.com/drive/my-drive';
@@ -2415,7 +2514,7 @@
       showToast({ type: 'error', title: 'Gagal Menyimpan', message: err.message });
     } finally {
       el.btnSaveGDriveLink.disabled = false;
-      el.btnSaveGDriveLink.textContent = 'Simpan Pengaturan';
+      el.btnSaveGDriveLink.innerHTML = `${svgIcon('save')} Simpan Pengaturan`;
     }
   }
 
@@ -2873,7 +2972,7 @@
           isDanger: false
         });
         if (okTranscribe) {
-          triggerTranscribe(file.name);
+          triggerTranscribe(data.filename || file.name);
         }
       }
     } catch (err) {
@@ -2895,16 +2994,16 @@
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal memulai transkripsi');
-      alert(`Transkripsi untuk ${filename} dimulai di latar belakang. Silakan pantau monitor log.`);
+      showToast({ type: 'info', title: 'Transkripsi Dimulai', message: `Whisper AI sedang memproses ${filename}... Pantau di monitor log.` });
     } catch (err) {
-      alert('Error transcribe: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Transkripsi', message: err.message });
     }
   }
 
   el.btnTranscribeCurrentVO.addEventListener('click', () => {
     const vo = el.selectVoiceOver.value;
     if (!vo) {
-      alert('Pilih file voice over terlebih dahulu pada dropdown di atas.');
+      showToast({ type: 'warn', title: 'Pilih Audio', message: 'Pilih file voice over terlebih dahulu pada dropdown di atas.' });
       return;
     }
     triggerTranscribe(vo);
@@ -3039,7 +3138,7 @@
         renderWordsTable();
         appendLog(`[SUBTITLE] Kata baris #${idx + 1} berhasil digabungkan dengan baris bawah di ${state.activeTranscriptFile}`, true);
       } catch (err) {
-        alert('Gagal menggabungkan kata: ' + err.message);
+        showToast({ type: 'error', title: 'Gagal Gabung Kata', message: err.message });
         renderWordsTable();
       }
       return;
@@ -3056,7 +3155,14 @@
       let p1 = parts[0] || '';
       let p2 = parts.slice(1).join(' ') || '';
 
-      const userInput = prompt(`Pisahkan kata "${currentWord}" menjadi 2 bagian (dipisahkan spasi):`, `${p1} ${p2}`.trim());
+      const userInput = await showPromptDialog({
+        title: 'Pisahkan Kata Subtitle',
+        message: `Pisahkan kata "${currentWord}" menjadi 2 bagian (dipisahkan spasi):`,
+        defaultValue: `${p1} ${p2}`.trim(),
+        placeholder: 'kata_pertama kata_kedua',
+        confirmText: 'Pisahkan',
+        cancelText: 'Batal'
+      });
       if (!userInput) return;
 
       const userParts = userInput.trim().split(/\s+/);
@@ -3081,7 +3187,7 @@
         renderWordsTable();
         appendLog(`[SUBTITLE] Kata baris #${idx + 1} berhasil dipisahkan menjadi "${p1}" dan "${p2}"`, true);
       } catch (err) {
-        alert('Gagal memisahkan kata: ' + err.message);
+        showToast({ type: 'error', title: 'Gagal Pisah Kata', message: err.message });
       }
       return;
     }
@@ -3118,7 +3224,7 @@
         renderWordsTable();
         appendLog(`[SUBTITLE] Kata baris #${idx + 1} berhasil dihapus dari ${state.activeTranscriptFile}`, true);
       } catch (err) {
-        alert('Gagal menghapus kata: ' + err.message);
+        showToast({ type: 'error', title: 'Gagal Hapus Kata', message: err.message });
       }
       return;
     }
@@ -3129,7 +3235,7 @@
     if (!state.activeTranscriptFile || !state.activeTranscriptWords) return;
     try {
       el.btnSaveSubtitles.disabled = true;
-      el.btnSaveSubtitles.textContent = 'Menyimpan...';
+      el.btnSaveSubtitles.innerHTML = `${svgIcon('save')} Menyimpan...`;
       const res = await fetch('/api/transcript', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3141,12 +3247,12 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menyimpan');
       appendLog(`[SUBTITLE] Berhasil menyimpan ${data.count} kata ke ${state.activeTranscriptFile}`, true);
-      alert('Perubahan kata subtitle berhasil disimpan!');
+      showToast({ type: 'success', title: 'Subtitle Tersimpan', message: 'Perubahan kata subtitle berhasil disimpan!' });
     } catch (err) {
-      alert('Gagal menyimpan: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Menyimpan', message: err.message });
     } finally {
       el.btnSaveSubtitles.disabled = false;
-      el.btnSaveSubtitles.textContent = 'Simpan perubahan subtitle';
+      el.btnSaveSubtitles.innerHTML = `${svgIcon('save')} Simpan perubahan`;
     }
   });
 
@@ -3164,19 +3270,19 @@
   // Auto-Correct Subtitles via Reference Script (Ground-Truth Gemini)
   el.btnAutoCorrectSubtitles.addEventListener('click', async () => {
     if (!state.activeTranscriptFile) {
-      alert('Pilih file transkrip JSON terlebih dahulu di atas.');
+      showToast({ type: 'warn', title: 'Pilih Transkrip', message: 'Pilih file transkrip JSON terlebih dahulu di atas.' });
       return;
     }
 
     const script = el.inputReferenceScript.value.trim();
     if (!script) {
-      alert('Tempelkan naskah voice over asli dari Gemini ke kotak naskah acuan di atas terlebih dahulu.');
+      showToast({ type: 'warn', title: 'Naskah Acuan Kosong', message: 'Tempelkan naskah voice over asli dari Gemini ke kotak naskah acuan terlebih dahulu.' });
       return;
     }
 
     try {
       el.btnAutoCorrectSubtitles.disabled = true;
-      el.btnAutoCorrectSubtitles.textContent = 'Mengoreksi...';
+      el.btnAutoCorrectSubtitles.innerHTML = `${svgIcon('wand')} Mengoreksi...`;
       el.autoCorrectFeedback.style.display = 'none';
 
       const res = await fetch('/api/transcript/auto-correct', {
@@ -3199,10 +3305,10 @@
 
       appendLog(`[AUTO-CORRECT] Berhasil menyelaraskan ${data.words.length} kata pada ${state.activeTranscriptFile} berdasarkan naskah narasi Gemini`, true);
     } catch (err) {
-      alert('Error auto-correct: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Koreksi Otomatis', message: err.message });
     } finally {
       el.btnAutoCorrectSubtitles.disabled = false;
-      el.btnAutoCorrectSubtitles.textContent = 'Auto-correct subtitle via naskah';
+      el.btnAutoCorrectSubtitles.innerHTML = `${svgIcon('wand')} Auto-correct dari naskah`;
     }
   });
 
@@ -3371,7 +3477,7 @@
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Gagal memulai render');
       } catch (err) {
-        alert('Error saat render: ' + err.message);
+        showToast({ type: 'error', title: 'Gagal Render', message: err.message });
         el.btnStartRender.disabled = false;
         el.btnCancelRender.style.display = 'none';
         el.renderStatusPill.textContent = 'Gagal';
@@ -4377,12 +4483,12 @@
   el.btnTrimSilence?.addEventListener('click', async () => {
     const filename = el.selectVoiceOver?.value;
     if (!filename) {
-      alert('Pilih file audio Voice Over terlebih dahulu.');
+      showToast({ type: 'warn', title: 'Pilih Audio', message: 'Pilih file audio Voice Over terlebih dahulu.' });
       return;
     }
-    const origText = el.btnTrimSilence.textContent;
+    const origHtml = el.btnTrimSilence.innerHTML;
     el.btnTrimSilence.disabled = true;
-    el.btnTrimSilence.textContent = '⏳ Memotong jeda...';
+    el.btnTrimSilence.innerHTML = `${svgIcon('scissors')} Memotong jeda...`;
 
     try {
       const res = await fetch('/api/trim-silence', {
@@ -4416,10 +4522,10 @@
         showToast({ type: 'info', title: 'Transkripsi Berjalan', message: 'Whisper AI sedang menyelaraskan ulang subtitle...' });
       }
     } catch (err) {
-      alert('Gagal memotong jeda napas: ' + err.message);
+      showToast({ type: 'error', title: 'Gagal Memotong Audio', message: err.message });
     } finally {
       el.btnTrimSilence.disabled = false;
-      el.btnTrimSilence.textContent = origText;
+      el.btnTrimSilence.innerHTML = origHtml;
     }
   });
 
@@ -4541,7 +4647,7 @@
   el.btnStartBatchRender?.addEventListener('click', async () => {
     const selectedIds = Array.from(document.querySelectorAll('.batch-prod-chk:checked')).map(c => c.value);
     if (selectedIds.length === 0) {
-      alert('Pilih minimal 1 produk untuk dirender.');
+      showToast({ type: 'warn', title: 'Antrean Kosong', message: 'Pilih minimal 1 produk untuk dirender.' });
       return;
     }
 

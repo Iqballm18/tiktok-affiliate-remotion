@@ -36,21 +36,26 @@ models/
 *.avi
 *.webm
 
-# Raw footage inside public/
-public/*.mov
-public/*.MOV
-public/*.mp4
-public/*.MP4
-public/*.mkv
-public/*.avi
-public/*.webm
+# ==========================================
+# User Product Configurations (products/*.json)
+# Simpan template sample saja di git jika perlu
+# ==========================================
+products/*
+!products/.gitkeep
+!products/bagus-serap-air.json
 
-# User voiceovers inside public/ (keep SFX sounds)
-public/*.mp3
-public/*.wav
+# ==========================================
+# Raw Media, Footages & Subtitles inside public/
+# (Hanya simpan audio SFX bawaan & gitkeep di git)
+# ==========================================
+public/*
 !public/sfx/
 !public/sfx/**
+!public/bgm/
+!public/bgm/**
 !public/.gitkeep
+public/products/
+public/products/**
 
 # ==========================================
 # Sensitive Local Config & API Credentials
