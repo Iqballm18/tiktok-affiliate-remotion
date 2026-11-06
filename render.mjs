@@ -152,42 +152,44 @@ export async function renderProductVariant({
 
   onLog(`[RENDER] Menyimpan video ke: out/${outFileName}`);
 
-  // 4. Siapkan opsi akselerasi GPU (Chromium GPU Compositing & 2D Canvas)
+  // 4. Siapkan opsi akselerasi GPU (Chromium GPU Compositing & ANGLE Direct3D 11 via AMD Radeon)
   const enableGpu = useGpu !== undefined ? !!useGpu : !!config.enableGpuRender;
 
-  // Catatan teknis: Remotion menggunakan binary internal FFmpeg yang hanya mendukung
-  // NVENC (Nvidia) dan belum menyertakan AMF (AMD). Namun untuk GPU Radeon, Remotion
-  // mendukung akselerasi penuh pada tahap Chromium Headless (WebGL, Canvas, Layer Compositing)
-  // yang memakan 90% beban proses render video.
+  // Di Remotion 4.0, chromiumOptions.gl = 'angle' mengarahkan Chromium headless
+  // untuk menggunakan backend Direct3D 11 yang mempercepat WebGL, backdrop blur,
+  // dan layer compositing langsung melalui GPU AMD Radeon RX 6600.
   const chromiumOptions = enableGpu ? {
-    args: [
-      '--enable-gpu',
-      '--ignore-gpu-blocklist',
-      '--enable-accelerated-2d-canvas',
-      '--use-angle=default',
-    ],
-  } : {};
+    gl: 'angle',
+  } : {
+    gl: null,
+  };
 
   if (enableGpu) {
-    onLog(`[GPU] 🎮 Akselerasi GPU Radeon AKTIF (Chromium WebGL & 2D Canvas Compositing)`);
-    onLog(`[GPU] Pipeline: AMD GPU Frame Render + Remotion Fast Encoder`);
+    onLog(`[GPU] 🎮 Akselerasi GPU Radeon AKTIF (Chromium ANGLE D3D11 / WebGL Compositing)`);
+    onLog(`[GPU] Pipeline: AMD Radeon GPU Rendering + Multi-thread Fast Encoder`);
   } else {
     onLog(`[CPU] Render menggunakan mode CPU standar (libx264, crf=20)`);
     onLog(`[CPU] Tips: Aktifkan GPU Rendering di modal untuk mempercepat render frame`);
   }
 
-  // 4. Render media
+  // 4. Render media dengan konfigurasi optimal untuk Intel i5-12400 (12 Threads) & RX 6600
   let lastLoggedFrame = -1;
   const startTime = Date.now();
+  const cpuCount = os.cpus()?.length || 8;
+  const optimalConcurrency = Math.max(4, Math.min(10, cpuCount > 4 ? cpuCount - 2 : 4));
 
   const renderResult = await renderMedia({
     composition,
     serveUrl: bundleLocation,
     codec: 'h264',
     crf: 20,
+    x264Preset: 'veryfast',
+    imageFormat: 'jpeg',
+    jpegQuality: 92,
     outputLocation,
     inputProps: props,
-    concurrency: 8,
+    concurrency: optimalConcurrency,
+    offthreadVideoThreads: Math.max(2, Math.min(6, Math.floor(cpuCount / 2))),
     disallowParallelEncoding: false,
     cancelToken,
     chromiumOptions,
@@ -248,6 +250,8 @@ export async function renderProductStill({
 }) {
   onProgress({ step: 'sync', message: 'Menyelaraskan media & membaca props...', percent: 20 });
   const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
+  const config = loadConfig();
+  const enableGpu = config.enableGpuRender !== false;
   const { props } = resolveVariantProps(product, variantKey);
 
   onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion (Webpack)...', percent: 45 });
@@ -275,6 +279,7 @@ export async function renderProductStill({
     inputProps: props,
     frame: parseInt(frame, 10),
     imageFormat: 'png',
+    chromiumOptions: enableGpu ? { gl: 'angle' } : { gl: null },
   });
 
   onProgress({ step: 'done', message: 'Pratinjau frame berhasil dibuat!', percent: 100 });

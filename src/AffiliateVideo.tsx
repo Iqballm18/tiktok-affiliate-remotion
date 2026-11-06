@@ -17,8 +17,8 @@ import { TikTokSafeZone } from './components/TikTokSafeZone';
 import { FloatingWatermark } from './components/FloatingWatermark';
 import { HookSubtitle } from './components/HookSubtitle';
 import { HookBadge, resolveBadgeVariant } from './components/HookBadge';
-import { HeadlineLayout, resolveHookLayout } from './components/HookLayouts';
-import { resolvePreset } from './presets';
+import { HeadlineLayout, resolveHookSelection } from './components/HookLayouts';
+import { resolvePreset, resolveVariantVersion, VariantVersion } from './presets';
 import { loadThemeFonts } from './load-theme-fonts';
 import { FONT } from './load-hook-fonts';
 import { Caption } from '@remotion/captions';
@@ -36,6 +36,9 @@ export const TRANSITION_TYPES = [
     'push_up', // geser vertikal ala scroll TikTok
     'flash_cut', // kilatan putih + hard cut
     'shutter', // rana kamera menutup lalu membuka
+    'split_wipe', // belahan layar menyapu dengan garis aksen (bang-motion)
+    'iris_pop', // bukaan fokus lingkar kamera dari tengah (bang-motion)
+    'tilt_whip', // banting sudut kamera miring + motion blur (bang-motion)
     'none',
 ] as const;
 export type TransitionType = (typeof TRANSITION_TYPES)[number];
@@ -65,15 +68,23 @@ export const clipItemSchema = z.object({
 });
 
 export const affiliateSchema = z.object({
-    // Preset desain: skincare | gadget | flash_sale | lifestyle. Mengisi themeStyle, cardStyle,
-    // dan badgeStyle yang kosong. Field eksplisit di bawah selalu menang atas preset.
+    // Preset desain: skincare | gadget | flash_sale | lifestyle | household | parenting | podcast_hook | luxury.
+    // Mengisi themeStyle, cardStyle, hookVariant, badgeStyle, captionStyle, captionVariant, dan transisi yang kosong.
+    // Field eksplisit di bawah selalu menang atas preset.
     preset: z.string().optional(),
+    // Versi preset: v1 | v2 | v3.
+    presetVariant: z.enum(['v1', 'v2', 'v3']).optional(),
     themeStyle: z.string().optional(),
-    // Layout hook. Baru: sticky_note | receipt | chat_thread | type_stack | label_tape | quiet_serif.
+    // Layout hook. Baru: sticky_note | receipt | chat_thread | type_stack | label_tape | quiet_serif
+    // (beserta alias spesifik: kinetic_pill, strike_box, white_catalog, comment_reply, grid_memo, paper_pocket, cyber_tape).
     // Lama: unified_glass | editorial_minimal | creator_aesthetic | clean_capsule | tiktok_native_ugc | top_banner_promo.
     cardStyle: z.string().optional(),
-    // Gaya subtitle: outline_pop | marker_sweep | reveal | plate. Kosong = outline_pop (atau dari preset).
+    // Versi desain hook di dalam cardStyle: v1 | v2 | v3.
+    hookVariant: z.enum(['v1', 'v2', 'v3']).optional(),
+    // Gaya subtitle: outline_pop | marker_sweep | reveal | plate (atau alias: pill_sparkle, under_draw, dim_focus, paper_ink).
     captionStyle: z.string().optional(),
+    // Versi desain subtitle di dalam captionStyle: v1 | v2 | v3.
+    captionVariant: z.enum(['v1', 'v2', 'v3']).optional(),
     // Alasan singkat pemilihan desain oleh Gemini. Hanya catatan, tidak memengaruhi render.
     designReason: z.string().optional(),
     // Gaya badge: sticker | alert | marker | glass. Kosong = otomatis (hook: sticker, demo & spec: glass).
@@ -98,8 +109,10 @@ export const affiliateSchema = z.object({
     karaokeHighlight: z.boolean().optional(),
     // Transisi hook -> klip produk pertama. Lihat TRANSITION_TYPES.
     hookTransition: z.enum(TRANSITION_TYPES).optional(),
-    // Transisi antarklip produk (demo -> spec -> CTA). 'auto' = dipilih dari preset SFX/tema.
+    // Transisi antarklip produk (demo -> spec -> CTA). 'auto' = dipilih dari preset SFX/tema & transitionVariant.
     clipTransition: z.enum([...TRANSITION_TYPES, 'auto']).optional(),
+    // Versi gerak transisi: v1 | v2 | v3.
+    transitionVariant: z.enum(['v1', 'v2', 'v3']).optional(),
     hookSubtitle: z.string().optional(),
     hookSubtitles: z.array(z.union([z.string(), timedSubtitleSchema])).optional(),
     hookCaptions: z.array(captionSchema).optional(),
@@ -263,12 +276,12 @@ const CinematicOverlays: React.FC<{ theme: ThemeDefinition }> = ({ theme }) => {
 type ActiveTransition = Exclude<TransitionType, 'none'>;
 type SfxPresetId = 'viral' | 'beauty' | 'tech' | 'minimal';
 
-// Pilihan otomatis transisi antarklip produk (demo -> spec -> CTA) berdasarkan preset SFX/tema.
-const AUTO_CLIP_TRANSITION: Record<SfxPresetId, TransitionType> = {
-    beauty: 'light_leak',
-    tech: 'glitch',
-    viral: 'push_up',
-    minimal: 'blur_zoom',
+// Pilihan otomatis transisi antarklip produk (demo -> spec -> CTA) berdasarkan preset SFX/tema & transitionVariant.
+const AUTO_CLIP_TRANSITION: Record<SfxPresetId, Record<VariantVersion, TransitionType>> = {
+    beauty: { v1: 'light_leak', v2: 'shutter', v3: 'split_wipe' },
+    tech: { v1: 'glitch', v2: 'split_wipe', v3: 'tilt_whip' },
+    viral: { v1: 'push_up', v2: 'flash_cut', v3: 'whip_pan' },
+    minimal: { v1: 'blur_zoom', v2: 'split_wipe', v3: 'shutter' },
 };
 
 // SFX per transisi. `at` = detik relatif ke titik cut (negatif = sebelum cut, agar puncak suara jatuh PAS di cut).
@@ -296,6 +309,18 @@ const TRANSITION_SFX: Record<TransitionType, SfxCue[]> = {
         { file: 'boom-sub', at: 0, vol: 0.45 },
     ],
     shutter: [{ file: 'camera-shutter', at: -0.03, vol: 0.5 }],
+    split_wipe: [
+        { file: 'swipe-soft', at: -0.09, vol: 0.55 },
+        { file: 'click-tactile', at: 0, vol: 0.38 },
+    ],
+    iris_pop: [
+        { file: 'shimmer-up', at: -0.1, vol: 0.35 },
+        { file: 'pop', at: 0, vol: 0.45 },
+    ],
+    tilt_whip: [
+        { file: 'swish-fast', at: -0.11, vol: 0.55 },
+        { file: 'boom-sub', at: 0, vol: 0.3 },
+    ],
     none: [{ file: 'transition', at: 0, vol: 0.45 }],
 };
 
@@ -306,18 +331,30 @@ const CARD_SFX: Record<string, SfxCue[]> = {
         { file: 'tick', at: 0.42, vol: 0.4 },
         { file: 'tick', at: 0.54, vol: 0.4 },
     ],
+    promo_coupon: [
+        { file: 'tick', at: 0.3, vol: 0.4 },
+        { file: 'paper-flip', at: 0.45, vol: 0.45 },
+    ],
+    white_catalog: [{ file: 'click-tactile', at: 0.3, vol: 0.45 }],
     label_tape: [
         { file: 'tick', at: 0.3, vol: 0.45 },
         { file: 'tick', at: 0.5, vol: 0.45 },
     ],
+    cyber_tape: [
+        { file: 'click-tactile', at: 0.28, vol: 0.45 },
+        { file: 'tick', at: 0.46, vol: 0.4 },
+    ],
     sticky_note: [{ file: 'paper-flip', at: 0.25, vol: 0.45 }],
+    grid_memo: [{ file: 'paper-flip', at: 0.25, vol: 0.45 }],
     chat_thread: [{ file: 'notify-ping', at: 0.35, vol: 0.4 }],
+    comment_reply: [{ file: 'notify-ping', at: 0.28, vol: 0.45 }],
 };
 
 interface TransitionFx {
     scale: number;
     x: number;
     y: number;
+    rotate: number;
     blur: number;
     brightness: number;
     hue: number;
@@ -339,38 +376,60 @@ const computeOutFx = (
     frame: number,
     durationInFrames: number,
     fps: number,
-    theme: ThemeDefinition
+    theme: ThemeDefinition,
+    ver: VariantVersion = 'v1'
 ): Partial<TransitionFx> => {
     const outroDuration = Math.min(14, Math.round(0.22 * fps));
     const outroStart = Math.max(0, durationInFrames - outroDuration);
     const range: [number, number] = [outroStart, durationInFrames];
     const eased = { easing: theme.easings.inCubic, ...CLAMP };
+    const dir = ver === 'v2' ? -1 : 1;
 
     switch (type) {
         case 'whip_pan':
             return {
-                x: interpolate(frame, range, [0, -140], eased),
+                x: interpolate(frame, range, [0, -140 * dir], eased),
+                y: ver === 'v3' ? interpolate(frame, range, [0, -70], eased) : 0,
                 blur: interpolate(frame, range, [0, 8], CLAMP),
+            };
+        case 'tilt_whip':
+            return {
+                x: interpolate(frame, range, [0, -110 * dir], eased),
+                rotate: interpolate(frame, range, [0, -4.5 * dir], eased),
+                scale: interpolate(frame, range, [1.0, 1.12], eased),
+                blur: interpolate(frame, range, [0, 9], CLAMP),
+            };
+        case 'split_wipe':
+            return {
+                x: ver === 'v3' ? 0 : interpolate(frame, range, [0, -45 * dir], eased),
+                y: ver === 'v3' ? interpolate(frame, range, [0, -45], eased) : 0,
+                scale: interpolate(frame, range, [1.0, 1.04], eased),
+            };
+        case 'iris_pop':
+            return {
+                scale: interpolate(frame, range, [1.0, ver === 'v2' ? 0.92 : 1.16], eased),
+                blur: interpolate(frame, range, [0, 6], CLAMP),
             };
         case 'zoom_flash':
         case 'light_leak':
             return {
-                scale: interpolate(frame, range, [1.0, 1.07], eased),
+                scale: interpolate(frame, range, [1.0, ver === 'v2' ? 1.12 : 1.07], eased),
                 blur: interpolate(frame, range, [0, 5], CLAMP),
             };
         case 'glitch': {
             const amp = interpolate(frame, range, [0, 1], CLAMP);
-            return glitchFx(frame, amp);
+            return glitchFx(frame, amp * (ver === 'v2' ? 1.25 : 1));
         }
         case 'blur_zoom':
             return {
-                scale: interpolate(frame, range, [1.0, 1.28], eased),
+                scale: interpolate(frame, range, [1.0, ver === 'v2' ? 0.86 : 1.28], eased),
                 blur: interpolate(frame, range, [0, 14], eased),
                 brightness: interpolate(frame, range, [1.0, 1.12], CLAMP),
             };
         case 'push_up':
             return {
-                y: interpolate(frame, range, [0, -260], eased),
+                y: interpolate(frame, range, [0, -260 * dir], eased),
+                scale: ver === 'v3' ? interpolate(frame, range, [1.0, 0.94], eased) : 1,
                 blur: interpolate(frame, range, [0, 6], CLAMP),
                 brightness: interpolate(frame, range, [1.0, 0.8], CLAMP),
             };
@@ -393,19 +452,48 @@ const computeInFx = (
     type: TransitionType,
     frame: number,
     fps: number,
-    theme: ThemeDefinition
+    theme: ThemeDefinition,
+    ver: VariantVersion = 'v1'
 ): Partial<TransitionFx> => {
     const introDuration = Math.min(14, Math.round(0.24 * fps));
     const settle = Math.round(0.12 * fps);
     const easedIntro = { easing: theme.easings.outExpo, extrapolateRight: 'clamp' } as const;
+    const dir = ver === 'v2' ? -1 : 1;
 
     switch (type) {
         case 'whip_pan':
             return {
-                x: interpolate(frame, [0, introDuration], [140, 0], easedIntro),
+                x: interpolate(frame, [0, introDuration], [140 * dir, 0], easedIntro),
+                y: ver === 'v3' ? interpolate(frame, [0, introDuration], [70, 0], easedIntro) : 0,
                 blur: interpolate(frame, [0, introDuration], [8, 0], easedIntro),
                 brightness: interpolate(frame, [0, settle], [1.25, 1.0], easedIntro),
             };
+        case 'tilt_whip':
+            return {
+                x: interpolate(frame, [0, introDuration], [110 * dir, 0], easedIntro),
+                rotate: interpolate(frame, [0, introDuration], [4.5 * dir, 0], easedIntro),
+                scale: interpolate(frame, [0, introDuration], [1.14, 1.0], easedIntro),
+                blur: interpolate(frame, [0, introDuration], [9, 0], easedIntro),
+            };
+        case 'split_wipe':
+            return {
+                x: ver === 'v3' ? 0 : interpolate(frame, [0, introDuration], [50 * dir, 0], easedIntro),
+                y: ver === 'v3' ? interpolate(frame, [0, introDuration], [50, 0], easedIntro) : 0,
+                scale: interpolate(frame, [0, introDuration], [1.06, 1.0], easedIntro),
+                brightness: interpolate(frame, [0, settle], [1.18, 1.0], easedIntro),
+            };
+        case 'iris_pop': {
+            const popSpring = spring({
+                fps,
+                frame,
+                config: { damping: 14, mass: 0.7, stiffness: 220 },
+            });
+            return {
+                scale: interpolate(popSpring, [0, 1], [ver === 'v2' ? 1.18 : 0.9, 1.0], { extrapolateRight: 'clamp' }),
+                blur: interpolate(frame, [0, settle], [6, 0], easedIntro),
+                brightness: interpolate(frame, [0, settle], [1.22, 1.0], easedIntro),
+            };
+        }
         case 'zoom_flash':
         case 'light_leak': {
             const settleSpring = spring({
@@ -414,24 +502,25 @@ const computeInFx = (
                 config: { damping: 16, mass: 0.75, stiffness: 210 },
             });
             return {
-                scale: interpolate(settleSpring, [0, 1], [1.09, 1.0], { extrapolateRight: 'clamp' }),
+                scale: interpolate(settleSpring, [0, 1], [ver === 'v2' ? 1.14 : 1.09, 1.0], { extrapolateRight: 'clamp' }),
                 blur: interpolate(frame, [0, settle], [7, 0], easedIntro),
                 brightness: interpolate(frame, [0, settle], [1.32, 1.0], easedIntro),
             };
         }
         case 'glitch': {
             const amp = 1 - interpolate(frame, [0, introDuration], [0, 1], CLAMP);
-            return { ...glitchFx(frame, amp), brightness: 1 + amp * 0.25 };
+            return { ...glitchFx(frame, amp * (ver === 'v2' ? 1.25 : 1)), brightness: 1 + amp * 0.25 };
         }
         case 'blur_zoom':
             return {
-                scale: interpolate(frame, [0, introDuration], [1.28, 1.0], easedIntro),
+                scale: interpolate(frame, [0, introDuration], [ver === 'v2' ? 0.86 : 1.28, 1.0], easedIntro),
                 blur: interpolate(frame, [0, introDuration], [14, 0], easedIntro),
                 brightness: interpolate(frame, [0, introDuration], [1.2, 1.0], easedIntro),
             };
         case 'push_up':
             return {
-                y: interpolate(frame, [0, introDuration], [260, 0], easedIntro),
+                y: interpolate(frame, [0, introDuration], [260 * dir, 0], easedIntro),
+                scale: ver === 'v3' ? interpolate(frame, [0, introDuration], [1.06, 1.0], easedIntro) : 1,
                 blur: interpolate(frame, [0, introDuration], [6, 0], easedIntro),
                 brightness: interpolate(frame, [0, introDuration], [0.85, 1.0], easedIntro),
             };
@@ -446,7 +535,6 @@ const computeInFx = (
                 brightness: interpolate(frame, [0, introDuration], [0.4, 1.0], easedIntro),
             };
         default:
-            // 'none' = standar cut antarklip: snap kecil + kilatan brightness singkat
             return {
                 scale: interpolate(frame, [0, Math.round(0.1 * fps)], [1.03, 1.0], easedIntro),
                 brightness: interpolate(frame, [0, Math.round(0.08 * fps)], [1.16, 1.0], easedIntro),
@@ -473,21 +561,23 @@ const composeFx = (
     frame: number,
     durationInFrames: number,
     fps: number,
-    theme: ThemeDefinition
+    theme: ThemeDefinition,
+    ver: VariantVersion = 'v1'
 ): TransitionFx => {
-    const fx: TransitionFx = { scale: 1, x: 0, y: 0, blur: 0, brightness: 1, hue: 0, contrast: 1, saturate: 1 };
+    const fx: TransitionFx = { scale: 1, x: 0, y: 0, rotate: 0, blur: 0, brightness: 1, hue: 0, contrast: 1, saturate: 1 };
     const merge = (p: Partial<TransitionFx>) => {
         if (p.scale !== undefined) fx.scale *= p.scale;
         if (p.x !== undefined) fx.x += p.x;
         if (p.y !== undefined) fx.y += p.y;
+        if (p.rotate !== undefined) fx.rotate += p.rotate;
         if (p.blur !== undefined) fx.blur = Math.max(fx.blur, p.blur);
         if (p.brightness !== undefined) fx.brightness *= p.brightness;
         if (p.hue !== undefined) fx.hue += p.hue;
         if (p.contrast !== undefined) fx.contrast *= p.contrast;
         if (p.saturate !== undefined) fx.saturate *= p.saturate;
     };
-    if (outType && outType !== 'none') merge(computeOutFx(outType, frame, durationInFrames, fps, theme));
-    if (inType) merge(computeInFx(inType, frame, fps, theme));
+    if (outType && outType !== 'none') merge(computeOutFx(outType, frame, durationInFrames, fps, theme, ver));
+    if (inType) merge(computeInFx(inType, frame, fps, theme, ver));
     return fx;
 };
 
@@ -547,6 +637,7 @@ const FootageClip: React.FC<{
     inType?: TransitionType;
     // Transisi di akhir klip ini (ke klip berikutnya). undefined/'none' = tanpa efek keluar.
     outType?: TransitionType;
+    transitionVariant?: VariantVersion;
     clipStartFrame?: number;
     voStartFrame?: number;
     captions?: Caption[];
@@ -558,6 +649,7 @@ const FootageClip: React.FC<{
     isFirstProductClip,
     inType,
     outType,
+    transitionVariant = 'v1',
     clipStartFrame = 0,
     voStartFrame = 0,
     captions,
@@ -593,7 +685,7 @@ const FootageClip: React.FC<{
             }
         );
 
-        const fx = composeFx(inType, outType, frame, durationInFrames, fps, theme);
+        const fx = composeFx(inType, outType, frame, durationInFrames, fps, theme, transitionVariant);
 
         // Dynamic Keyword Punch-In Zoom saat kata kunci penting diucapkan oleh Voice Over
         const keywordPunch = computeKeywordPunchScale(
@@ -630,7 +722,7 @@ const FootageClip: React.FC<{
         return (
             <AbsoluteFill
                 style={{
-                    transform: `scale(${kenBurnsScale * fx.scale * keywordPunch}) translateX(${fx.x}px) translateY(${driftY + fx.y}px)`,
+                    transform: `scale(${kenBurnsScale * fx.scale * keywordPunch}) translateX(${fx.x}px) translateY(${driftY + fx.y}px) rotate(${fx.rotate}deg)`,
                     filter: [
                         `brightness(${fx.brightness})`,
                         fx.blur > 0 ? `blur(${fx.blur}px)` : '',
@@ -697,7 +789,8 @@ const transitionPeakFrames = (fps: number) => Math.round(TRANSITION_PEAK_SEC * f
 const TransitionOverlay: React.FC<{
     theme: ThemeDefinition;
     type: ActiveTransition;
-}> = ({ theme, type }) => {
+    version?: VariantVersion;
+}> = ({ theme, type, version = 'v1' }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
     const midPoint = transitionPeakFrames(fps);
@@ -705,6 +798,67 @@ const TransitionOverlay: React.FC<{
 
     // Naik ke puncak di midPoint lalu turun: 0 -> 1 -> 0
     const pulse = interpolate(frame, [0, midPoint, totalFrames], [0, 1, 0], CLAMP);
+
+    if (type === 'split_wipe') {
+        const sweep = interpolate(frame, [0, totalFrames], [-15, 115], CLAMP);
+        const angle = version === 'v2' ? -16 : version === 'v3' ? 90 : 0;
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '-25%',
+                        bottom: '-25%',
+                        left: `${sweep}%`,
+                        width: 90,
+                        marginLeft: -45,
+                        background: `linear-gradient(90deg, transparent 0%, ${theme.colors.accent} 45%, #FFFFFF 50%, ${theme.colors.indicatorColor} 55%, transparent 100%)`,
+                        boxShadow: `0 0 32px 6px ${theme.colors.accent}`,
+                        transform: `rotate(${angle}deg)`,
+                        opacity: Math.min(1, pulse * 1.5),
+                    }}
+                />
+            </AbsoluteFill>
+        );
+    }
+
+    if (type === 'iris_pop') {
+        const radius = interpolate(frame, [0, midPoint, totalFrames], [85, 8, 110], {
+            easing: theme.easings.outExpo,
+            ...CLAMP,
+        });
+        return (
+            <AbsoluteFill
+                style={{
+                    pointerEvents: 'none',
+                    background: `radial-gradient(circle at 50% 50%, transparent ${radius}%, ${theme.colors.accent} ${radius + 2}%, rgba(9, 10, 15, 0.92) ${radius + 12}%)`,
+                    opacity: pulse * 0.9,
+                }}
+            />
+        );
+    }
+
+    if (type === 'tilt_whip') {
+        const dir = version === 'v2' ? -1 : 1;
+        const streakX = interpolate(frame, [0, totalFrames], [-120 * dir, 120 * dir], CLAMP);
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '-20%',
+                        bottom: '-20%',
+                        left: `${streakX}%`,
+                        width: '75%',
+                        background: `linear-gradient(90deg, transparent 0%, ${theme.colors.accent} 45%, #FFFFFF 50%, transparent 100%)`,
+                        opacity: pulse * 0.72,
+                        filter: 'blur(18px)',
+                        transform: `rotate(${14 * dir}deg)`,
+                    }}
+                />
+            </AbsoluteFill>
+        );
+    }
 
     if (type === 'glitch') {
         const bars = Array.from({ length: 7 }, (_, i) => {
@@ -1032,6 +1186,7 @@ const EditorialHeadline: React.FC<{
     variant: 'hook' | 'solution';
     theme: ThemeDefinition;
     cardStyle?: string;
+    hookVariant?: VariantVersion;
     badgeStyle?: string;
     urgencyTag?: string;
 }> = ({
@@ -1042,6 +1197,7 @@ const EditorialHeadline: React.FC<{
     variant,
     theme,
     cardStyle = 'unified_glass',
+    hookVariant,
     badgeStyle,
     urgencyTag,
 }) => {
@@ -1049,11 +1205,12 @@ const EditorialHeadline: React.FC<{
         const { fps } = useVideoConfig();
 
         // Layout baru ditangani komponen tersendiri (HookLayouts.tsx). Gaya lama jatuh ke bawah.
-        const hookLayout = resolveHookLayout(cardStyle);
-        if (hookLayout) {
+        const hookSelection = resolveHookSelection(cardStyle);
+        if (hookSelection) {
             return (
                 <HeadlineLayout
-                    layout={hookLayout}
+                    layout={hookSelection.layout}
+                    hookVariant={resolveVariantVersion(hookVariant || hookSelection.impliedVersion, 'v1')}
                     badge={badge}
                     line1={line1}
                     highlightLine={highlightLine}
@@ -1507,8 +1664,9 @@ const EditorialCTA: React.FC<{
     );
 
     let cardContent: React.ReactNode;
+    const resolvedCard = resolveHookSelection(cardStyle)?.layout ?? cardStyle;
 
-    if (cardStyle === 'sticky_note') {
+    if (resolvedCard === 'sticky_note') {
         // Gaya Catatan Tempel Fisik
         cardContent = (
             <div
@@ -1561,7 +1719,7 @@ const EditorialCTA: React.FC<{
                 </div>
             </div>
         );
-    } else if (cardStyle === 'receipt') {
+    } else if (resolvedCard === 'receipt') {
         // Gaya Struk Thermal Belanja
         cardContent = (
             <div
@@ -1605,7 +1763,7 @@ const EditorialCTA: React.FC<{
                 </div>
             </div>
         );
-    } else if (cardStyle === 'label_tape') {
+    } else if (resolvedCard === 'label_tape') {
         // Gaya Pita Emboss Dymo
         cardContent = (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
@@ -1643,7 +1801,7 @@ const EditorialCTA: React.FC<{
                 </div>
             </div>
         );
-    } else if (cardStyle === 'quiet_serif') {
+    } else if (resolvedCard === 'quiet_serif') {
         // Gaya Editorial Luxury Serif
         cardContent = (
             <div
@@ -1777,9 +1935,12 @@ const EditorialCTA: React.FC<{
 // ==========================================
 export const AffiliateVideo: React.FC<AffiliateProps> = ({
     preset: presetKey,
+    presetVariant,
     themeStyle: themeStyleProp,
     cardStyle: cardStyleProp,
+    hookVariant: hookVariantProp,
     captionStyle: captionStyleProp,
+    captionVariant: captionVariantProp,
     badgeStyle: badgeStyleProp,
     showProgressBar,
     enableSfx,
@@ -1798,8 +1959,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     hookVolume,
     showHookHeadline,
     karaokeHighlight,
-    hookTransition = 'zoom_flash',
-    clipTransition = 'auto',
+    hookTransition: hookTransitionProp,
+    clipTransition: clipTransitionProp,
+    transitionVariant: transitionVariantProp,
     hookSubtitle,
     hookSubtitles,
     hookCaptions,
@@ -1823,17 +1985,23 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
 }) => {
     const { fps } = useVideoConfig();
     // Preset mengisi yang kosong; field eksplisit selalu menang.
-    const preset = resolvePreset(presetKey);
+    const preset = resolvePreset(presetKey, presetVariant);
     const themeStyle = themeStyleProp ?? preset?.themeStyle;
     const cardStyle = cardStyleProp ?? preset?.cardStyle;
+    const hookVariant: VariantVersion = resolveVariantVersion(hookVariantProp ?? preset?.hookVariant);
     const captionStyle = captionStyleProp ?? preset?.captionStyle;
+    const captionVariant: VariantVersion = resolveVariantVersion(captionVariantProp ?? preset?.captionVariant);
     const badgeStyle = badgeStyleProp ?? preset?.badgeStyle;
+    const transitionVariant: VariantVersion = resolveVariantVersion(transitionVariantProp ?? preset?.transitionVariant);
+    const hookTransition = (hookTransitionProp ?? preset?.hookTransition ?? 'zoom_flash') as TransitionType;
+    const clipTransition = (clipTransitionProp ?? preset?.clipTransition ?? 'auto') as TransitionType | 'auto';
     const theme = getTheme(themeStyle);
     let accumulatedFrames = 0;
 
     // Deteksi preset SFX aktif secara otomatis berdasarkan themeStyle jika tidak diset
     const activePreset: SfxPresetId =
         sfxPreset ||
+        preset?.sfxPreset ||
         (themeStyle === 'pastel'
             ? 'beauty'
             : themeStyle === 'minimal'
@@ -1887,7 +2055,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     // Transisi: boundary i (i >= 1) = titik cut tempat klip ke-i dimulai.
     // Boundary 1 (hook -> produk) memakai hookTransition; sisanya memakai clipTransition.
     const resolvedClipTransition: TransitionType =
-        clipTransition === 'auto' ? AUTO_CLIP_TRANSITION[activePreset] : clipTransition;
+        clipTransition === 'auto'
+            ? AUTO_CLIP_TRANSITION[activePreset][transitionVariant]
+            : clipTransition;
     const boundaryType = (i: number): TransitionType =>
         i === 1 ? hookTransition : resolvedClipTransition;
     const boundaries: { index: number; frame: number; type: TransitionType }[] = [];
@@ -1940,6 +2110,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                                     : boundaryType(idx)
                             }
                             outType={idx < clips.length - 1 ? boundaryType(idx + 1) : undefined}
+                            transitionVariant={transitionVariant}
                             clipStartFrame={fromFrame}
                             voStartFrame={voStartFrame}
                             captions={voiceOverCaptions as Caption[] | undefined}
@@ -1957,7 +2128,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             from={Math.max(0, b.frame - transitionPeakFrames(fps))}
                             durationInFrames={transitionOverlayFrames(fps)}
                         >
-                            <TransitionOverlay theme={theme} type={b.type} />
+                            <TransitionOverlay theme={theme} type={b.type} version={transitionVariant} />
                         </Sequence>
                     )
             )}
@@ -2177,6 +2348,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         variant="hook"
                         theme={theme}
                         cardStyle={cardStyle}
+                        hookVariant={hookVariant}
                         badgeStyle={badgeStyle}
                         urgencyTag={urgencyTag}
                     />
@@ -2190,6 +2362,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         theme={theme}
                         karaokeHighlight={karaokeHighlight}
                         captionStyle={captionStyle}
+                        captionVariant={captionVariant}
                     />
                 )}
             </Sequence>
@@ -2204,6 +2377,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     variant="solution"
                     theme={theme}
                     cardStyle={cardStyle}
+                    hookVariant={hookVariant}
                     badgeStyle={badgeStyle}
                     urgencyTag={urgencyTag}
                 />
@@ -2219,6 +2393,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     variant="solution"
                     theme={theme}
                     cardStyle={cardStyle}
+                    hookVariant={hookVariant}
                     badgeStyle={badgeStyle}
                     urgencyTag={urgencyTag}
                 />
@@ -2257,6 +2432,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         theme={theme}
                         karaokeHighlight={karaokeHighlight}
                         captionStyle={captionStyle}
+                        captionVariant={captionVariant}
                         // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
                         liftFromFrame={ctaStartFrame - voStartFrame}
                         liftPx={CAPTION_LIFT_IN_CTA}

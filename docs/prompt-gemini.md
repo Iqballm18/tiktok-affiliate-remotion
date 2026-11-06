@@ -50,40 +50,39 @@ Desain TIDAK boleh asal pilih atau selalu sama. Tonton video, lalu putuskan berd
   (b) SUASANA footage (terang/gelap, tenang/ramai, ada wajah atau tidak),
   (c) KONDISI SEPERTIGA ATAS LAYAR, karena semua teks hook muncul di sana.
 
-LANGKAH 1 - PILIH cardStyle (layout hook) DARI KATEGORI:
+LANGKAH 1 - PILIH cardStyle & hookVariant (18 desain layout hook multi-versi):
 
-| Kategori produk | cardStyle utama | cadangan | Bahan visualnya |
+| Kategori produk | cardStyle utama | Variasi hookVariant (`v1` / `v2` / `v3`) | Cadangan |
 |---|---|---|---|
-| Skincare, kecantikan, parfum, perhiasan, fashion premium | quiet_serif | type_stack | serif italic besar, satu garis tipis, ruang kosong |
-| Rumah tangga, dapur, kebersihan, organizer, penyimpanan | sticky_note | label_tape | catatan tempel tulisan tangan dengan selotip |
-| Gadget, elektronik, alat, otomotif, tools | label_tape | type_stack | pita label-maker tercetak per baris |
-| Ibu & bayi, suplemen, kesehatan, produk yang dijual lewat cerita masalah pribadi | chat_thread | sticky_note | percakapan: ada yang bertanya, kamu yang menjawab |
-| Promo event, bundle, diskon, harga | receipt | type_stack | struk thermal, baris total dicetak terbalik |
-| Fashion kasual, makanan-minuman, snack, olahraga, mainan, atau tidak masuk kategori lain | type_stack | label_tape | tipografi poster besar tanpa kotak |
+| Skincare, kecantikan, parfum, fashion premium | `quiet_serif` | `v1` (Editorial Italic), `v2` (Magazine Masthead), `v3` (Warm Paper Pocket `#F7F4EB`) | `type_stack` |
+| Rumah tangga, dapur, kebersihan, organizer | `sticky_note` | `v1` (Post-It Kuning), `v2` (Grid Memo + Paku Pin 3D), `v3` (Dual Layered Notes) | `label_tape` |
+| Gadget, elektronik, alat, otomotif, tools | `label_tape` | `v1` (Dymo Emboss), `v2` (Cyber Industrial Spec Bar), `v3` (Frosted Split Tag) | `type_stack` |
+| Ibu & bayi, suplemen, curhat solusi masalah pribadi | `chat_thread` | `v1` (WA/iMessage Q&A), `v2` (TikTok Comment Reply Sticker), `v3` (Voice DM Waveform) | `sticky_note` |
+| Promo event, bundle, diskon, harga | `receipt` | `v1` (Struk Kasir Thermal), `v2` (Kupon Promo Sobek), `v3` (White Catalog Index `01 // HOOK`) | `type_stack` |
+| Fashion kasual, kuliner, edukasi, podcast, umum | `type_stack` | `v1` (Poster Brush), `v2` (Kinetic Pill + Sparkle `✦`), `v3` (Strike-Through + Frame Box) | `label_tape` |
 
 LANGKAH 2 - SESUAIKAN DENGAN FOOTAGE (boleh menimpa pilihan utama):
-- Sepertiga atas layar TERANG, RAMAI, atau penuh detail -> pilih layout yang punya permukaan sendiri: sticky_note, receipt, chat_thread, atau label_tape. JANGAN pilih quiet_serif atau type_stack (teksnya langsung di atas footage).
-- Sepertiga atas layar GELAP, POLOS, atau bersih -> semua layout boleh. quiet_serif dan type_stack paling bagus di kondisi ini.
-- Wajah, tangan, atau produk berada di sepertiga atas layar -> pilih layout paling kecil: chat_thread atau label_tape.
+- Sepertiga atas layar TERANG, RAMAI, atau penuh detail -> pilih layout yang punya permukaan solid sendiri: `sticky_note`, `receipt`, `chat_thread`, `label_tape`, atau `quiet_serif` dengan `hookVariant: "v3"` (Warm Paper Pocket).
+- Sepertiga atas layar GELAP, POLOS, atau bersih -> semua layout boleh. `quiet_serif` (`v1`/`v2`) dan `type_stack` (`v1`/`v2`/`v3`) paling menonjol di kondisi ini.
+- Wajah, tangan, atau produk berada di sepertiga atas layar -> pilih layout paling ringkas: `chat_thread` atau `label_tape`.
 
-LANGKAH 3 - PILIH captionStyle (subtitle karaoke):
-- "outline_pop": teks putih berkontur, kata yang diucapkan terangkat dan berwarna. Default aman untuk footage apa pun.
-- "marker_sweep": stabilo menyapu di belakang kata yang diucapkan. Untuk promo dan konten berenergi tinggi.
-- "reveal": kata muncul satu per satu tanpa warna sorot. Untuk footage tenang dan estetik (skincare, lifestyle, ibu & bayi).
-- "plate": pelat gelap solid. HANYA untuk footage yang sangat ramai atau sangat terang sehingga subtitle lain sulit terbaca.
+LANGKAH 3 - PILIH captionStyle & captionVariant (12 desain subtitle karaoke):
+- `"outline_pop"`: `v1` (putih berkontur klasik), `v2` (3D kinetic bounce miring), `v3` (indikator titik/bar aktif di atas kata). Default aman untuk segala footage.
+- `"marker_sweep"`: `v1` (stabilo miring menyapu), `v2` (kapsul mengembang dari kiri + kilau `✦` berputar ala `bang-motion`), `v3` (garis bawah tergambar kiri ke kanan). Cocok untuk promo & energi tinggi.
+- `"reveal"`: `v1` (kata muncul satu per satu), `v2` (semua kata tampil redup 32% lalu menyala 100% saat diucapkan), `v3` (muncul dengan vertical blur-in). Cocok untuk skincare, edukasi, & storytelling.
+- `"plate"`: `v1` (pelat gelap solid), `v2` (pelat kertas hangat `#F7F4EB` tinta hitam), `v3` (kapsul kaca buram per kata aktif). Cocok untuk footage sangat terang/ramai.
 
 LANGKAH 4 - PILIH themeStyle (warna progress bar dan karakter SFX):
-- "pastel": skincare, kecantikan, ibu & bayi
-- "editorial": gadget, otomotif, tools
-- "flash_sale": promo, event, diskon
-- "minimal": rumah tangga, fashion, lifestyle, dan kategori lain
+- `"pastel"`: skincare, kecantikan, ibu & bayi
+- `"editorial"`: gadget, otomotif, tools, edukasi
+- `"flash_sale"`: promo, event, diskon
+- `"minimal"`: rumah tangga, fashion, lifestyle, luxury, dan kategori lain
 
-ATURAN A/B TESTING DESAIN:
-- v1 dan v2 WAJIB memakai cardStyle BERBEDA. v1 = pilihan utama. v2 = pilihan cadangan, atau receipt jika ada MODE EVENT.
-- captionStyle boleh sama atau berbeda. themeStyle boleh berbeda jika sudut pandangnya berbeda.
-- Jika MODE EVENT diisi: v2 = cardStyle "receipt", themeStyle "flash_sale", captionStyle "marker_sweep".
-- DILARANG memakai cardStyle lama (unified_glass, editorial_minimal, creator_aesthetic, clean_capsule, tiktok_native_ugc, top_banner_promo) kecuali saya memintanya secara eksplisit.
-- Jangan isi field "preset" dan "badgeStyle". Pilih desain lewat cardStyle, captionStyle, dan themeStyle.
+ATURAN A/B TESTING DESAIN (`v1` vs `v2`):
+- Variasi 1 (`v1`) dan Variasi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` yang BERBEDA agar visualnya kontras untuk A/B testing!
+- Contoh: Jika Variasi 1 memakai `cardStyle: "sticky_note", hookVariant: "v1"`, maka Variasi 2 bisa memakai `cardStyle: "receipt", hookVariant: "v2"` atau `cardStyle: "type_stack", hookVariant: "v2"`.
+- Jika MODE EVENT diisi: Variasi 2 wajib memakai `cardStyle: "receipt"`, `hookVariant: "v2"` (kupon promo) atau `"v1"` (struk thermal), `themeStyle: "flash_sale"`, `captionStyle: "marker_sweep"`, `captionVariant: "v2"`.
+- DILARANG memakai cardStyle lama (`unified_glass`, `editorial_minimal`, `creator_aesthetic`, `clean_capsule`, `tiktok_native_ugc`, `top_banner_promo`) kecuali diminta eksplisit.
 
 TULIS "designReason": SATU kalimat (maks 140 karakter) yang menyebut kategori produk dan kondisi footage yang membuat desain itu dipilih. Contoh: "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel yang punya permukaan sendiri."
 
@@ -157,8 +156,9 @@ DUA VARIASI A/B TESTING:
 - sfxPreset: "beauty" untuk pastel, "tech" untuk editorial, "viral" untuk flash_sale, "minimal" untuk minimal.
 
 PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
-- hookTransition: Transisi dari hook ke produk pertama. Pilihan: "zoom_flash" (default reveal), "whip_pan" (geser cepat), "light_leak" (cahaya lembut/skincare), "glitch" (efek digital/tech), "blur_zoom" (zoom dramatis), "push_up" (swipe scroll FYP), "flash_cut" (kilat putih), "shutter" (kamera), atau "none".
-- clipTransition: Transisi antarklip produk (demo -> spec -> CTA). Isi "auto" (default, otomatis ikut sfxPreset) atau pilih salah satu jenis transisi di atas.
+- hookTransition: Transisi dari hook ke produk pertama. Pilihan: "zoom_flash" (default reveal), "whip_pan" (geser cepat), "tilt_whip" (banting kamera diagonal ala bang-motion), "split_wipe" (tirai belah dua ala bang-motion), "iris_pop" (lingkaran fokus membesar), "light_leak" (cahaya lembut/skincare), "glitch_stamp" (efek digital/tech), "blur_zoom" (zoom dramatis), "push_up" (swipe scroll FYP), "shutter" (rana kamera), atau "none".
+- clipTransition: Transisi antarklip produk (demo -> spec -> CTA). Isi "auto" (default, otomatis ikut sfxPreset & transitionVariant) atau pilih salah satu jenis transisi di atas.
+- transitionVariant: "v1" (halus), "v2" (cepat & dinamis), atau "v3" (aksen sinematik).
 - ctaSound: Suara saat kartu CTA muncul. Pilihan: "kaching" (kasir), "ding" (bel ringkas), "glockenspiel" (melodi ceria), "sparkle" (kilau lembut), "notify" (ping notifikasi HP).
 - cardSfx: true (default, memutar SFX khas struk printer/kertas/label sesuai cardStyle).
 
@@ -175,23 +175,22 @@ Tuliskan 2 naskah narasi suara yang mengalir, natural, dan persuasif untuk disal
 - Naskah Variasi 2 (v2 - Simpan audio sebagai "public/voiceover_v2.mp3"):
   "..."
 
-BAGIAN 2: DUA REKOMENDASI CAPTION TIKTOK LENGKAP (UNTUK v1 & v2)
-Karena kita memproduksi 2 video berbeda untuk A/B testing materi TikTok, buatkan 2 teks caption postingan terpisah yang siap di-copypaste saat upload:
+BAGIAN 2: DUA REKOMENDASI CAPTION TIKTOK SINGKAT & PADAT (UNTUK v1 & v2)
+Karena kita memproduksi 2 video berbeda untuk A/B testing materi TikTok, buatkan 2 teks caption postingan terpisah yang siap di-copypaste saat upload.
+
+ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT):
+1. DILARANG membuat caption panjang atau bertele-tele! Caption panjang akan tertutup tombol "...more" dan menutupi keranjang kuning di layar HP.
+2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-120 karakter).
+3. Struktur standar: [1 Kalimat Hook/Solusi Menarik] + [CTA Singkat ke Keranjang Kuning] + [Cukup 3-4 Hashtag Relevan & FYP].
 
 CAPTION POSTINGAN VIDEO 1 (Variasi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
-- Baris 1: Hook emosional yang bikin penasaran / relate (contoh: "Nyesel banget baru tau trik ini sekarang... 😭👇").
-- Baris 2-3: Penjelasan solusi ringkas tanpa bahasa sales yang kaku.
-- Baris 4: Call to Action (CTA) mengarahkan klik ke tombol Keranjang Kuning di kiri bawah.
-- Baris 5: 5-8 hashtag TikTok Affiliate viral (niche problem, nama kategori, dan hashtag FYP).
+- Contoh format: "Nyesel baru tau trik ini sekarang! 😭 Cek promonya di keranjang kuning mumpung ready 👇🛒 #racuntiktok #[katakunci] #fyp"
 
 CAPTION POSTINGAN VIDEO 2 (Variasi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
-- Baris 1: Hook urgensi diskon / promo / hemat (contoh: "Jangan checkout sebelum tau rahasia hemat ini! ⚡👇").
-- Baris 2-3: Poin keunggulan konkret (wadah bisa diisi ulang, daya tahan berbulan-bulan, paket bundle).
-- Baris 4: CTA mendesak untuk checkout selagi harga promo / voucher aktif.
-- Baris 5: 5-8 hashtag TikTok Affiliate viral fokus belanja, diskon, dan racun belanja.
+- Contoh format: "Mumpung lagi promo diskon bundle! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #fyp"
 
 BAGIAN 3: JSON DATA PRODUK LENGKAP (SIAP IMPORT KE WEB STUDIO)
-Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur persis seperti ini (perhatikan: TIDAK ADA field videoSource atau voiceOver, dan TIDAK ADA field src di clips). Nilai cardStyle, captionStyle, dan themeStyle di bawah hanyalah CONTOH; isi sesuai hasil PEMILIHAN DESAIN OTOMATIS untuk video ini:
+Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur persis seperti ini (perhatikan: TIDAK ADA field videoSource atau voiceOver, dan TIDAK ADA field src di clips). Nilai cardStyle, hookVariant, captionStyle, captionVariant, dan themeStyle di bawah hanyalah CONTOH; isi sesuai hasil PEMILIHAN DESAIN OTOMATIS untuk video ini:
 
 ```json
 {
@@ -200,12 +199,15 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
   "variants": {
     "v1": {
       "title": "Problem-Solution & Social Proof",
-      "designReason": "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel yang punya permukaan sendiri.",
+      "designReason": "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel dengan paku pin & stabilo yang punya permukaan sendiri.",
       "themeStyle": "minimal",
       "cardStyle": "sticky_note",
+      "hookVariant": "v2",
       "captionStyle": "outline_pop",
-      "hookTransition": "zoom_flash",
+      "captionVariant": "v1",
+      "hookTransition": "iris_pop",
       "clipTransition": "auto",
+      "transitionVariant": "v1",
       "sfxPreset": "minimal",
       "ctaSound": "kaching",
       "cardSfx": true,
@@ -216,7 +218,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 1 di sini untuk auto-correct subtitle otomatis di Web Studio",
-      "tiktokCaption": "Lemari bau apek padahal baju baru dicuci? 😭 Tinggal taruh penyerap lembap ini di pojok lemari, air & bau langsung hilang! Cek promonya di keranjang kuning kiri bawah 👇✨ #racuntiktok #penyeraplembap #perlengkapanrumah #anakkos #fyp",
+      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Cek promonya di keranjang kuning kiri bawah 👇🛒 #racuntiktok #penyeraplembap #fyp",
       "badgeText": "Ibu-ibu wajib tau",
       "demoBadge": "Demo langsung",
       "specBadge": "Kapasitas jumbo",
@@ -236,12 +238,15 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
     },
     "v2": {
       "title": "Event Promo Tanggal Kembar & Flash Sale",
-      "designReason": "Ada event 11.11, jadi struk promo dengan baris total terbalik; subtitle stabilo untuk energi tinggi.",
+      "designReason": "Ada event 11.11, jadi kupon promo merah dengan garis sobek; subtitle kapsul mengembang + sparkle untuk energi tinggi.",
       "themeStyle": "flash_sale",
       "cardStyle": "receipt",
+      "hookVariant": "v2",
       "captionStyle": "marker_sweep",
-      "hookTransition": "push_up",
+      "captionVariant": "v2",
+      "hookTransition": "tilt_whip",
       "clipTransition": "auto",
+      "transitionVariant": "v2",
       "sfxPreset": "viral",
       "ctaSound": "kaching",
       "cardSfx": true,
@@ -252,7 +257,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 2 (sudut pandang event promo / diskon tanggal kembar) di sini untuk auto-correct subtitle otomatis di Web Studio",
-      "tiktokCaption": "Mumpung promo lagi jalan, stok penyerap lembap di rumah wajib aman! ⚡ Ambil paket bundle jatuhnya jauh lebih hemat + gratis ongkir. Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #racunbelanja #rumahbersih #fyp",
+      "tiktokCaption": "Mumpung promo diskon bundle lagi jalan! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #fyp",
       "badgeText": "Promo 11.11 hari ini",
       "demoBadge": "Bukti nyata",
       "specBadge": "Paket bundle",

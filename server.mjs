@@ -595,6 +595,183 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 8c. API: Smart VO Processing Pipeline (Trim Silence + Whisper Transcribe + Auto-Correct)
+  if (pathname === '/api/smart-process-vo' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { filename, model, referenceScript, doTrim } = JSON.parse(body);
+        if (!filename) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Parameter filename wajib diisi' }));
+          return;
+        }
+
+        let inputPath = resolvePublicFilePath(filename);
+        let relFilename = path.relative(PUBLIC_DIR, inputPath).replace(/\\/g, '/');
+        if (!fs.existsSync(inputPath)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: `File public/${filename} tidak ditemukan` }));
+          return;
+        }
+
+        appendLog(`[SMART-VO] Memulai pipeline cerdas untuk public/${relFilename}...`);
+
+        // Langsung respon HTTP agar UI tidak timeout saat proses panjang
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          message: 'Pipeline VO cerdas dimulai di latar belakang',
+          file: relFilename
+        }));
+
+        // Jalankan pipeline bertahap
+        (async () => {
+          try {
+            // Tahap 1: FFmpeg Trim Silence (Opsional tapi default true)
+            if (doTrim) {
+              const oldDur = getVideoDurationSec(relFilename);
+              if (oldDur > 0) {
+                appendLog(`[SMART-VO 1/3] Memotong jeda napas (${oldDur.toFixed(1)}s)...`);
+                const ext = path.extname(inputPath);
+                const tempPath = inputPath.replace(new RegExp(`\\${ext}$`), `.smart-trimmed${ext}`);
+                await new Promise(resolve => {
+                  const filter = 'silenceremove=start_periods=1:start_duration=0.08:start_threshold=-45dB:detection=peak,areverse,silenceremove=start_periods=1:start_duration=0.08:start_threshold=-45dB:detection=peak,areverse';
+                  const child = spawn('ffmpeg', ['-y', '-i', inputPath, '-af', filter, '-c:a', 'libmp3lame', '-q:a', '2', tempPath], {
+                    windowsHide: true
+                  });
+                  child.on('close', code => {
+                    if (code === 0 && fs.existsSync(tempPath)) {
+                      fs.renameSync(tempPath, inputPath);
+                      syncBundlePublic();
+                      const newDur = getVideoDurationSec(relFilename) || oldDur;
+                      appendLog(`[SMART-VO 1/3] Jeda napas dipotong: ${oldDur.toFixed(1)}s → ${newDur.toFixed(1)}s`);
+                    } else {
+                      try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
+                      appendLog(`[SMART-VO 1/3] Lewati potong napas (FFmpeg selesai dengan kode ${code})`);
+                    }
+                    resolve();
+                  });
+                });
+              }
+            }
+
+            // Tahap 2: Whisper Transcribe
+            appendLog(`[SMART-VO 2/3] Mentranskripsi kata dengan Whisper AI...`);
+            const whisperModel = model || 'small';
+            await new Promise((resolve, reject) => {
+              const child = spawn('node', ['scripts/transcribe.mjs', inputPath, '--model', whisperModel, '--force'], {
+                cwd: __dirname,
+                windowsHide: true
+              });
+              child.stdout.on('data', chunk => {
+                for (const l of chunk.toString().split('\n')) {
+                  const line = l.trim();
+                  if (line) appendLog(`[WHISPER] ${line}`);
+                }
+              });
+              child.stderr.on('data', chunk => {
+                for (const l of chunk.toString().split('\n')) {
+                  const line = l.trim();
+                  if (line) appendLog(`[WHISPER] ${line}`);
+                }
+              });
+              child.on('close', code => {
+                if (code === 0) resolve();
+                else reject(new Error(`Whisper gagal dengan kode exit ${code}`));
+              });
+            });
+
+            // Cari file JSON hasil transcribe
+            let baseName = path.basename(inputPath).replace(/\.[^/.]+$/, '');
+            let jsonPath = path.join(path.dirname(inputPath), `${baseName}.json`);
+            if (!fs.existsSync(jsonPath)) {
+              jsonPath = path.join(PUBLIC_DIR, `${baseName}.json`);
+            }
+
+            let wordsCount = 0;
+            if (fs.existsSync(jsonPath)) {
+              let words = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+
+              // Tahap 3: Auto-koreksi teks jika referenceScript disediakan
+              if (referenceScript && referenceScript.trim()) {
+                appendLog(`[SMART-VO 3/3] Melakukan auto-correct subtitle terhadap naskah Gemini...`);
+                const { alignedWords, stats } = alignWhisperWithScript(words, referenceScript);
+                fs.writeFileSync(jsonPath, JSON.stringify(alignedWords, null, 2), 'utf8');
+                words = alignedWords;
+                appendLog(`[SMART-VO 3/3] Sukses auto-correct: ${stats.correctedCount} kata diperbaiki (${stats.mergedCount} digabung, ${stats.splitCount} dipecah).`);
+              } else {
+                appendLog(`[SMART-VO 3/3] Naskah acuan kosong, subtitle tetap memakai teks asli Whisper.`);
+              }
+
+              wordsCount = words.length;
+              syncBundlePublic();
+
+              // Broadcast SSE ke browser agar reload otomatis
+              broadcastSSE('transcribe-done', {
+                file: relFilename,
+                jsonFile: path.basename(jsonPath),
+                wordsCount
+              });
+            }
+
+            appendLog(`[SMART-VO] Selesai sempurna! ${wordsCount} kata siap dipakai untuk subtitle karaoke.`, true);
+          } catch (err) {
+            appendLog(`[SMART-VO ERROR] ${err.message}`);
+          }
+        })();
+
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 8d. API: Get Master Gemini Prompt with injected duration and event mode
+  if (pathname === '/api/gemini-prompt' && req.method === 'GET') {
+    try {
+      const promptPath = path.join(__dirname, 'docs', 'prompt-gemini.md');
+      if (!fs.existsSync(promptPath)) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'docs/prompt-gemini.md tidak ditemukan' }));
+        return;
+      }
+      let content = fs.readFileSync(promptPath, 'utf8');
+      const fenceMatch = content.match(/````([\s\S]*?)````/);
+      let promptText = fenceMatch ? fenceMatch[1].trim() : content;
+
+      const durParam = urlObj.searchParams.get('duration');
+      const eventParam = urlObj.searchParams.get('event');
+
+      if (durParam) {
+        const sec = parseFloat(durParam) || 0;
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        const timeFmt = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        promptText = promptText.replace(
+          /DURASI ASLI VIDEO: \[.*?\]/g,
+          `DURASI ASLI VIDEO: ${sec.toFixed(0)} detik (${timeFmt})`
+        );
+      }
+      if (eventParam && eventParam.trim()) {
+        promptText = promptText.replace(
+          /MODE EVENT: \[.*?\]/g,
+          `MODE EVENT: ${eventParam.trim()}`
+        );
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ prompt: promptText }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
   // 9. API: Get Rendered Videos in out/
   if (pathname === '/api/videos' && req.method === 'GET') {
     try {

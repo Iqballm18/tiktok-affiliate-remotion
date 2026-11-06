@@ -87,24 +87,8 @@
           </svg>
           <span>Link GDrive</span>
         </button>
-        <button class="btn small" id="btnOpenImportModal">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="7 10 12 15 17 10"></polyline>
-            <line x1="12" y1="15" x2="12" y2="3"></line>
-          </svg>
-          Import JSON Gemini
-        </button>
-        <button class="btn small" id="btnPreviewStill">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          Lihat Frame
-        </button>
         <button class="btn small" id="btnOpenBatchModal" title="Antrean Render Multi-Produk sekaligus">
-          📚 Antrean Batch
+          <svg class="ic" aria-hidden="true"><use href="#i-layers"></use></svg> Antrean Batch
         </button>
         <button class="btn small primary" id="btnStartRender">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -136,14 +120,31 @@
             <section class="studio-panel">
               <div class="panel-header">
                 <div>
-                  <h2 class="panel-title">Pilih & Konfigurasi Produk</h2>
+                  <h2 class="panel-title">Pilih &amp; Konfigurasi Produk</h2>
                   <p class="panel-sub" id="activeProductBreadcrumb">Memuat data produk...</p>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                  <button class="btn small" id="btnRefreshProducts" title="Muat ulang daftar file JSON di folder products/"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> Segarkan</button>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button class="btn small" id="btnRefreshProducts" title="Muat ulang daftar file JSON di folder products/"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
                   <button class="btn small" id="btnNewProduct"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg> Produk Baru</button>
                   <button class="btn small danger" id="btnDeleteProduct" title="Hapus produk yang aktif saat ini"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Hapus</button>
                   <button class="btn small primary" id="btnSaveProduct"><svg class="ic" aria-hidden="true"><use href="#i-save"></use></svg> Simpan Produk</button>
+                </div>
+              </div>
+
+              <!-- Dedicated AI Gemini Assistant Workflow Strip -->
+              <div class="gemini-workflow-strip">
+                <div class="gw-label">
+                  <span class="gw-badge"><svg class="ic" style="width: 12px; height: 12px;" aria-hidden="true"><use href="#i-sparkles"></use></svg> Alur Gemini</span>
+                  <span>Siapkan storyboard &amp; naskah otomatis:</span>
+                </div>
+                <div class="gw-actions">
+                  <button class="btn small" id="btnCopyGeminiPrompt" type="button" title="Salin Master Prompt Gemini dengan durasi video otomatis terisi">
+                    <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> 1. Salin Prompt (+ Durasi Video)
+                  </button>
+                  <span class="gw-arrow">➔</span>
+                  <button class="btn small" id="btnOpenImportModal" type="button" title="Tempel JSON hasil Gemini untuk membuat / mengisi produk" style="border-color: rgba(59, 130, 246, 0.4); color: #93c5fd;">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> 2. Import JSON Gemini
+                  </button>
                 </div>
               </div>
 
@@ -162,31 +163,7 @@
                   </div>
                 </div>
 
-                <!-- Custom Output Video Title, Watermark & Position -->
-                <div class="form-row three-col">
-                  <div class="form-group">
-                    <label class="form-label" for="inputCustomOutputName">
-                      <span style="font-weight: 600; color: #fff;">Nama Video Output</span>
-                      <span class="pill rose">out/*.mp4</span>
-                    </label>
-                    <input class="input" type="text" id="inputCustomOutputName"
-                      placeholder="Judul file render output">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="inputWatermark">Teks Watermark</label>
-                    <input class="input" type="text" id="inputWatermark" value="@inanikma_ | @spillbyna_">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label" for="selectWatermarkPosition">Posisi Watermark</label>
-                    <select class="input" id="selectWatermarkPosition">
-                      <option value="floating">Floating (Anti-Subtitle)</option>
-                      <option value="top_left">Kiri Atas</option>
-                      <option value="top_right">Kanan Atas</option>
-                      <option value="mid_left">Tengah Kiri</option>
-                      <option value="mid_right">Tengah Kanan</option>
-                    </select>
-                  </div>
-                </div>
+                <!-- (Nama output & watermark dipindah ke tab "3. Caption & Output") -->
 
                 <!-- Visual Video Source (Shared across variants) -->
                 <div class="form-group">
@@ -203,50 +180,88 @@
 
             <!-- Panel 2: Editor Variasi & Babak Klip Video -->
             <section class="studio-panel">
-              <div class="panel-header">
-                <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="panel-header" style="align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <div class="segmented" id="variantSegmented">
                     <button class="active" data-variant="v1">Variasi 1 (v1)</button>
                     <button data-variant="v2">Variasi 2 (v2)</button>
                   </div>
+                  <button class="btn small" id="btnSyncClipsBetweenVariants" type="button" title="Salin waktu klip babak 1-4 dari variasi ini ke variasi lainnya">
+                    <svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Salin Klip v1 ⇄ v2
+                  </button>
                   <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
                 </div>
-                <div class="panel-sub">4 Babak Klip + Copywriting Presisi</div>
+                <div class="panel-sub" style="margin: 0; font-size: 12px; color: var(--text-faint);">4 Babak Klip + Copywriting Presisi</div>
               </div>
 
+              <!-- Sub-tab alur kerja: 1 Audio & Desain → 2 Storyboard → 3 Caption & Output -->
+              <nav class="wf-tabs" id="workflowTabs" role="tablist" aria-label="Langkah pengeditan">
+                <button type="button" class="wf-tab active" data-pane="design" role="tab">
+                  <span class="wf-step">1</span><span>Audio &amp; Desain</span>
+                </button>
+                <button type="button" class="wf-tab" data-pane="storyboard" role="tab">
+                  <span class="wf-step">2</span><span>Storyboard 4 Babak</span>
+                </button>
+                <button type="button" class="wf-tab" data-pane="output" role="tab">
+                  <span class="wf-step">3</span><span>Caption &amp; Output</span>
+                </button>
+              </nav>
+
+              <!-- PANE 1: AUDIO & DESAIN -->
+              <div class="wf-pane active" data-pane="design">
+
               <!-- Dedicated Voice Over & Audio Section for Active Variant -->
-              <div class="form-row" style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px; margin-bottom: 12px;">
-                <div class="form-group" style="flex: 2;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
-                    <label class="form-label" for="selectVoiceOver" style="margin: 0;">
-                      <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">Voice over untuk Variasi 1 (v1)</span>
-                      <span id="pillVoiceOverStatus" class="pill emerald" style="cursor: pointer;" title="Klik untuk membuka & mengedit transkrip subtitle">Memeriksa...</span>
-                    </label>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      <button class="btn small" id="btnTrimSilence" type="button" title="Pangkas jeda hening/napas panjang pada audio ini via FFmpeg">
-                        <svg class="ic" aria-hidden="true"><use href="#i-scissors"></use></svg> Potong Jeda Napas
-                      </button>
-                      <button class="btn small" id="btnJumpToSubtitle" type="button" title="Langsung buka tab koreksi subtitle untuk file audio ini">
-                        <svg class="ic" aria-hidden="true"><use href="#i-mic"></use></svg> Edit subtitle audio ini
-                      </button>
+              <div class="audio-card">
+                <div class="audio-card-grid">
+                  <!-- Col 1: Voice Over File -->
+                  <div class="form-group" style="margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                      <label class="form-label" for="selectVoiceOver" style="margin: 0;">
+                        <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">Voice over untuk Variasi 1 (v1)</span>
+                      </label>
+                      <span id="pillVoiceOverStatus" class="pill emerald" style="cursor: pointer;" title="Klik untuk membuka &amp; mengedit transkrip subtitle">Memeriksa...</span>
                     </div>
+                    <select class="input" id="selectVoiceOver">
+                      <!-- Populated dynamically from public/*.mp3 -->
+                    </select>
                   </div>
-                  <select class="input" id="selectVoiceOver">
-                    <!-- Populated dynamically from public/*.mp3 -->
-                  </select>
+
+                  <!-- Col 2: Musik Latar BGM -->
+                  <div class="form-group" style="margin: 0;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                      <label class="form-label" for="selectBgmTrack" style="margin: 0;">
+                        <span>Musik Latar BGM</span>
+                      </label>
+                      <span style="font-size: 11px; color: var(--text-faint);">Ducking otomatis</span>
+                    </div>
+                    <select class="input" id="selectBgmTrack">
+                      <option value="">(Tanpa BGM / Hening)</option>
+                    </select>
+                  </div>
+
+                  <!-- Col 3: Jeda Narasi -->
+                  <div class="form-group" style="margin: 0;">
+                    <label class="form-label" for="inputVoiceOverDelay" style="margin: 0; margin-bottom: 4px; white-space: nowrap;">Jeda (detik)</label>
+                    <input class="input" type="number" id="inputVoiceOverDelay" value="0" min="0" max="30" step="0.5" style="text-align: center;">
+                  </div>
                 </div>
-                <div class="form-group" style="flex: 1.2;">
-                  <label class="form-label" for="selectBgmTrack">
-                    <span>Musik Latar BGM</span>
-                    <span style="font-size: 11px; color: var(--text-faint);">Ducking</span>
-                  </label>
-                  <select class="input" id="selectBgmTrack">
-                    <option value="">(Tanpa BGM / Hening)</option>
-                  </select>
-                </div>
-                <div class="form-group" style="flex: 0.8;">
-                  <label class="form-label" for="inputVoiceOverDelay">Jeda Narasi (s)</label>
-                  <input class="input" type="number" id="inputVoiceOverDelay" value="0" min="0" max="30" step="0.5">
+
+                <!-- Bottom Toolbar for Audio Actions -->
+                <div class="audio-card-toolbar">
+                  <div class="audio-toolbar-left">
+                    <button class="btn small primary" id="btnSmartProcessVO" type="button" title="1-Klik: Pangkas napas (FFmpeg) + Whisper AI + Auto-correct ejaan naskah" style="background: linear-gradient(135deg, #10B981, #059669); border-color: #10B981; color: #fff; font-weight: 600;">
+                      <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> ⚡ Proses Pintar VO
+                    </button>
+                    <span style="font-size: 11px; color: var(--text-faint);">1-Klik: Potong Napas + Whisper + Auto-Koreksi Naskah</span>
+                  </div>
+                  <div class="audio-toolbar-right">
+                    <button class="btn small" id="btnTrimSilence" type="button" title="Pangkas jeda hening/napas panjang pada audio ini via FFmpeg">
+                      <svg class="ic" aria-hidden="true"><use href="#i-scissors"></use></svg> Potong Napas
+                    </button>
+                    <button class="btn small" id="btnJumpToSubtitle" type="button" title="Langsung buka tab koreksi subtitle untuk file audio ini">
+                      <svg class="ic" aria-hidden="true"><use href="#i-mic"></use></svg> Koreksi Subtitle
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -258,119 +273,142 @@
                 <div id="designReasonText" style="line-height: 1.4; color: #e2e8f0;"></div>
               </div>
 
-              <!-- Preset + Gaya Badge -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="selectPreset">Preset Desain</label>
-                  <select class="input" id="selectPreset">
-                    <option value="">Kustom (atur manual di bawah)</option>
-                    <option value="skincare">Skincare — Quiet Serif, Subtitle Reveal</option>
-                    <option value="gadget">Gadget — Label Tape, Subtitle Outline</option>
-                    <option value="flash_sale">Flash Sale — Thermal Receipt, Marker Sweep</option>
-                    <option value="lifestyle">Lifestyle — Type Stack Poster, Subtitle Outline</option>
-                    <option value="household">Rumah Tangga — Sticky Note Catatan Tempel</option>
-                    <option value="parenting">Ibu &amp; Bayi — Chat Thread iMessage</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="selectBadgeStyle">Gaya Badge</label>
-                  <select class="input" id="selectBadgeStyle">
-                    <option value="">Otomatis (hook: sticker, demo &amp; spec: glass)</option>
-                    <option value="sticker">Sticker (label miring, paling menahan scroll)</option>
-                    <option value="alert">Alert (kapsul gelap + titik LIVE)</option>
-                    <option value="marker">Marker (stabilo tersapu)</option>
-                    <option value="glass">Glass (chip kaca tenang)</option>
-                  </select>
-                </div>
-              </div>
+              <!-- Hidden inputs untuk state sync (Preset & Versi Preset dikendalikan penuh oleh Galeri Animasi di bawah) -->
+              <input type="hidden" id="selectPreset" value="">
+              <input type="hidden" id="selectPresetVariant" value="v1">
 
-              <!-- Pengaturan lanjutan: tema, layout hook & caption (override preset) -->
-              <details class="advanced-design" id="advancedDesign">
-                <summary style="cursor: pointer; font-size: 12px; color: var(--text-faint); margin-bottom: 8px;">Pengaturan lanjutan: tema, tata letak teks &amp; subtitle (menimpa preset)</summary>
-              <div class="form-row">
-                <div class="form-group">
-                  <label class="form-label" for="selectThemeStyle">Tema Visual</label>
-                  <select class="input" id="selectThemeStyle">
-                    <option value="pastel" data-color="#FF4D6D" data-bg="#F8FAFC" data-text="#0F172A" data-sub="Soft Rose • Clean Beauty & Aesthetic">Pastel (Soft, Aesthetic)</option>
-                    <option value="editorial" data-color="#E2FF32" data-bg="#090A0F" data-text="#F8FAFC" data-sub="Acid Lime Neon • Dark High-Fashion">Editorial (Bold, High Fashion)</option>
-                    <option value="minimal" data-color="#FFFFFF" data-bg="#000000" data-text="#FFFFFF" data-sub="Monochrome • Clean Luxury Black & White">Minimal (Clean, Monochrome)</option>
-                    <option value="flash_sale" data-color="#FF2E54" data-bg="#0A0A0D" data-text="#FFFFFF" data-sub="TikTok Crimson Red & Gold Urgency">Flash Sale (Urgent, High Energy)</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="selectCardStyle">Gaya Tata Letak Hook</label>
-                  <select class="input" id="selectCardStyle">
-                    <optgroup label="Layout Fisik / Berkarakter (Baru)">
-                      <option value="sticky_note" data-shape="sticky_note" data-sub="Catatan tempel Caveat dengan selotip & tilt fisik (Dapur/Rumah)">Sticky Note (Catatan Tempel)</option>
-                      <option value="receipt" data-shape="receipt" data-sub="Struk thermal DM Mono dengan total terbalik (Flash Sale/Diskon)">Thermal Receipt (Struk Belanja)</option>
-                      <option value="chat_thread" data-shape="chat_thread" data-sub="Balon iMessage dua arah (Ibu, Bayi, Skincare)">Chat Thread (iMessage)</option>
-                      <option value="type_stack" data-shape="type_stack" data-sub="Tipografi poster bold masked reveal (Lifestyle/General)">Type Stack (Poster Masked)</option>
-                      <option value="label_tape" data-shape="label_tape" data-sub="Pita timbul label-maker per baris (Gadget/Teknik)">Label Tape (Pita Emboss)</option>
-                      <option value="quiet_serif" data-shape="quiet_serif" data-sub="Serif italic high-end editorial minimal (Skincare/Luxury)">Quiet Serif (Editorial Italic)</option>
-                    </optgroup>
-                    <optgroup label="Layout Tipografi Mengambang">
-                      <option value="creator_aesthetic" data-shape="floating" data-sub="Teks floating organik kreator asli dengan drop-shadow sinematik">Creator Aesthetic (Floating Shadow)</option>
-                      <option value="editorial_minimal" data-shape="two_tier" data-sub="Tipografi editorial tajam berbayangan pekat tanpa kotak penutup video">Editorial Minimal (Floating Clean)</option>
-                      <option value="unified_glass" data-shape="glass" data-sub="Tipografi mengambang bersih dengan highlight bersinar">Unified Clean (Floating Accent)</option>
-                      <option value="clean_capsule" data-shape="capsule" data-sub="Tipografi modern ringkas mengambang bebas di atas video">Clean Modern (Floating Typography)</option>
-                      <option value="tiktok_native_ugc" data-shape="tiktok_ugc" data-sub="Subtitle khas CapCut/TikTok: teks putih + stempel highlight kuning stabilo FYP">TikTok Native UGC (Tag Kuning Stabilo)</option>
-                      <option value="top_banner_promo" data-shape="top_banner" data-sub="Banner strip promo flash sale di atas, maksimalkan 100% ruang video">Top-Banner Promo (Flash Sale Strip)</option>
-                    </optgroup>
-                  </select>
-                </div>
-              </div>
-              <div class="form-row" style="margin-top: 10px;">
-                <div class="form-group">
-                  <label class="form-label" for="selectCaptionStyle">Gaya Subtitle / Caption Hook</label>
-                  <select class="input" id="selectCaptionStyle">
-                    <option value="">Otomatis (mengikuti preset)</option>
-                    <option value="outline_pop">Outline Pop (Kontur Tegas &amp; Pop-in)</option>
-                    <option value="marker_sweep">Marker Sweep (Sapuan Stabilo)</option>
-                    <option value="reveal">Word Reveal (Muncul Tenang Kata per Kata)</option>
-                    <option value="plate">Pill Plate (Kapsul Minimalis)</option>
-                  </select>
-                </div>
-              </div>
-              </details>
-
-              <!-- Pratinjau langsung: frame dirender oleh Remotion yang sama dengan render akhir -->
-              <section class="live-preview" id="livePreview" aria-label="Pratinjau langsung">
-                <header class="live-preview-head">
-                  <div class="seg-mini" id="liveMoments" role="group" aria-label="Momen yang dipratinjau">
-                    <button type="button" data-moment="hook" class="active">Hook</button>
-                    <button type="button" data-moment="subtitle">Subtitle</button>
-                    <button type="button" data-moment="demo">Demo</button>
-                    <button type="button" data-moment="spec">Spec</button>
-                    <button type="button" data-moment="cta">CTA</button>
+              <!-- Galeri Pratinjau Gerak Ala CapCut (Real-time CSS Micro-Animation) -->
+              <section class="cc-picker" id="capcutDesignPicker" aria-label="Galeri Pratinjau Animasi Desain">
+                <header class="cc-picker-head">
+                  <div class="cc-tabs" id="ccPickerTabs" role="tablist">
+                    <button type="button" class="cc-tab active" data-tab="presets" role="tab">
+                      <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+                      <span>Preset Paket</span>
+                    </button>
+                    <button type="button" class="cc-tab" data-tab="hooks" role="tab">
+                      <svg class="ic" aria-hidden="true"><use href="#i-layers"></use></svg>
+                      <span>Animasi Hook</span>
+                      <span class="cc-count">18</span>
+                    </button>
+                    <button type="button" class="cc-tab" data-tab="captions" role="tab">
+                      <svg class="ic" aria-hidden="true"><use href="#i-message"></use></svg>
+                      <span>Gaya Subtitle</span>
+                      <span class="cc-count">12</span>
+                    </button>
+                    <button type="button" class="cc-tab" data-tab="transitions" role="tab">
+                      <svg class="ic" aria-hidden="true"><use href="#i-film"></use></svg>
+                      <span>Transisi</span>
+                      <span class="cc-count">10</span>
+                    </button>
                   </div>
-                  <div class="live-preview-actions">
-                    <label class="check-inline" title="Render ulang otomatis sesaat setelah Anda berhenti mengetik">
-                      <input type="checkbox" id="chkLiveAuto" checked>
-                      <span>Otomatis</span>
-                    </label>
-                    <button class="btn small" id="btnLiveRefresh" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> Segarkan</button>
+                  <div class="cc-head-right">
+                    <span class="cc-active-summary" id="ccActiveSummary">Skincare · v1</span>
+                    <button type="button" class="btn small" id="btnToggleCcDrawer" title="Lipat atau buka galeri kartu animasi">
+                      Galeri Aktif
+                    </button>
                   </div>
                 </header>
-                <div class="live-preview-body">
-                  <div class="live-stage" id="livePreviewStage" data-state="idle">
-                    <img id="livePreviewImg" alt="Frame pratinjau 9:16">
-                    <div class="live-status" id="livePreviewStatus" role="status">Tekan Segarkan untuk melihat frame pertama.</div>
-                  </div>
-                  <div class="live-side">
-                    <p class="live-meta num" id="livePreviewMeta">Belum dirender</p>
-                    <p class="live-note">Gambar ini dirender oleh komposisi Remotion yang sama dengan video akhir, termasuk footage, font, dan animasinya. Setiap perubahan butuh sekitar 2 detik.</p>
 
-                    <div class="live-field" id="liveSubtitleControls" hidden>
-                      <label class="form-label" for="liveSubtitleSlider">Kata yang ditampilkan</label>
-                      <input type="range" id="liveSubtitleSlider" min="0" max="0" value="0" step="1">
-                      <p class="live-excerpt" id="liveSubtitleExcerpt"></p>
-                    </div>
+                <div class="cc-picker-body" id="ccPickerBody">
+                  <div class="cc-toolbar" id="ccPickerToolbar">
+                    <div class="cc-toolbar-left" id="ccSubFilter"></div>
+                    <div class="cc-toolbar-right">
+                      <div class="cc-toolbar-group" title="Warna aksen tema visual">
+                        <span class="cc-ver-label">Tema:</span>
+                        <div class="cc-theme-swatches" id="ccThemeSwatches" role="group" aria-label="Tema visual">
+                          <button type="button" class="cc-swatch" data-theme="pastel" title="Pastel (Rose)" style="--swatch-color:#FF4D6D;"></button>
+                          <button type="button" class="cc-swatch" data-theme="editorial" title="Editorial (Neon Lime)" style="--swatch-color:#E2FF32;"></button>
+                          <button type="button" class="cc-swatch" data-theme="minimal" title="Minimal (Monochrome)" style="--swatch-color:#FFFFFF;"></button>
+                          <button type="button" class="cc-swatch" data-theme="flash_sale" title="Flash Sale (Crimson)" style="--swatch-color:#FF2E54;"></button>
+                        </div>
+                      </div>
 
-                    <div class="live-field">
-                      <span class="form-label">Gaya subtitle</span>
-                      <div class="seg-mini" id="liveCaptionStyles" role="group" aria-label="Gaya subtitle"></div>
+                      <div class="cc-toolbar-group" title="Gaya badge babak">
+                        <span class="cc-ver-label">Badge:</span>
+                        <div class="seg-mini" id="ccBadgeSeg" role="group" aria-label="Pilih gaya badge">
+                          <button type="button" data-badge="sticker" class="active" title="Sticker miring tahan scroll">Sticker</button>
+                          <button type="button" data-badge="alert" title="Alert kapsul titik LIVE">Alert</button>
+                          <button type="button" data-badge="marker" title="Marker stabilo">Marker</button>
+                          <button type="button" data-badge="glass" title="Glass chip kaca">Glass</button>
+                        </div>
+                      </div>
+
+                      <div class="cc-toolbar-group">
+                        <span class="cc-ver-label">Versi:</span>
+                        <div class="seg-mini" id="ccVersionSeg" role="group" aria-label="Pilih versi v1 v2 v3">
+                          <button type="button" data-ver="v1" class="active">v1</button>
+                          <button type="button" data-ver="v2">v2</button>
+                          <button type="button" data-ver="v3">v3</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  <div class="cc-grid" id="ccPickerGrid" role="listbox"></div>
+                </div>
+              </section>
+
+              <!-- Hidden input fallbacks untuk backward-compatibility script & API -->
+              <input type="hidden" id="selectThemeStyle" value="pastel">
+              <input type="hidden" id="selectBadgeStyle" value="sticker">
+              <input type="hidden" id="selectCardStyle" value="sticky_note">
+              <input type="hidden" id="selectHookVariant" value="v1">
+              <input type="hidden" id="selectCaptionStyle" value="outline_pop">
+              <input type="hidden" id="selectCaptionVariant" value="v1">
+              <input type="hidden" id="selectHookTransition" value="zoom_flash">
+              <input type="hidden" id="selectClipTransition" value="auto">
+              <input type="hidden" id="selectTransitionVariant" value="v1">
+
+              <div class="wf-next-row">
+                <button type="button" class="btn small primary" data-goto-pane="storyboard">Lanjut ke Storyboard <svg class="ic" aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+              </div>
+              </div>
+              <!-- /PANE 1 -->
+
+              <!-- PANE 2: STORYBOARD 4 BABAK -->
+              <div class="wf-pane" data-pane="storyboard">
+
+              <!-- Source Scrubber: geser video mentah lalu set detik Mulai/Selesai babak aktif -->
+              <section class="scrubber" id="sourceScrubber" aria-label="Pemotong klip visual">
+                <div class="scrubber-video-wrap">
+                  <video id="scrubberVideo" muted playsinline preload="metadata"></video>
+                  <div class="scrubber-empty" id="scrubberEmpty">Pilih file video produk mentah di panel atas.</div>
+                </div>
+                <div class="scrubber-side">
+                  <div class="scrubber-time-row">
+                    <span class="scrubber-time num" id="scrubberTime">0:00.0</span>
+                    <span class="scrubber-dur num" id="scrubberDur">/ 0:00.0</span>
+                  </div>
+                  <div class="scrubber-range-container">
+                    <div class="scrubber-track-markers" id="scrubberTrackMarkers" aria-hidden="true">
+                      <div class="scrubber-marker hook" id="smClip0" style="left:0%;width:0%;" title="Babak 1: Hook"></div>
+                      <div class="scrubber-marker demo" id="smClip1" style="left:0%;width:0%;" title="Babak 2: Demo"></div>
+                      <div class="scrubber-marker spec" id="smClip2" style="left:0%;width:0%;" title="Babak 3: Spec"></div>
+                      <div class="scrubber-marker cta"  id="smClip3" style="left:0%;width:0%;" title="Babak 4: CTA"></div>
+                    </div>
+                    <input type="range" id="scrubberRange" min="0" max="0" step="0.1" value="0" aria-label="Posisi video mentah">
+                  </div>
+                  <div class="scrubber-ctrls">
+                    <button type="button" class="btn small" id="scrubberBack" title="Mundur 1 detik (←)">−1s</button>
+                    <button type="button" class="btn small" id="scrubberStepBack" title="Mundur 0.1 detik">−0.1</button>
+                    <button type="button" class="btn small" id="scrubberPlay" title="Putar / jeda (Spasi)"><svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg></button>
+                    <button type="button" class="btn small" id="scrubberStepFwd" title="Maju 0.1 detik">+0.1</button>
+                    <button type="button" class="btn small" id="scrubberFwd" title="Maju 1 detik (→)">+1s</button>
+                  </div>
+                  <div class="scrubber-target">
+                    <span class="form-label" style="margin:0;">Babak aktif:</span>
+                    <div class="seg-mini" id="scrubberClipSeg" role="group" aria-label="Babak target">
+                      <button type="button" data-clip="0" class="active">1 Hook</button>
+                      <button type="button" data-clip="1">2 Demo</button>
+                      <button type="button" data-clip="2">3 Spec</button>
+                      <button type="button" data-clip="3">4 CTA</button>
+                    </div>
+                  </div>
+                  <div class="scrubber-set">
+                    <button type="button" class="btn small primary" id="scrubberSetStart" title="Isi detik Mulai babak aktif (I)">[ Set Mulai</button>
+                    <button type="button" class="btn small primary" id="scrubberSetEnd" title="Isi detik Selesai babak aktif (O)">Set Selesai ]</button>
+                    <button type="button" class="btn small" id="scrubberJump" title="Lompat ke detik Mulai babak aktif">Putar babak</button>
+                  </div>
+                  <p class="scrubber-hint">Pintasan: <kbd>Spasi</kbd> putar · <kbd>←</kbd>/<kbd>→</kbd> geser · <kbd>I</kbd> set mulai · <kbd>O</kbd> set selesai (saat kursor di area ini).</p>
                 </div>
               </section>
 
@@ -417,7 +455,9 @@
                       </div>
                     </div>
 
-                    <!-- Bank hook: kalimat pembuka yang bisa diterapkan sekali klik -->
+                    <!-- Bank hook: kalimat pembuka yang bisa diterapkan sekali klik (laci lipat) -->
+                    <details class="bank-drawer">
+                    <summary><svg class="ic" aria-hidden="true"><use href="#i-note"></use></svg> Buka ide hook (bank kalimat pembuka)</summary>
                     <div class="bank" id="hookBank">
                       <div class="bank-head">
                         <span class="section-label">Bank hook</span>
@@ -430,6 +470,7 @@
                       <p class="bank-hint" id="hookBankHint"></p>
                       <div class="bank-list" id="hookBankList"></div>
                     </div>
+                    </details>
 
                     <!-- Naskah & Copywriting Inputs -->
                     <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -577,7 +618,9 @@
                       </div>
                     </div>
 
-                    <!-- Pilihan CTA -->
+                    <!-- Pilihan CTA (laci lipat) -->
+                    <details class="bank-drawer">
+                    <summary><svg class="ic" aria-hidden="true"><use href="#i-note"></use></svg> Buka ide CTA</summary>
                     <div class="bank" id="ctaBank">
                       <div class="bank-head">
                         <span class="section-label">Pilihan CTA</span>
@@ -585,6 +628,7 @@
                       <div class="bank-tabs" id="ctaBankTabs" role="group" aria-label="Kategori CTA"></div>
                       <div class="bank-list" id="ctaBankList"></div>
                     </div>
+                    </details>
 
                     <!-- Naskah CTA Input -->
                     <div class="form-group">
@@ -605,90 +649,155 @@
                         <input class="input" type="text" id="inputUrgencyTag" placeholder="mis. STOK TERBATAS — hanya jika benar">
                       </div>
                     </div>
-                    <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 12px;">Isi hanya klaim yang benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
-
-                    <!-- Paket Siap Posting: Caption TikTok + Hashtag Otomatis -->
-                    <div class="form-group" style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px; margin-top: 8px;">
-                      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
-                        <label class="form-label" for="inputTiktokCaption" style="margin: 0; font-weight: 600; color: #fff;">
-                          📱 Caption &amp; Hashtag Siap Posting TikTok
-                        </label>
-                        <div style="display: flex; gap: 6px;">
-                          <button class="btn small" id="btnAutoGenCaption" type="button" title="Rangkai otomatis dari Hook, Spesifikasi, dan CTA varian ini">
-                            <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Buat Otomatis
-                          </button>
-                          <button class="btn small primary" id="btnCopyTiktokCaption" type="button" title="Salin caption & hashtag ke clipboard">
-                            <svg class="ic" aria-hidden="true"><use href="#i-clipboard-copy"></use></svg> Salin Caption
-                          </button>
-                        </div>
-                      </div>
-                      <textarea class="input" id="inputTiktokCaption" rows="3" placeholder="Caption pendek memancing komentar + 5 hashtag relevan untuk langsung di-paste saat upload TikTok..." style="resize: vertical; font-size: 12px; line-height: 1.45;"></textarea>
-                    </div>
+                    <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 4px;">Isi hanya klaim yang benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
                   </div>
                 </div>
 
                 <!-- Hidden fallback element for script compatibility -->
                 <div id="clipsTableBody" style="display: none;"></div>
               </div>
-            </section>
 
-            <!-- Panel 3: Live Monitor Render & SSE Console -->
-            <section class="studio-panel">
-              <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">Monitor Render Real-Time</h2>
-                  <p class="panel-sub" id="monitorSubText">Menunggu proses render dimulai...</p>
+              <div class="wf-next-row">
+                <button type="button" class="btn small" data-goto-pane="design">← Audio &amp; Desain</button>
+                <button type="button" class="btn small primary" data-goto-pane="output">Lanjut ke Caption &amp; Output <svg class="ic" aria-hidden="true"><use href="#i-arrow-right"></use></svg></button>
+              </div>
+              </div>
+              <!-- /PANE 2 -->
+
+              <!-- PANE 3: CAPTION & OUTPUT -->
+              <div class="wf-pane" data-pane="output">
+                <!-- Paket Siap Posting: Caption TikTok + Hashtag Otomatis -->
+                <div class="form-group" style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 12px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                    <label class="form-label" for="inputTiktokCaption" style="margin: 0; font-weight: 600; color: #fff;">
+                      Caption &amp; hashtag siap posting TikTok
+                    </label>
+                    <div style="display: flex; gap: 6px;">
+                      <button class="btn small" id="btnAutoGenCaption" type="button" title="Rangkai otomatis dari Hook, Spesifikasi, dan CTA varian ini">
+                        <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Buat Otomatis
+                      </button>
+                      <button class="btn small primary" id="btnCopyTiktokCaption" type="button" title="Salin caption & hashtag ke clipboard">
+                        <svg class="ic" aria-hidden="true"><use href="#i-clipboard-copy"></use></svg> Salin Caption
+                      </button>
+                    </div>
+                  </div>
+                  <textarea class="input" id="inputTiktokCaption" rows="5" placeholder="Caption pendek memancing komentar + 5 hashtag relevan untuk langsung di-paste saat upload TikTok..." style="resize: vertical; font-size: 12.5px; line-height: 1.5;"></textarea>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <select class="input" id="selectFps" style="width: 130px; height: 28px; font-size: 12px;">
-                    <option value="60">60 FPS (Cinema)</option>
-                    <option value="30">30 FPS (Fast Mode)</option>
-                  </select>
-                  <button class="btn danger small" id="btnCancelRender" style="display: none;">
-                    Hentikan
-                  </button>
+
+                <!-- Custom Output Video Title, Watermark & Position -->
+                <div class="form-row three-col" style="margin-top: 12px;">
+                  <div class="form-group">
+                    <label class="form-label" for="inputCustomOutputName">
+                      <span style="font-weight: 600; color: #fff;">Nama Video Output</span>
+                      <span class="pill rose">out/*.mp4</span>
+                    </label>
+                    <input class="input" type="text" id="inputCustomOutputName"
+                      placeholder="Judul file render output">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="inputWatermark">Teks Watermark</label>
+                    <input class="input" type="text" id="inputWatermark" value="@inanikma_ | @spillbyna_">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="selectWatermarkPosition">Posisi Watermark</label>
+                    <select class="input" id="selectWatermarkPosition">
+                      <option value="floating">Floating (Anti-Subtitle)</option>
+                      <option value="top_left">Kiri Atas</option>
+                      <option value="top_right">Kanan Atas</option>
+                      <option value="mid_left">Tengah Kiri</option>
+                      <option value="mid_right">Tengah Kanan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="wf-next-row">
+                  <button type="button" class="btn small" data-goto-pane="storyboard">← Storyboard</button>
+                  <button type="button" class="btn small primary" id="btnPaneStartRender"><svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg> Mulai Render Video</button>
                 </div>
               </div>
-
-              <div class="progress-box">
-                <div class="progress-header">
-                  <span id="progressStep">Status: Idle</span>
-                  <span class="num" id="progressPercent">0%</span>
-                </div>
-                <div class="progress-bar-bg">
-                  <div class="progress-bar-fill" id="progressBarFill"></div>
-                </div>
-                <div class="progress-stats">
-                  <span class="num" id="progressFrames">0 / 0 frame</span>
-                  <span class="num" id="progressEta">Estimasi: -</span>
-                </div>
-              </div>
-
-              <pre class="console-box" id="consoleBox"><span class="log-line"><span class="log-time">[00:00:00]</span> Sistem siap. Konfigurasi produk lalu klik Mulai Render Video.</span></pre>
+              <!-- /PANE 3 -->
             </section>
 
           </div>
 
-          <!-- Right Column: 9:16 Video Player & Direct Media Dropzone -->
-          <div style="display: flex; flex-direction: column; gap: var(--gap);">
+          <!-- Right Column (Sticky): Layar HP Utama (Live Frame + Video Render), Monitor Render, Unggah Media -->
+          <div class="studio-right-col" id="studioRightCol">
 
-            <!-- Panel 4: Pemutar Video (9:16 Phone Mockup) -->
-            <section class="studio-panel">
+            <!-- Panel 4: Layar HP Utama -->
+            <section class="studio-panel player-panel">
               <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">Pemutar Video (9:16)</h2>
-                  <p class="panel-sub">Tinjau video hasil render & pratinjau</p>
+                <div class="seg-mini player-mode-seg" id="playerModeSeg" role="tablist" aria-label="Mode layar">
+                  <button type="button" data-mode="live" class="active"><svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Live Frame</button>
+                  <button type="button" data-mode="render"><svg class="ic" aria-hidden="true"><use href="#i-frame-play"></use></svg> Video Render</button>
                 </div>
                 <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                  <!-- Size Toggle Buttons (S, M, L) -->
-                  <div class="player-size-toggle" title="Pilihan Ukuran Tampilan Pemutar Video Desktop">
-                    <button class="player-size-btn" data-size="sm" type="button" title="Ukuran Ringkas (270px)">S</button>
-                    <button class="player-size-btn active" data-size="md" type="button" title="Ukuran Standar Desktop (340px)">M</button>
-                    <button class="player-size-btn" data-size="lg" type="button" title="Ukuran Besar / Bioskop (400px)">L</button>
-                  </div>
+                  <button class="btn small" id="btnPreviewStill" type="button" title="Render frame HD resolusi penuh di jendela terpisah">
+                    <svg class="ic" aria-hidden="true"><use href="#i-frame"></use></svg> Frame HD
+                  </button>
                   <button class="btn small" id="btnToggleSafeArea" type="button" title="Tampilkan panduan zona aman TikTok (ikon Like, komen, keranjang kuning)">
                     <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Safe area TikTok
                   </button>
+                </div>
+              </div>
+
+              <!-- MODE A: LIVE FRAME (Remotion still, sinkron dengan form) -->
+              <div class="player-mode-pane active" data-mode="live">
+                <section class="live-preview live-preview--main" id="livePreview" aria-label="Pratinjau langsung">
+                  <header class="live-preview-head">
+                    <div class="seg-mini" id="liveMoments" role="group" aria-label="Momen yang dipratinjau">
+                      <button type="button" data-moment="hook" class="active">Hook</button>
+                      <button type="button" data-moment="subtitle">Subtitle</button>
+                      <button type="button" data-moment="demo">Demo</button>
+                      <button type="button" data-moment="spec">Spec</button>
+                      <button type="button" data-moment="cta">CTA</button>
+                    </div>
+                    <div class="live-preview-actions">
+                      <label class="check-inline" title="Render ulang otomatis sesaat setelah Anda berhenti mengetik">
+                        <input type="checkbox" id="chkLiveAuto" checked>
+                        <span>Otomatis</span>
+                      </label>
+                      <button class="btn small" id="btnLiveRefresh" type="button"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg> Segarkan</button>
+                    </div>
+                  </header>
+                  <div class="live-preview-body">
+                    <div class="live-stage" id="livePreviewStage" data-state="idle">
+                      <img id="livePreviewImg" alt="Frame pratinjau 9:16">
+                      <div class="live-status" id="livePreviewStatus" role="status">Tekan Segarkan untuk melihat frame pertama.</div>
+                      <div class="live-safe-overlay" aria-hidden="true">
+                        <div class="lso-top"></div>
+                        <div class="lso-right"></div>
+                        <div class="lso-bottom"></div>
+                      </div>
+                    </div>
+                    <div class="live-side">
+                      <p class="live-meta num" id="livePreviewMeta">Belum dirender</p>
+
+                      <div class="live-field" id="liveSubtitleControls" hidden>
+                        <label class="form-label" for="liveSubtitleSlider">Kata yang ditampilkan</label>
+                        <input type="range" id="liveSubtitleSlider" min="0" max="0" value="0" step="1">
+                        <p class="live-excerpt" id="liveSubtitleExcerpt"></p>
+                      </div>
+
+                      <div class="live-field">
+                        <span class="form-label">Gaya subtitle</span>
+                        <div class="seg-mini" id="liveCaptionStyles" role="group" aria-label="Gaya subtitle"></div>
+                      </div>
+                      <p class="live-note">Dirender oleh komposisi Remotion yang sama dengan video akhir (~2 detik per perubahan).</p>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <!-- MODE B: VIDEO RENDER (MP4 hasil render + still babak) -->
+              <div class="player-mode-pane" data-mode="render">
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; justify-content: space-between;">
+                <!-- Size Toggle Buttons (S, M, L) -->
+                <div class="player-size-toggle" title="Pilihan Ukuran Tampilan Pemutar Video Desktop">
+                  <button class="player-size-btn" data-size="sm" type="button" title="Ukuran Ringkas (270px)">S</button>
+                  <button class="player-size-btn active" data-size="md" type="button" title="Ukuran Standar Desktop (340px)">M</button>
+                  <button class="player-size-btn" data-size="lg" type="button" title="Ukuran Besar / Bioskop (400px)">L</button>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
                   <button class="btn small" id="btnUploadToGDrive" type="button" style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);" title="Unggah video ini langsung ke Google Drive secara otomatis">
                     <svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg> Upload ke Drive
                   </button>
@@ -832,6 +941,49 @@
                 </div>
 
                 <div class="num" id="videoMetaText" style="font-size: 12px; color: var(--text-muted);">-</div>
+              </div>
+              </div>
+              <!-- /MODE B -->
+            </section>
+
+            <!-- Panel 3: Monitor Render (ringkas saat idle, otomatis terbuka saat render/transkripsi) -->
+            <section class="studio-panel monitor-drawer" id="monitorDrawer" data-open="false">
+              <button type="button" class="monitor-summary" id="monitorToggle" aria-expanded="false" aria-controls="monitorBody">
+                <span class="monitor-dot" aria-hidden="true"></span>
+                <span class="monitor-title">Monitor render</span>
+                <span class="monitor-inline num" id="monitorInline">Idle · 0%</span>
+                <span class="monitor-mini-track" aria-hidden="true"><span class="monitor-mini-fill" id="monitorMiniFill"></span></span>
+                <svg class="ic monitor-chevron" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+              </button>
+              <div class="monitor-body" id="monitorBody">
+                <div class="panel-header" style="padding-bottom: 8px;">
+                  <p class="panel-sub" id="monitorSubText">Menunggu proses render dimulai...</p>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <select class="input" id="selectFps" style="width: 130px; height: 28px; font-size: 12px;">
+                      <option value="60">60 FPS (Cinema)</option>
+                      <option value="30">30 FPS (Fast Mode)</option>
+                    </select>
+                    <button class="btn danger small" id="btnCancelRender" style="display: none;">
+                      Hentikan
+                    </button>
+                  </div>
+                </div>
+
+                <div class="progress-box">
+                  <div class="progress-header">
+                    <span id="progressStep">Status: Idle</span>
+                    <span class="num" id="progressPercent">0%</span>
+                  </div>
+                  <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                  </div>
+                  <div class="progress-stats">
+                    <span class="num" id="progressFrames">0 / 0 frame</span>
+                    <span class="num" id="progressEta">Estimasi: -</span>
+                  </div>
+                </div>
+
+                <pre class="console-box" id="consoleBox"><span class="log-line"><span class="log-time">[00:00:00]</span> Sistem siap. Konfigurasi produk lalu klik Mulai Render Video.</span></pre>
               </div>
             </section>
 

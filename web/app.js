@@ -38,6 +38,7 @@
     // Global Header Actions
     btnOpenGDriveModal: $('btnOpenGDriveModal'),
     gdriveHeaderStatusDot: $('gdriveHeaderStatusDot'),
+    btnCopyGeminiPrompt: $('btnCopyGeminiPrompt'),
     btnOpenImportModal: $('btnOpenImportModal'),
     btnPreviewStill: $('btnPreviewStill'),
     btnStartRender: $('btnStartRender'),
@@ -61,6 +62,7 @@
     selectVoiceOver: $('selectVoiceOver'),
     labelVoiceOver: $('labelVoiceOver'),
     pillVoiceOverStatus: $('pillVoiceOverStatus'),
+    btnSmartProcessVO: $('btnSmartProcessVO'),
     btnTrimSilence: $('btnTrimSilence'),
     btnJumpToSubtitle: $('btnJumpToSubtitle'),
     selectBgmTrack: $('selectBgmTrack'),
@@ -86,11 +88,18 @@
 
     // Variant Form
     variantSegmented: $('variantSegmented'),
+    btnSyncClipsBetweenVariants: $('btnSyncClipsBetweenVariants'),
     durationMatchPill: $('durationMatchPill'),
     selectThemeStyle: $('selectThemeStyle'),
     selectCardStyle: $('selectCardStyle'),
+    selectHookVariant: $('selectHookVariant'),
     selectPreset: $('selectPreset'),
+    selectPresetVariant: $('selectPresetVariant'),
     selectCaptionStyle: $('selectCaptionStyle'),
+    selectCaptionVariant: $('selectCaptionVariant'),
+    selectHookTransition: $('selectHookTransition'),
+    selectClipTransition: $('selectClipTransition'),
+    selectTransitionVariant: $('selectTransitionVariant'),
     designReasonBox: $('designReasonBox'),
     designReasonText: $('designReasonText'),
     selectBadgeStyle: $('selectBadgeStyle'),
@@ -543,10 +552,21 @@
       btn.classList.toggle('active', btn.dataset.variant === variantKey);
     });
 
+    if (el.btnSyncClipsBetweenVariants) {
+      const otherKey = variantKey === 'v1' ? 'v2' : 'v1';
+      el.btnSyncClipsBetweenVariants.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Salin Klip ${variantKey.toUpperCase()} ➔ ${otherKey.toUpperCase()}`;
+    }
+
     el.selectThemeStyle.value = v.themeStyle || 'pastel';
     el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
+    if (el.selectHookVariant) el.selectHookVariant.value = v.hookVariant || 'v1';
     if (el.selectPreset) el.selectPreset.value = v.preset || '';
+    if (el.selectPresetVariant) el.selectPresetVariant.value = v.presetVariant || 'v1';
     if (el.selectCaptionStyle) el.selectCaptionStyle.value = v.captionStyle || '';
+    if (el.selectCaptionVariant) el.selectCaptionVariant.value = v.captionVariant || 'v1';
+    if (el.selectHookTransition) el.selectHookTransition.value = v.hookTransition || 'zoom_flash';
+    if (el.selectClipTransition) el.selectClipTransition.value = v.clipTransition || 'auto';
+    if (el.selectTransitionVariant) el.selectTransitionVariant.value = v.transitionVariant || 'v1';
     if (el.designReasonBox && el.designReasonText) {
       if (v.designReason) {
         el.designReasonText.textContent = v.designReason;
@@ -605,6 +625,7 @@
     // Clips table
     renderClipsTable(v.clips || []);
     checkDurationMatch(v);
+    document.dispatchEvent(new CustomEvent('clipsUpdated'));
   }
 
   function renderClipsTable(clips) {
@@ -636,16 +657,75 @@
     }
 
     updateThemeVisualPreview();
+    document.dispatchEvent(new CustomEvent('clipsUpdated'));
   }
 
-  // Cermin dari src/presets.ts. Ubah di kedua tempat jika preset berubah.
+  // Cermin dari src/presets.ts (dengan dukungan multi-versi v1, v2, v3).
   const DESIGN_PRESETS = {
-    skincare: { themeStyle: 'pastel', cardStyle: 'quiet_serif', badgeStyle: 'marker', captionStyle: 'reveal' },
-    gadget: { themeStyle: 'editorial', cardStyle: 'label_tape', badgeStyle: 'alert', captionStyle: 'outline_pop' },
-    flash_sale: { themeStyle: 'flash_sale', cardStyle: 'receipt', badgeStyle: 'sticker', captionStyle: 'marker_sweep' },
-    lifestyle: { themeStyle: 'minimal', cardStyle: 'type_stack', badgeStyle: 'sticker', captionStyle: 'outline_pop' },
-    household: { themeStyle: 'minimal', cardStyle: 'sticky_note', badgeStyle: 'sticker', captionStyle: 'outline_pop' },
-    parenting: { themeStyle: 'pastel', cardStyle: 'chat_thread', badgeStyle: 'glass', captionStyle: 'reveal' }
+    skincare: {
+      themeStyle: 'pastel', cardStyle: 'quiet_serif', hookVariant: 'v1', badgeStyle: 'marker', captionStyle: 'reveal', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'pastel', cardStyle: 'quiet_serif', hookVariant: 'v1', badgeStyle: 'marker', captionStyle: 'reveal', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1' },
+        v2: { themeStyle: 'pastel', cardStyle: 'quiet_serif', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'plate', captionVariant: 'v2', hookTransition: 'iris_pop', clipTransition: 'light_leak', transitionVariant: 'v2' },
+        v3: { themeStyle: 'pastel', cardStyle: 'type_stack', hookVariant: 'v2', badgeStyle: 'sticker', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'whip_pan', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    gadget: {
+      themeStyle: 'editorial', cardStyle: 'label_tape', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'shutter', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'editorial', cardStyle: 'label_tape', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'shutter', transitionVariant: 'v1' },
+        v2: { themeStyle: 'editorial', cardStyle: 'label_tape', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'marker_sweep', captionVariant: 'v3', hookTransition: 'split_wipe', clipTransition: 'tilt_whip', transitionVariant: 'v2' },
+        v3: { themeStyle: 'editorial', cardStyle: 'type_stack', hookVariant: 'v3', badgeStyle: 'sticker', captionStyle: 'reveal', captionVariant: 'v2', hookTransition: 'glitch_stamp', clipTransition: 'whip_pan', transitionVariant: 'v3' }
+      }
+    },
+    flash_sale: {
+      themeStyle: 'flash_sale', cardStyle: 'receipt', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'marker_sweep', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'flash_sale', cardStyle: 'receipt', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'marker_sweep', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1' },
+        v2: { themeStyle: 'flash_sale', cardStyle: 'receipt', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'outline_pop', captionVariant: 'v2', hookTransition: 'tilt_whip', clipTransition: 'zoom_flash', transitionVariant: 'v2' },
+        v3: { themeStyle: 'flash_sale', cardStyle: 'receipt', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'split_wipe', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    lifestyle: {
+      themeStyle: 'minimal', cardStyle: 'type_stack', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'push_up', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'minimal', cardStyle: 'type_stack', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'push_up', transitionVariant: 'v1' },
+        v2: { themeStyle: 'editorial', cardStyle: 'type_stack', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'tilt_whip', clipTransition: 'split_wipe', transitionVariant: 'v2' },
+        v3: { themeStyle: 'minimal', cardStyle: 'quiet_serif', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'reveal', captionVariant: 'v3', hookTransition: 'shutter', clipTransition: 'blur_zoom', transitionVariant: 'v3' }
+      }
+    },
+    household: {
+      themeStyle: 'minimal', cardStyle: 'sticky_note', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'push_up', clipTransition: 'whip_pan', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'minimal', cardStyle: 'sticky_note', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'outline_pop', captionVariant: 'v1', hookTransition: 'push_up', clipTransition: 'whip_pan', transitionVariant: 'v1' },
+        v2: { themeStyle: 'minimal', cardStyle: 'sticky_note', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'plate', captionVariant: 'v2', hookTransition: 'iris_pop', clipTransition: 'push_up', transitionVariant: 'v2' },
+        v3: { themeStyle: 'pastel', cardStyle: 'sticky_note', hookVariant: 'v3', badgeStyle: 'sticker', captionStyle: 'outline_pop', captionVariant: 'v2', hookTransition: 'whip_pan', clipTransition: 'light_leak', transitionVariant: 'v3' }
+      }
+    },
+    parenting: {
+      themeStyle: 'pastel', cardStyle: 'chat_thread', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'reveal', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'push_up', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'pastel', cardStyle: 'chat_thread', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'reveal', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'push_up', transitionVariant: 'v1' },
+        v2: { themeStyle: 'pastel', cardStyle: 'chat_thread', hookVariant: 'v2', badgeStyle: 'sticker', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'iris_pop', clipTransition: 'light_leak', transitionVariant: 'v2' },
+        v3: { themeStyle: 'minimal', cardStyle: 'chat_thread', hookVariant: 'v3', badgeStyle: 'alert', captionStyle: 'plate', captionVariant: 'v3', hookTransition: 'blur_zoom', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    podcast_hook: {
+      themeStyle: 'editorial', cardStyle: 'type_stack', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'reveal', captionVariant: 'v2', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'editorial', cardStyle: 'type_stack', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'reveal', captionVariant: 'v2', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1' },
+        v2: { themeStyle: 'editorial', cardStyle: 'type_stack', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'marker_sweep', captionVariant: 'v3', hookTransition: 'split_wipe', clipTransition: 'shutter', transitionVariant: 'v2' },
+        v3: { themeStyle: 'minimal', cardStyle: 'chat_thread', hookVariant: 'v3', badgeStyle: 'alert', captionStyle: 'plate', captionVariant: 'v1', hookTransition: 'glitch_stamp', clipTransition: 'tilt_whip', transitionVariant: 'v3' }
+      }
+    },
+    luxury: {
+      themeStyle: 'minimal', cardStyle: 'quiet_serif', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'plate', captionVariant: 'v3', hookTransition: 'blur_zoom', clipTransition: 'light_leak', transitionVariant: 'v1',
+      versions: {
+        v1: { themeStyle: 'minimal', cardStyle: 'quiet_serif', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'plate', captionVariant: 'v3', hookTransition: 'blur_zoom', clipTransition: 'light_leak', transitionVariant: 'v1' },
+        v2: { themeStyle: 'pastel', cardStyle: 'quiet_serif', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'plate', captionVariant: 'v2', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v2' },
+        v3: { themeStyle: 'minimal', cardStyle: 'receipt', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'split_wipe', clipTransition: 'shutter', transitionVariant: 'v3' }
+      }
+    }
   };
 
   // ===========================================================================
@@ -862,8 +942,450 @@
     }
   }
 
+  // ===========================================================================
+  // GALERI PRATINJAU ANIMASI ALA CAPCUT (Real-time CSS Micro-Animation)
+  // ===========================================================================
+  const ccState = {
+    tab: 'presets',       // 'presets' | 'hooks' | 'captions' | 'transitions'
+    verFilter: 'all',     // untuk tab hooks & captions: 'all' | 'v1' | 'v2' | 'v3'
+    transTarget: 'hook',  // 'hook' (hookTransition) | 'clip' (clipTransition)
+    collapsed: false
+  };
+
+  try {
+    ccState.collapsed = localStorage.getItem('studio.ccPickerCollapsed') === '1';
+  } catch (_) {}
+
+  const THEME_ACCENTS = {
+    pastel: '#FF4D6D',
+    editorial: '#E2FF32',
+    flash_sale: '#FF2E54',
+    minimal: '#F2A93B'
+  };
+
+  const CC_PRESETS_META = [
+    { id: 'skincare', title: 'Skincare & Clean', sub: 'Quiet Serif • Paper Pocket • Kinetic Pill' },
+    { id: 'gadget', title: 'Gadget & Tech', sub: 'Label Tape • Cyber Spec • Strike Box' },
+    { id: 'flash_sale', title: 'Flash Sale Promo', sub: 'Thermal Struk • Kupon • White Catalog' },
+    { id: 'lifestyle', title: 'Lifestyle & Fashion', sub: 'Poster Brush • Kinetic Pill • Masthead' },
+    { id: 'household', title: 'Rumah & Dapur', sub: 'Sticky Note • Grid Memo Pin • Dual Note' },
+    { id: 'parenting', title: 'Ibu, Bayi & Curhat', sub: 'WA/iMessage • Reply Komentar • Voice DM' },
+    { id: 'podcast_hook', title: 'Dark Podcast Hook', sub: 'Kinetic Pill • Strike Box • Voice DM' },
+    { id: 'luxury', title: 'Aesthetic Luxury', sub: 'Magazine Serif • Paper Ink • Katalog' }
+  ];
+
+  const CC_HOOKS_CATALOG = [
+    { style: 'sticky_note', ver: 'v1', title: 'Sticky Note · v1', sub: 'Post-It kuning klasik dengan selotip atas' },
+    { style: 'sticky_note', ver: 'v2', title: 'Grid Memo Pin · v2', sub: 'Kertas kotak + paku pin 3D + sapuan stabilo' },
+    { style: 'sticky_note', ver: 'v3', title: 'Dual Layered Note · v3', sub: 'Dua kartu catatan bertumpuk kontras' },
+    { style: 'receipt', ver: 'v1', title: 'Thermal Receipt · v1', sub: 'Struk kasir thermal dengan baris total blok hitam' },
+    { style: 'receipt', ver: 'v2', title: 'Promo Coupon · v2', sub: 'Kupon diskon merah dengan garis sobek emas' },
+    { style: 'receipt', ver: 'v3', title: 'White Catalog · v3', sub: 'Indeks katalog putih 01 // HOOK + pil hitam' },
+    { style: 'chat_thread', ver: 'v1', title: 'Chat Q&A · v1', sub: 'Balon tanya-jawab WA/iMessage dua arah' },
+    { style: 'chat_thread', ver: 'v2', title: 'TikTok Reply · v2', sub: 'Stiker "Membalas komentar @..." asli FYP' },
+    { style: 'chat_thread', ver: 'v3', title: 'Voice Note DM · v3', sub: 'Kartu pesan suara gelap + gelombang audio' },
+    { style: 'type_stack', ver: 'v1', title: 'Poster Brush · v1', sub: 'Tipografi poster besar + garis kuas tangan' },
+    { style: 'type_stack', ver: 'v2', title: 'Kinetic Pill ✦ · v2', sub: 'Kapsul mengembang dari kiri + kilau bintang' },
+    { style: 'type_stack', ver: 'v3', title: 'Strike + Box · v3', sub: 'Coret anggapan lama + bingkai kotak teknis' },
+    { style: 'label_tape', ver: 'v1', title: 'Dymo Emboss · v1', sub: 'Pita label-maker timbul cetak per baris' },
+    { style: 'label_tape', ver: 'v2', title: 'Cyber Spec Bar · v2', sub: 'Bar spesifikasi sudut miring + indeks 01/02' },
+    { style: 'label_tape', ver: 'v3', title: 'Frosted Split · v3', sub: 'Tag kaca buram terpisah + kapsul aksen' },
+    { style: 'quiet_serif', ver: 'v1', title: 'Editorial Italic · v1', sub: 'Serif italic mewah + garis pemisah halus' },
+    { style: 'quiet_serif', ver: 'v2', title: 'Magazine Masthead · v2', sub: 'Kartu redaksi gelap dengan garis vertikal kiri' },
+    { style: 'quiet_serif', ver: 'v3', title: 'Warm Paper Pocket · v3', sub: 'Kertas hangat #F7F4EB dengan tinta hitam' }
+  ];
+
+  const CC_CAPTIONS_CATALOG = [
+    { style: 'outline_pop', ver: 'v1', title: 'Outline Pop · v1', sub: 'Kontur hitam tegas & lompatan klasik FYP' },
+    { style: 'outline_pop', ver: 'v2', title: 'Kinetic Bounce 3D · v2', sub: 'Kata aktif melompat miring + bayangan blok' },
+    { style: 'outline_pop', ver: 'v3', title: 'Dot Indicator · v3', sub: 'Bar indikator menyala di atas kata aktif' },
+    { style: 'marker_sweep', ver: 'v1', title: 'Stabilo Sweep · v1', sub: 'Sapuan stabilo miring dari kiri ke kanan' },
+    { style: 'marker_sweep', ver: 'v2', title: 'Pill + Sparkle ✦ · v2', sub: 'Kapsul bulat mengembang + kilau bintang' },
+    { style: 'marker_sweep', ver: 'v3', title: 'Underline Draw · v3', sub: 'Garis bawah tebal tergambar mengikuti suara' },
+    { style: 'reveal', ver: 'v1', title: 'Word Appear · v1', sub: 'Kata muncul satu per satu mengikuti ucapan' },
+    { style: 'reveal', ver: 'v2', title: 'Dim-to-Full Focus · v2', sub: 'Kalimat tampil 32% lalu menyala 100% saat aktif' },
+    { style: 'reveal', ver: 'v3', title: 'Vertical Blur-In · v3', sub: 'Kata masuk dengan efek motion blur halus' },
+    { style: 'plate', ver: 'v1', title: 'Dark Solid Plate · v1', sub: 'Pelat gelap solid kontras tinggi' },
+    { style: 'plate', ver: 'v2', title: 'Warm Paper Ink · v2', sub: 'Pelat kertas krem hangat + tinta hitam' },
+    { style: 'plate', ver: 'v3', title: 'Frosted Chip · v3', sub: 'Kapsul kaca buram dengan chip kata aktif' }
+  ];
+
+  const CC_TRANSITIONS_CATALOG = [
+    { id: 'zoom_flash', title: 'Zoom Flash', sub: 'Dorongan lensa cepat + kilatan cahaya' },
+    { id: 'whip_pan', title: 'Whip Pan', sub: 'Bantingan kamera horizontal cepat' },
+    { id: 'tilt_whip', title: 'Tilt Whip (Bang-Motion)', sub: 'Bantingan kamera diagonal miring berenergi' },
+    { id: 'split_wipe', title: 'Split Wipe (Bang-Motion)', sub: 'Layar membelah dua dengan garis cahaya' },
+    { id: 'iris_pop', title: 'Iris Pop (Bang-Motion)', sub: 'Fokus lingkaran membesar dari tengah' },
+    { id: 'light_leak', title: 'Light Leak', sub: 'Sapuan cahaya hangat organik' },
+    { id: 'glitch_stamp', title: 'Glitch Stamp', sub: 'geseran RGB split & hentakan digital' },
+    { id: 'push_up', title: 'Push Up', sub: 'Dorongan vertikal ala swipe feed FYP' },
+    { id: 'shutter', title: 'Shutter Cut', sub: 'Bilah rana kamera mekanis menutup-buka' },
+    { id: 'blur_zoom', title: 'Blur Zoom', sub: ' Transisi fokus lembut sinematik' }
+  ];
+
+  function buildHookStageHtml(style, ver) {
+    const key = `${style}-${ver}`;
+    switch (key) {
+      case 'sticky_note-v1':
+        return `<div class="cc-anim-sticky-v1"><div style="color:#DC2626;font-size:8px;">Ibu wajib tau!</div><div>Air langsung terserap!</div></div>`;
+      case 'sticky_note-v2':
+        return `<div class="cc-anim-sticky-v2"><span class="cc-pin-dot"></span><div>Lemari bau apek?</div><span class="cc-marker-sweep-bar">Cukup 1 kotak ini!</span></div>`;
+      case 'sticky_note-v3':
+        return `<div class="cc-anim-sticky-v3"><div class="cc-sticky-back">01 · Masalah lembap?</div><div class="cc-sticky-front">Tuntas dalam 1 malam!</div></div>`;
+      case 'receipt-v1':
+        return `<div class="cc-anim-receipt-v1"><div>*** FLASH SALE ***</div><div>Hemat 50% Hari Ini</div><div class="cc-receipt-inv">TOTAL: KLIK DI BAWAH</div></div>`;
+      case 'receipt-v2':
+        return `<div class="cc-anim-receipt-v2"><div>VOUCHER 11.11</div><div class="cc-coupon-gold">DISKON + GRATIS ONGKIR</div></div>`;
+      case 'receipt-v3':
+        return `<div class="cc-anim-receipt-v3"><div class="cc-catalog-head">01 // HOOK PRODUK</div><div>Kualitas di atas harga</div><div class="cc-catalog-pill">Wajib punya sekarang!</div></div>`;
+      case 'chat_thread-v1':
+        return `<div class="cc-anim-chat-v1"><div class="cc-chat-q">Kok bisa awet wangi?</div><div class="cc-chat-a">Rahasianya cuma ini!</div></div>`;
+      case 'chat_thread-v2':
+        return `<div class="cc-anim-chat-v2"><div class="cc-tt-reply-sub"><span class="cc-tt-reply-dot"></span>Membalas @user</div><div style="font-weight:700;margin-top:2px;">Spill dong kak belinya!</div><div style="background:var(--cc-accent);color:#000;font-weight:800;padding:2px 4px;border-radius:3px;margin-top:3px;">Cek keranjang kuning!</div></div>`;
+      case 'chat_thread-v3':
+        return `<div class="cc-anim-chat-v3"><div class="cc-wave-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div style="font-weight:700;">"Asli ini penyelamat!"</div></div>`;
+      case 'type_stack-v1':
+        return `<div class="cc-anim-type-v1"><div>Jangan salah pilih</div><div style="color:var(--cc-accent);">Hasilnya secepat ini!</div><div class="cc-brush-line"></div></div>`;
+      case 'type_stack-v2':
+        return `<div class="cc-anim-type-v2"><div>Capek coba yang lain?</div><div class="cc-kinetic-pill-wrap"><span class="cc-kinetic-pill-bg"></span>Ini solusi akhirnya!<span class="cc-sparkle-star">✦</span></div></div>`;
+      case 'type_stack-v3':
+        return `<div class="cc-anim-type-v3"><div class="cc-strike-row">Cara lama yang ribet<span class="cc-strike-bar"></span></div><div class="cc-frame-box">3× Lebih Praktis!</div></div>`;
+      case 'label_tape-v1':
+        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1">SPEK UNGGULAN</div><div class="cc-dymo-row2">MATERIAL ANTI KARAT</div></div>`;
+      case 'label_tape-v2':
+        return `<div class="cc-anim-tape-v2"><div class="cc-cyber-bar">01 // UJI KETAHANAN</div><div class="cc-cyber-bar2">TAHAN PANAS & DINGIN</div></div>`;
+      case 'label_tape-v3':
+        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1" style="border-radius:99px;background:rgba(255,255,255,0.14);">FITUR UTAMA</div><div class="cc-dymo-row2" style="border-radius:5px;">DESAIN COMPACT</div></div>`;
+      case 'quiet_serif-v1':
+        return `<div class="cc-anim-serif-v1"><div class="cc-serif-line1">Perawatan kulit tenang</div><div class="cc-serif-rule"></div><div class="cc-serif-italic">Kembalikan glow alami</div></div>`;
+      case 'quiet_serif-v2':
+        return `<div class="cc-anim-serif-v2"><div class="cc-serif-line1">EDISI PILIHAN</div><div class="cc-serif-italic">Tekstur ringan meresap</div></div>`;
+      case 'quiet_serif-v3':
+      default:
+        return `<div class="cc-anim-serif-v3"><div style="font-size:8px;color:#52525B;">KANTONG KERTAS</div><div class="cc-serif-italic" style="color:#111;font-weight:700;">Lembut sejak tetes pertama</div><div class="cc-serif-rule" style="width:100%;"></div></div>`;
+    }
+  }
+
+  function buildCaptionStageHtml(style, ver) {
+    const clsMap = {
+      'outline_pop-v1': 'cc-sub-outline-v1',
+      'outline_pop-v2': 'cc-sub-outline-v2',
+      'outline_pop-v3': 'cc-sub-outline-v3',
+      'marker_sweep-v1': 'cc-sub-marker-v1',
+      'marker_sweep-v2': 'cc-sub-marker-v2',
+      'marker_sweep-v3': 'cc-sub-marker-v3',
+      'reveal-v1': 'cc-sub-reveal-v1',
+      'reveal-v2': 'cc-sub-reveal-v2',
+      'reveal-v3': 'cc-sub-reveal-v3',
+      'plate-v1': 'cc-sub-plate-v1',
+      'plate-v2': 'cc-sub-plate-v2',
+      'plate-v3': 'cc-sub-plate-v3'
+    };
+    const cls = clsMap[`${style}-${ver}`] || 'cc-sub-outline-v1';
+    return `<div class="cc-sub-row ${cls}"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div>`;
+  }
+
+  function buildTransitionStageHtml(transId, ver) {
+    return `<div class="cc-trans-viewport cc-trans-${transId}"><div class="cc-trans-scene-a">BABAK 1</div><div class="cc-trans-scene-b">BABAK 2 · ${ver.toUpperCase()}</div></div>`;
+  }
+
+  function renderCapcutPicker() {
+    const root = $('capcutDesignPicker');
+    const grid = $('ccPickerGrid');
+    const subFilter = $('ccSubFilter');
+    const verSeg = $('ccVersionSeg');
+    const summaryEl = $('ccActiveSummary');
+    const toggleBtn = $('btnToggleCcDrawer');
+    if (!root || !grid) return;
+
+    root.dataset.collapsed = ccState.collapsed ? 'true' : 'false';
+    if (toggleBtn) {
+      toggleBtn.textContent = ccState.collapsed ? 'Buka Galeri Animasi' : 'Lipat Galeri';
+    }
+
+    const activeTheme = el.selectThemeStyle?.value || 'pastel';
+    root.style.setProperty('--cc-accent', THEME_ACCENTS[activeTheme] || '#FF4D6D');
+
+    const activePreset = el.selectPreset?.value || '';
+    const activePresetVer = el.selectPresetVariant?.value || 'v1';
+    const activeCard = el.selectCardStyle?.value || 'sticky_note';
+    const activeHookVer = el.selectHookVariant?.value || 'v1';
+    const activeCap = el.selectCaptionStyle?.value || 'outline_pop';
+    const activeCapVer = el.selectCaptionVariant?.value || 'v1';
+    const activeHookTrans = el.selectHookTransition?.value || 'zoom_flash';
+    const activeClipTrans = el.selectClipTransition?.value || 'auto';
+    const activeTransVer = el.selectTransitionVariant?.value || 'v1';
+
+    if (summaryEl) {
+      if (activePreset) {
+        summaryEl.textContent = `Preset: ${activePreset} (${activePresetVer})`;
+      } else {
+        summaryEl.textContent = `Hook: ${activeCard} (${activeHookVer}) · Sub: ${activeCap || 'auto'} (${activeCapVer})`;
+      }
+    }
+
+    // Highlight active tab
+    document.querySelectorAll('#ccPickerTabs .cc-tab').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === ccState.tab);
+    });
+
+    // Update version seg active button based on current tab
+    const currentTabVer =
+      ccState.tab === 'presets' ? activePresetVer :
+      ccState.tab === 'hooks' ? activeHookVer :
+      ccState.tab === 'captions' ? activeCapVer :
+      activeTransVer;
+
+    verSeg?.querySelectorAll('button[data-ver]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ver === currentTabVer);
+    });
+
+    // Update Theme Swatches & Badge Seg in Toolbar
+    const activeBadge = el.selectBadgeStyle?.value || 'sticker';
+    document.querySelectorAll('#ccThemeSwatches .cc-swatch').forEach(sw => {
+      sw.classList.toggle('active', sw.dataset.theme === activeTheme);
+    });
+    document.querySelectorAll('#ccBadgeSeg button[data-badge]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.badge === activeBadge);
+    });
+
+    // Render left toolbar filter
+    if (subFilter) {
+      if (ccState.tab === 'transitions') {
+        subFilter.innerHTML = `
+          <span class="cc-ver-label">Target Cut:</span>
+          <div class="seg-mini" id="ccTransTargetSeg">
+            <button type="button" data-target="hook" class="${ccState.transTarget === 'hook' ? 'active' : ''}">Hook → Produk (${activeHookTrans})</button>
+            <button type="button" data-target="clip" class="${ccState.transTarget === 'clip' ? 'active' : ''}">Antar Babak (${activeClipTrans})</button>
+          </div>
+        `;
+      } else if (ccState.tab === 'hooks' || ccState.tab === 'captions') {
+        subFilter.innerHTML = `
+          <span class="cc-ver-label">Tampilkan:</span>
+          <div class="seg-mini" id="ccVerFilterSeg">
+            <button type="button" data-filter="all" class="${ccState.verFilter === 'all' ? 'active' : ''}">Semua Versi</button>
+            <button type="button" data-filter="v1" class="${ccState.verFilter === 'v1' ? 'active' : ''}">Hanya v1</button>
+            <button type="button" data-filter="v2" class="${ccState.verFilter === 'v2' ? 'active' : ''}">Hanya v2</button>
+            <button type="button" data-filter="v3" class="${ccState.verFilter === 'v3' ? 'active' : ''}">Hanya v3</button>
+          </div>
+        `;
+      } else {
+        subFilter.innerHTML = `<span class="cc-ver-label">Klik kartu preset atau tombol <strong>v1 / v2 / v3</strong> di bawah kartu untuk melihat perubahan gerak:</span>`;
+      }
+    }
+
+    // Render cards grid
+    if (ccState.tab === 'presets') {
+      grid.innerHTML = CC_PRESETS_META.map(p => {
+        const presetObj = DESIGN_PRESETS[p.id];
+        const ver = activePreset === p.id ? activePresetVer : activePresetVer;
+        const cfg = presetObj?.versions?.[ver] || presetObj;
+        const isSelected = activePreset === p.id;
+        const accent = THEME_ACCENTS[cfg.themeStyle] || '#FF4D6D';
+        return `
+          <div class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-preset" data-preset="${p.id}" style="--cc-accent:${accent}">
+            <div class="cc-stage">
+              <span class="cc-stage-badge">${ver.toUpperCase()}</span>
+              ${buildHookStageHtml(cfg.cardStyle, cfg.hookVariant || 'v1')}
+            </div>
+            <div class="cc-card-meta">
+              <div class="cc-card-title-row">
+                <span class="cc-card-title">${p.title}</span>
+              </div>
+              <span class="cc-card-sub">${cfg.cardStyle} (${cfg.hookVariant}) · ${cfg.captionStyle} (${cfg.captionVariant})</span>
+              <div class="cc-ver-pills">
+                ${['v1', 'v2', 'v3'].map(vKey => `
+                  <button type="button" class="cc-ver-pill ${isSelected && activePresetVer === vKey ? 'active' : ''}" data-action="pick-preset-ver" data-preset="${p.id}" data-ver="${vKey}">${vKey}</button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    } else if (ccState.tab === 'hooks') {
+      const items = CC_HOOKS_CATALOG.filter(item => ccState.verFilter === 'all' || item.ver === ccState.verFilter);
+      grid.innerHTML = items.map(item => {
+        const isSelected = activeCard === item.style && activeHookVer === item.ver;
+        return `
+          <button type="button" class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-hook" data-style="${item.style}" data-ver="${item.ver}">
+            <div class="cc-stage">
+              <span class="cc-stage-badge">${item.ver.toUpperCase()}</span>
+              ${buildHookStageHtml(item.style, item.ver)}
+            </div>
+            <div class="cc-card-meta">
+              <span class="cc-card-title">${item.title}</span>
+              <span class="cc-card-sub">${item.sub}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    } else if (ccState.tab === 'captions') {
+      const items = CC_CAPTIONS_CATALOG.filter(item => ccState.verFilter === 'all' || item.ver === ccState.verFilter);
+      grid.innerHTML = items.map(item => {
+        const isSelected = (activeCap || 'outline_pop') === item.style && activeCapVer === item.ver;
+        return `
+          <button type="button" class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-caption" data-style="${item.style}" data-ver="${item.ver}">
+            <div class="cc-stage">
+              <span class="cc-stage-badge">${item.ver.toUpperCase()}</span>
+              ${buildCaptionStageHtml(item.style, item.ver)}
+            </div>
+            <div class="cc-card-meta">
+              <span class="cc-card-title">${item.title}</span>
+              <span class="cc-card-sub">${item.sub}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    } else if (ccState.tab === 'transitions') {
+      const currentTrans = ccState.transTarget === 'hook' ? activeHookTrans : activeClipTrans;
+      grid.innerHTML = CC_TRANSITIONS_CATALOG.map(item => {
+        const isSelected = currentTrans === item.id;
+        return `
+          <button type="button" class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-transition" data-trans="${item.id}">
+            <div class="cc-stage">
+              <span class="cc-stage-badge">${activeTransVer.toUpperCase()}</span>
+              ${buildTransitionStageHtml(item.id, activeTransVer)}
+            </div>
+            <div class="cc-card-meta">
+              <span class="cc-card-title">${item.title}</span>
+              <span class="cc-card-sub">${item.sub}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+  }
+
+  function initCapcutPicker() {
+    const root = $('capcutDesignPicker');
+    if (!root) return;
+
+    $('ccPickerTabs')?.addEventListener('click', e => {
+      const btn = e.target.closest('.cc-tab');
+      if (!btn) return;
+      ccState.tab = btn.dataset.tab;
+      if (ccState.collapsed) {
+        ccState.collapsed = false;
+        try { localStorage.setItem('studio.ccPickerCollapsed', '0'); } catch (_) {}
+      }
+      renderCapcutPicker();
+    });
+
+    $('btnToggleCcDrawer')?.addEventListener('click', () => {
+      ccState.collapsed = !ccState.collapsed;
+      try { localStorage.setItem('studio.ccPickerCollapsed', ccState.collapsed ? '1' : '0'); } catch (_) {}
+      renderCapcutPicker();
+    });
+
+    $('ccVersionSeg')?.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-ver]');
+      if (!btn) return;
+      const ver = btn.dataset.ver;
+      live.armed = true;
+      if (ccState.tab === 'presets') {
+        syncSelectEl(el.selectPresetVariant, ver);
+        if (el.selectPreset?.value) {
+          applySelectedPresetToFields();
+        } else {
+          syncSelectEl(el.selectHookVariant, ver);
+          syncSelectEl(el.selectCaptionVariant, ver);
+          syncSelectEl(el.selectTransitionVariant, ver);
+        }
+      } else if (ccState.tab === 'hooks') {
+        syncSelectEl(el.selectHookVariant, ver);
+      } else if (ccState.tab === 'captions') {
+        syncSelectEl(el.selectCaptionVariant, ver);
+      } else if (ccState.tab === 'transitions') {
+        syncSelectEl(el.selectTransitionVariant, ver);
+      }
+      syncFormToVariant();
+      updateThemeVisualPreview();
+      triggerAutoSave();
+    });
+
+    $('ccThemeSwatches')?.addEventListener('click', e => {
+      const sw = e.target.closest('.cc-swatch');
+      if (!sw || !sw.dataset.theme) return;
+      live.armed = true;
+      syncSelectEl(el.selectThemeStyle, sw.dataset.theme);
+      syncFormToVariant();
+      updateThemeVisualPreview();
+      triggerAutoSave();
+    });
+
+    $('ccBadgeSeg')?.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-badge]');
+      if (!btn || !btn.dataset.badge) return;
+      live.armed = true;
+      syncSelectEl(el.selectBadgeStyle, btn.dataset.badge);
+      syncFormToVariant();
+      updateThemeVisualPreview();
+      triggerAutoSave();
+    });
+
+    $('ccSubFilter')?.addEventListener('click', e => {
+      const targetBtn = e.target.closest('#ccTransTargetSeg button[data-target]');
+      if (targetBtn) {
+        ccState.transTarget = targetBtn.dataset.target;
+        renderCapcutPicker();
+        return;
+      }
+      const filterBtn = e.target.closest('#ccVerFilterSeg button[data-filter]');
+      if (filterBtn) {
+        ccState.verFilter = filterBtn.dataset.filter;
+        renderCapcutPicker();
+      }
+    });
+
+    $('ccPickerGrid')?.addEventListener('click', e => {
+      const verPill = e.target.closest('[data-action="pick-preset-ver"]');
+      if (verPill) {
+        e.stopPropagation();
+        live.armed = true;
+        syncSelectEl(el.selectPreset, verPill.dataset.preset);
+        syncSelectEl(el.selectPresetVariant, verPill.dataset.ver);
+        applySelectedPresetToFields();
+        syncFormToVariant();
+        updateThemeVisualPreview();
+        triggerAutoSave();
+        return;
+      }
+
+      const card = e.target.closest('.cc-card');
+      if (!card) return;
+      live.armed = true;
+      const action = card.dataset.action;
+
+      if (action === 'pick-preset') {
+        syncSelectEl(el.selectPreset, card.dataset.preset);
+        applySelectedPresetToFields();
+      } else if (action === 'pick-hook') {
+        syncSelectEl(el.selectPreset, '');
+        syncSelectEl(el.selectCardStyle, card.dataset.style);
+        syncSelectEl(el.selectHookVariant, card.dataset.ver);
+      } else if (action === 'pick-caption') {
+        syncSelectEl(el.selectPreset, '');
+        syncSelectEl(el.selectCaptionStyle, card.dataset.style);
+        syncSelectEl(el.selectCaptionVariant, card.dataset.ver);
+      } else if (action === 'pick-transition') {
+        if (ccState.transTarget === 'hook') {
+          syncSelectEl(el.selectHookTransition, card.dataset.trans);
+        } else {
+          syncSelectEl(el.selectClipTransition, card.dataset.trans);
+        }
+      }
+
+      syncFormToVariant();
+      updateThemeVisualPreview();
+      triggerAutoSave();
+    });
+
+    renderCapcutPicker();
+  }
+
   // Dipanggil dari banyak tempat (input, preset, klip). Namanya dipertahankan.
   function updateThemeVisualPreview() {
+    renderCapcutPicker();
     scheduleLivePreview();
   }
 
@@ -1278,16 +1800,29 @@
       el.pillVoiceOverStatus.className = 'pill neutral';
       return;
     }
-    const jsonBase = voName.replace(/\.[^/.]+$/, '');
-    const voAsset = state.assets?.voiceOvers?.find(vo => vo.name === voName);
-    const hasJson = voAsset ? voAsset.hasTranscript : state.assets?.transcripts?.some(t => t.name === `${jsonBase}.json`);
-    const count = voAsset?.wordsCount || 0;
+    const cleanBase = voName.split('/').pop().replace(/\.[^/.]+$/, '');
+    const voAsset = state.assets?.voiceOvers?.find(vo =>
+      vo.name === voName ||
+      vo.name.endsWith('/' + voName) ||
+      voName.endsWith('/' + vo.name) ||
+      vo.name.split('/').pop() === voName.split('/').pop()
+    );
 
-    if (hasJson) {
+    // Deteksi jika option dropdown memiliki informasi "(XX kata)"
+    const optText = el.selectVoiceOver?.selectedOptions?.[0]?.textContent || '';
+    const matchWords = optText.match(/\((\d+)\s*kata\)/i);
+    const count = matchWords ? parseInt(matchWords[1], 10) : (voAsset?.wordsCount || 0);
+
+    const hasJson = count > 0 || (voAsset ? voAsset.hasTranscript : state.assets?.transcripts?.some(t => t.name.includes(cleanBase)));
+
+    if (hasJson && count > 0) {
       el.pillVoiceOverStatus.textContent = `Transkrip tersedia (${count} kata) · Klik untuk edit`;
       el.pillVoiceOverStatus.className = 'pill emerald';
+    } else if (hasJson) {
+      el.pillVoiceOverStatus.textContent = `Transkrip tersedia · Klik untuk edit`;
+      el.pillVoiceOverStatus.className = 'pill emerald';
     } else {
-      el.pillVoiceOverStatus.textContent = `Transkrip belum dibuat · klik untuk membuat`;
+      el.pillVoiceOverStatus.textContent = `Transkrip belum dibuat · Klik untuk membuat`;
       el.pillVoiceOverStatus.className = 'pill amber';
     }
   }
@@ -1327,8 +1862,14 @@
       if (val) v[key] = val; else delete v[key];
     };
     setOptional('preset', el.selectPreset?.value);
+    setOptional('presetVariant', el.selectPresetVariant?.value);
+    setOptional('hookVariant', el.selectHookVariant?.value);
     setOptional('captionStyle', el.selectCaptionStyle?.value);
+    setOptional('captionVariant', el.selectCaptionVariant?.value);
     setOptional('badgeStyle', el.selectBadgeStyle?.value);
+    setOptional('hookTransition', el.selectHookTransition?.value);
+    setOptional('clipTransition', el.selectClipTransition?.value);
+    setOptional('transitionVariant', el.selectTransitionVariant?.value);
     setOptional('ctaLabel', el.inputCtaLabel?.value);
     setOptional('urgencyTag', el.inputUrgencyTag?.value);
     setOptional('tiktokCaption', el.inputTiktokCaption?.value);
@@ -1396,6 +1937,46 @@
     renderVariant(btn.dataset.variant);
   });
 
+  // Cross-Variant Clip Timing Sync (v1 ➔ v2 atau sebaliknya)
+  el.btnSyncClipsBetweenVariants?.addEventListener('click', async () => {
+    if (!state.currentProduct) return;
+    const currentKey = state.activeVariantKey || 'v1';
+    const targetKey = currentKey === 'v1' ? 'v2' : 'v1';
+
+    const currentV = state.currentProduct.variants?.[currentKey];
+    const targetV = state.currentProduct.variants?.[targetKey];
+
+    if (!currentV || !targetV) {
+      showToast({ type: 'warn', title: 'Data Varian Belum Siap', message: 'Pastikan kedua variasi (v1 dan v2) sudah ada di produk ini.' });
+      return;
+    }
+
+    const ok = await showConfirmDialog({
+      title: `Salin Waktu Klip ke ${targetKey.toUpperCase()}`,
+      message: `Apakah Anda yakin ingin menyalin semua timestamp potongan video (Babak 1 s/d 4) dari <strong>${currentKey.toUpperCase()}</strong> ke <strong>${targetKey.toUpperCase()}</strong>?`,
+      subtext: `Timestamp klip di ${targetKey.toUpperCase()} akan ditimpa sama persis dengan ${currentKey.toUpperCase()}.`,
+      confirmText: `Ya, Salin ke ${targetKey.toUpperCase()}`,
+      cancelText: 'Batal',
+      isDanger: false
+    });
+
+    if (!ok) return;
+
+    // Deep copy clips array
+    targetV.clips = (currentV.clips || []).map(c => ({
+      startSec: c.startSec,
+      endSec: c.endSec
+    }));
+
+    triggerAutoSave();
+    showToast({
+      type: 'success',
+      title: 'Timestamp Klip Disinkronkan!',
+      message: `Semua 4 babak berhasil disalin dari ${currentKey.toUpperCase()} ke ${targetKey.toUpperCase()}.`,
+      duration: 3500
+    });
+  });
+
   // Storyboard Clips Time Change Listener
   document.addEventListener('change', e => {
     const inp = e.target.closest('.clip-time-input');
@@ -1427,6 +2008,7 @@
         if (el.barClip2) el.barClip2.style.width = `${(clipDurations[2] / totalSec) * 100}%`;
         if (el.barClip3) el.barClip3.style.width = `${(clipDurations[3] / totalSec) * 100}%`;
       }
+      document.dispatchEvent(new CustomEvent('clipsUpdated'));
       triggerAutoSave();
     }
   });
@@ -1666,27 +2248,64 @@
   });
 
   // Mengubah tema / tata letak manual berarti keluar dari preset (menjadi "Kustom").
+  const syncSelectEl = (sel, val) => {
+    if (!sel || val === undefined) return;
+    sel.value = val;
+    if (typeof sel._syncCustomSelect === 'function') sel._syncCustomSelect();
+  };
+
+  function applySelectedPresetToFields() {
+    const presetKey = el.selectPreset?.value || '';
+    const presetBase = DESIGN_PRESETS[presetKey];
+    if (!presetBase) return;
+    const ver = el.selectPresetVariant?.value || 'v1';
+    const cfg = presetBase.versions?.[ver] || presetBase;
+    syncSelectEl(el.selectThemeStyle, cfg.themeStyle);
+    syncSelectEl(el.selectCardStyle, cfg.cardStyle);
+    syncSelectEl(el.selectHookVariant, cfg.hookVariant || ver);
+    syncSelectEl(el.selectBadgeStyle, cfg.badgeStyle);
+    syncSelectEl(el.selectCaptionStyle, cfg.captionStyle || '');
+    syncSelectEl(el.selectCaptionVariant, cfg.captionVariant || ver);
+    syncSelectEl(el.selectHookTransition, cfg.hookTransition || 'zoom_flash');
+    syncSelectEl(el.selectClipTransition, cfg.clipTransition || 'auto');
+    syncSelectEl(el.selectTransitionVariant, cfg.transitionVariant || ver);
+  }
+
   el.selectThemeStyle?.addEventListener('change', () => {
-    if (el.selectPreset) el.selectPreset.value = '';
+    syncSelectEl(el.selectPreset, '');
     syncFormToVariant();
     updateThemeVisualPreview();
     triggerAutoSave();
   });
 
   el.selectCardStyle?.addEventListener('change', () => {
-    if (el.selectPreset) el.selectPreset.value = '';
+    syncSelectEl(el.selectPreset, '');
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectHookVariant?.addEventListener('change', () => {
     syncFormToVariant();
     updateThemeVisualPreview();
     triggerAutoSave();
   });
 
   el.selectPreset?.addEventListener('change', () => {
-    const preset = DESIGN_PRESETS[el.selectPreset.value];
-    if (preset) {
-      el.selectThemeStyle.value = preset.themeStyle;
-      el.selectCardStyle.value = preset.cardStyle;
-      if (el.selectBadgeStyle) el.selectBadgeStyle.value = preset.badgeStyle;
-      if (el.selectCaptionStyle) el.selectCaptionStyle.value = preset.captionStyle || '';
+    applySelectedPresetToFields();
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectPresetVariant?.addEventListener('change', () => {
+    if (el.selectPreset?.value) {
+      applySelectedPresetToFields();
+    } else {
+      const ver = el.selectPresetVariant.value || 'v1';
+      syncSelectEl(el.selectHookVariant, ver);
+      syncSelectEl(el.selectCaptionVariant, ver);
+      syncSelectEl(el.selectTransitionVariant, ver);
     }
     syncFormToVariant();
     updateThemeVisualPreview();
@@ -1694,7 +2313,31 @@
   });
 
   el.selectCaptionStyle?.addEventListener('change', () => {
-    if (el.selectPreset) el.selectPreset.value = '';
+    syncSelectEl(el.selectPreset, '');
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectCaptionVariant?.addEventListener('change', () => {
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectHookTransition?.addEventListener('change', () => {
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectClipTransition?.addEventListener('change', () => {
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  });
+
+  el.selectTransitionVariant?.addEventListener('change', () => {
     syncFormToVariant();
     updateThemeVisualPreview();
     triggerAutoSave();
@@ -1892,6 +2535,43 @@
     } finally {
       el.btnSaveProduct.disabled = false;
       el.btnSaveProduct.innerHTML = `${svgIcon('save')} Simpan Produk`;
+    }
+  });
+
+  // Salin Master Prompt Gemini dengan durasi video terdeteksi otomatis
+  el.btnCopyGeminiPrompt?.addEventListener('click', async () => {
+    try {
+      const origHtml = el.btnCopyGeminiPrompt.innerHTML;
+      el.btnCopyGeminiPrompt.disabled = true;
+      el.btnCopyGeminiPrompt.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Menyiapkan Prompt...`;
+
+      // Ambil durasi video mentah yang sedang dipilih
+      const currentVideo = el.selectProductVideo?.value;
+      const vidObj = state.assets?.videos?.find(v => v.name === currentVideo);
+      const durSec = vidObj?.durationSec ? Math.round(vidObj.durationSec) : '';
+
+      const res = await fetch(`/api/gemini-prompt?duration=${durSec}&event=`);
+      if (!res.ok) throw new Error('Gagal memuat prompt Gemini dari server');
+      const data = await res.json();
+
+      await navigator.clipboard.writeText(data.prompt);
+      showToast({
+        type: 'success',
+        title: 'Prompt Gemini Tersalin!',
+        message: durSec
+          ? `Prompt disalin dengan durasi video asli otomatis: ${durSec} detik.`
+          : 'Prompt disalin ke clipboard! Tempelkan ke chat Google Gemini.',
+        duration: 3500
+      });
+      el.btnCopyGeminiPrompt.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Tersalin!`;
+      setTimeout(() => {
+        el.btnCopyGeminiPrompt.innerHTML = origHtml;
+        el.btnCopyGeminiPrompt.disabled = false;
+      }, 2000);
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal Menyalin Prompt', message: err.message });
+      el.btnCopyGeminiPrompt.disabled = false;
+      el.btnCopyGeminiPrompt.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Salin Prompt Gemini`;
     }
   });
 
@@ -3541,6 +4221,21 @@
       el.progressFrames.textContent = `${p.frame || 0} / ${p.totalFrames || 0} frame`;
       el.progressEta.textContent = `Estimasi: ${p.eta || '-'}`;
 
+      // Update monitor drawer inline preview
+      const monInline = $('monitorInline');
+      const monMiniFill = $('monitorMiniFill');
+      const monDrawer = $('monitorDrawer');
+      if (monInline) monInline.textContent = `${p.step || 'Merender'} · ${pct.toFixed(0)}%`;
+      if (monMiniFill) monMiniFill.style.width = `${pct}%`;
+      if (monDrawer) {
+        monDrawer.dataset.rendering = 'true';
+        if (monDrawer.dataset.open !== 'true') {
+          monDrawer.dataset.open = 'true';
+          const btn = $('monitorToggle');
+          if (btn) btn.setAttribute('aria-expanded', 'true');
+        }
+      }
+
       // Floating Mini-Progress Bar under Header
       if (el.headerProgressStrip) {
         el.headerProgressStrip.style.display = 'block';
@@ -3554,6 +4249,11 @@
           <span style="animation: spin 0.8s linear infinite; display: inline-block;">⏳</span>
           Merender ${Math.round(pct)}% (${p.frame || 0}/${p.totalFrames || 0})
         `;
+      }
+      const paneBtn = $('btnPaneStartRender');
+      if (paneBtn) {
+        paneBtn.disabled = true;
+        paneBtn.innerHTML = `⏳ Merender ${Math.round(pct)}%`;
       }
       if (el.renderStatusPill) {
         el.renderStatusPill.textContent = `Merender ${Math.round(pct)}%`;
@@ -3583,6 +4283,11 @@
           Mulai Render Video
         `;
       }
+      const paneBtn = $('btnPaneStartRender');
+      if (paneBtn) {
+        paneBtn.disabled = false;
+        paneBtn.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg> Mulai Render Video`;
+      }
 
       if (data.cancelled) {
         el.renderStatusPill.textContent = 'Dibatalkan';
@@ -3594,6 +4299,13 @@
         el.progressBarFill.style.width = '100%';
         appendLog('[FINISH] Render selesai sempurna! Video siap diputar di galeri.', true);
         loadVideos();
+
+        // Switch Layar HP ke Mode Render dan putar video output yang baru selesai
+        const modeSeg = $('playerModeSeg');
+        if (modeSeg) {
+          const rBtn = modeSeg.querySelector('button[data-mode="render"]');
+          if (rBtn) rBtn.click();
+        }
 
         const firstOut = data.outputs?.[0];
         showToast({
@@ -3618,6 +4330,19 @@
       const data = JSON.parse(e.data);
       appendLog(`[TRANSKRIBSI SELESAI] File ${data.jsonFile} (${data.wordsCount} kata)`, true);
       loadAssets();
+      if (el.btnSmartProcessVO) {
+        el.btnSmartProcessVO.disabled = false;
+        el.btnSmartProcessVO.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> ⚡ Proses Pintar VO`;
+      }
+      showToast({
+        type: 'success',
+        title: '⚡ Pemrosesan VO Selesai!',
+        message: `File ${data.jsonFile} (${data.wordsCount} kata) berhasil diproses dan siap digunakan.`,
+        duration: 4000
+      });
+      if (state.activeTranscriptFile && state.activeTranscriptFile.includes(data.jsonFile.replace(/\.json$/, ''))) {
+        loadTranscript(data.jsonFile);
+      }
     });
 
     es.addEventListener('still_progress', e => {
@@ -4478,6 +5203,49 @@
   }
 
   // -------------------------------------------------------------
+  // Fitur Pintar VO: Pipeline 1-Klik (Trim Napas + Whisper + Auto-Correct Naskah)
+  // -------------------------------------------------------------
+  el.btnSmartProcessVO?.addEventListener('click', async () => {
+    const filename = el.selectVoiceOver?.value;
+    if (!filename) {
+      showToast({ type: 'warn', title: 'Pilih Audio', message: 'Pilih file audio Voice Over terlebih dahulu pada dropdown.' });
+      return;
+    }
+    const v = state.currentProduct?.variants?.[state.activeVariantKey];
+    const referenceScript = v?.voiceOverScript || el.inputReferenceScript?.value || '';
+
+    const origHtml = el.btnSmartProcessVO.innerHTML;
+    el.btnSmartProcessVO.disabled = true;
+    el.btnSmartProcessVO.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Memproses VO...`;
+
+    try {
+      const res = await fetch('/api/smart-process-vo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename,
+          model: 'small',
+          referenceScript,
+          doTrim: true
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal memulai pemrosesan pintar VO');
+
+      showToast({
+        type: 'info',
+        title: '⚡ Pipeline Cerdas VO Dimulai',
+        message: 'Tahap: 1. Pangkas hening → 2. Whisper transkrip → 3. Auto-koreksi naskah. Pantau di monitor log.',
+        duration: 5000
+      });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal Memproses VO', message: err.message });
+      el.btnSmartProcessVO.disabled = false;
+      el.btnSmartProcessVO.innerHTML = origHtml;
+    }
+  });
+
+  // -------------------------------------------------------------
   // Fitur 3: Auto-Cut Jeda Napas (Silence Remover via FFmpeg)
   // -------------------------------------------------------------
   el.btnTrimSilence?.addEventListener('click', async () => {
@@ -4530,15 +5298,13 @@
   });
 
   // -------------------------------------------------------------
-  // Fitur 6: Paket Siap Posting — Caption TikTok + Hashtag Otomatis
+  // Fitur 6: Paket Siap Posting — Caption TikTok Singkat & Padat
   // -------------------------------------------------------------
   function buildAutoTiktokCaption(prod, v) {
-    const prodName = prod?.name || 'produk ini';
-    const hook = [v?.hookLine1, v?.hookHighlight].filter(Boolean).join(' ');
-    const benefit = [v?.demoHighlight, v?.specHighlight].filter(Boolean).join(' • ');
-    const cta = v?.ctaText || 'Cek promonya di keranjang kuning kiri bawah!';
+    const hook = v?.hookHighlight || v?.hookLine1 || prod?.name || 'Rekomendasi terbaik';
+    const cta = v?.ctaText ? `👉 ${v.ctaText} 👇` : 'Cek promonya di keranjang kuning 👇🛒';
     const slugTag = (prod?.id || 'racuntiktok').replace(/[^a-z0-9]/gi, '').toLowerCase();
-    return `${hook} ✨\n${benefit} (${prodName}).\n👉 ${cta} 🛒👇\n\n#${slugTag} #racuntiktok #spillproduk #rekomendasitiktok #fyp`;
+    return `${hook}! ✨\n${cta}\n#${slugTag} #racuntiktok #fyp`;
   }
 
   el.btnAutoGenCaption?.addEventListener('click', () => {
@@ -4723,12 +5489,312 @@
     }
   });
 
+  // ===========================================================================
+  // REDESIGN UI/UX HANDLERS:
+  // 1. Sub-Tab Alur Kerja (1. Audio & Desain -> 2. Storyboard -> 3. Output)
+  // 2. Pemutar Layar HP (Mode Live Frame ⇄ Mode Video Render)
+  // 3. Visual Source Scrubber (Klip Video Mentah Trimmer)
+  // 4. Monitor Render Drawer (Auto-Expanding)
+  // ===========================================================================
+
+  function initWorkflowSubTabs() {
+    const tabs = $('workflowTabs');
+    if (!tabs) return;
+
+    function setPane(paneId) {
+      document.querySelectorAll('#workflowTabs .wf-tab').forEach(b => {
+        b.classList.toggle('active', b.dataset.pane === paneId);
+      });
+      document.querySelectorAll('.wf-pane').forEach(p => {
+        p.classList.toggle('active', p.dataset.pane === paneId);
+      });
+      try { localStorage.setItem('studio.activeWorkflowPane', paneId); } catch (_) {}
+    }
+
+    tabs.addEventListener('click', e => {
+      const b = e.target.closest('.wf-tab');
+      if (b && b.dataset.pane) setPane(b.dataset.pane);
+    });
+
+    document.addEventListener('click', e => {
+      const nextBtn = e.target.closest('[data-goto-pane]');
+      if (nextBtn && nextBtn.dataset.gotoPane) {
+        setPane(nextBtn.dataset.gotoPane);
+      }
+    });
+
+    $('btnPaneStartRender')?.addEventListener('click', () => {
+      if (el.btnStartRender) el.btnStartRender.click();
+    });
+
+    const saved = (() => {
+      try { return localStorage.getItem('studio.activeWorkflowPane'); } catch (_) { return null; }
+    })() || 'design';
+    setPane(saved);
+  }
+
+  function initPlayerModeSwitcher() {
+    const seg = $('playerModeSeg');
+    if (!seg) return;
+
+    seg.addEventListener('click', e => {
+      const b = e.target.closest('button[data-mode]');
+      if (!b) return;
+      const mode = b.dataset.mode;
+      seg.querySelectorAll('button').forEach(btn => {
+        btn.classList.toggle('active', btn === b);
+      });
+      document.querySelectorAll('.player-mode-pane').forEach(p => {
+        p.classList.toggle('active', p.dataset.mode === mode);
+      });
+      try { localStorage.setItem('studio.playerMode', mode); } catch (_) {}
+    });
+
+    const savedMode = (() => {
+      try { return localStorage.getItem('studio.playerMode'); } catch (_) { return null; }
+    })() || 'live';
+    const activeBtn = seg.querySelector(`button[data-mode="${savedMode}"]`);
+    if (activeBtn) activeBtn.click();
+  }
+
+  function initSourceScrubber() {
+    const video = $('scrubberVideo');
+    const emptyMsg = $('scrubberEmpty');
+    const range = $('scrubberRange');
+    const timeEl = $('scrubberTime');
+    const durEl = $('scrubberDur');
+    const playBtn = $('scrubberPlay');
+    const clipSeg = $('scrubberClipSeg');
+    const btnSetStart = $('scrubberSetStart');
+    const btnSetEnd = $('scrubberSetEnd');
+    const btnJump = $('scrubberJump');
+
+    if (!video || !range) return;
+
+    let targetClipIdx = 0;
+
+    function formatScrubTime(sec) {
+      if (!isFinite(sec) || sec < 0) sec = 0;
+      const m = Math.floor(sec / 60);
+      const s = (sec % 60).toFixed(1).padStart(4, '0');
+      return `${m}:${s}`;
+    }
+
+    function syncScrubberSource() {
+      const vidName = el.selectProductVideo?.value || state.currentProduct?.videoSource || '';
+      if (!vidName) {
+        video.src = '';
+        if (emptyMsg) {
+          emptyMsg.style.display = 'flex';
+          emptyMsg.textContent = 'Pilih file video produk mentah di panel atas.';
+        }
+        range.max = '0';
+        range.value = '0';
+        if (durEl) durEl.textContent = '/ 0:00.0';
+        if (timeEl) timeEl.textContent = '0:00.0';
+        return;
+      }
+
+      const encodedUrl = `/public/${encodeURI(vidName)}`;
+      if (video.getAttribute('data-loaded-src') !== encodedUrl) {
+        video.setAttribute('data-loaded-src', encodedUrl);
+        video.src = encodedUrl;
+        video.load();
+        if (emptyMsg) emptyMsg.style.display = 'none';
+      }
+    }
+
+    function updateScrubberMarkers() {
+      const v = state.currentProduct?.variants?.[state.activeVariantKey];
+      const clips = v?.clips || [];
+      const totalDur = video.duration || 0;
+      if (totalDur <= 0) return;
+
+      for (let i = 0; i < 4; i++) {
+        const m = $(`smClip${i}`);
+        if (!m) continue;
+        const c = clips[i];
+        if (c && c.endSec > c.startSec) {
+          const leftPct = Math.max(0, Math.min(100, (c.startSec / totalDur) * 100));
+          const widthPct = Math.max(0.5, Math.min(100 - leftPct, ((c.endSec - c.startSec) / totalDur) * 100));
+          m.style.left = `${leftPct}%`;
+          m.style.width = `${widthPct}%`;
+          m.style.display = 'block';
+        } else {
+          m.style.display = 'none';
+        }
+      }
+    }
+
+    video.addEventListener('loadedmetadata', () => {
+      range.max = String(video.duration || 0);
+      if (durEl) durEl.textContent = `/ ${formatScrubTime(video.duration || 0)}`;
+      range.value = String(video.currentTime || 0);
+      if (timeEl) timeEl.textContent = formatScrubTime(video.currentTime || 0);
+      updateScrubberMarkers();
+    });
+
+    video.addEventListener('timeupdate', () => {
+      range.value = String(video.currentTime || 0);
+      if (timeEl) timeEl.textContent = formatScrubTime(video.currentTime || 0);
+    });
+
+    video.addEventListener('play', () => {
+      if (playBtn) playBtn.innerHTML = '⏸️';
+    });
+
+    video.addEventListener('pause', () => {
+      if (playBtn) playBtn.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-play"></use></svg>`;
+    });
+
+    range.addEventListener('input', () => {
+      const t = parseFloat(range.value) || 0;
+      video.currentTime = t;
+      if (timeEl) timeEl.textContent = formatScrubTime(t);
+    });
+
+    playBtn?.addEventListener('click', () => {
+      if (video.paused) video.play().catch(() => {});
+      else video.pause();
+    });
+
+    $('scrubberBack')?.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 1);
+    });
+    $('scrubberStepBack')?.addEventListener('click', () => {
+      video.currentTime = Math.max(0, video.currentTime - 0.1);
+    });
+    $('scrubberStepFwd')?.addEventListener('click', () => {
+      video.currentTime = Math.min(video.duration || 0, video.currentTime + 0.1);
+    });
+    $('scrubberFwd')?.addEventListener('click', () => {
+      video.currentTime = Math.min(video.duration || 0, video.currentTime + 1);
+    });
+
+    clipSeg?.addEventListener('click', e => {
+      const b = e.target.closest('button[data-clip]');
+      if (!b) return;
+      targetClipIdx = parseInt(b.dataset.clip, 10);
+      clipSeg.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn === b));
+    });
+
+    btnSetStart?.addEventListener('click', () => {
+      const cur = parseFloat(video.currentTime.toFixed(1)) || 0;
+      const startInp = document.querySelector(`.clip-time-input[data-clip="${targetClipIdx}"][data-field="start"]`);
+      if (startInp) {
+        startInp.value = formatTimeDisplay(cur);
+        startInp.dispatchEvent(new Event('change', { bubbles: true }));
+        showToast({
+          type: 'success',
+          title: `Babak ${targetClipIdx + 1} Mulai Di-set`,
+          message: `Detik mulai diatur ke ${cur.toFixed(1)}s`,
+          duration: 2500
+        });
+      }
+    });
+
+    btnSetEnd?.addEventListener('click', () => {
+      const cur = parseFloat(video.currentTime.toFixed(1)) || 0;
+      const endInp = document.querySelector(`.clip-time-input[data-clip="${targetClipIdx}"][data-field="end"]`);
+      if (endInp) {
+        endInp.value = formatTimeDisplay(cur);
+        endInp.dispatchEvent(new Event('change', { bubbles: true }));
+        showToast({
+          type: 'success',
+          title: `Babak ${targetClipIdx + 1} Selesai Di-set`,
+          message: `Detik selesai diatur ke ${cur.toFixed(1)}s`,
+          duration: 2500
+        });
+      }
+    });
+
+    btnJump?.addEventListener('click', () => {
+      const v = state.currentProduct?.variants?.[state.activeVariantKey];
+      const clip = v?.clips?.[targetClipIdx];
+      if (clip) {
+        video.currentTime = clip.startSec || 0;
+        video.play().catch(() => {});
+      }
+    });
+
+    // Keyboard shortcuts inside scrubber
+    $('sourceScrubber')?.addEventListener('keydown', e => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.code === 'Space') {
+        e.preventDefault();
+        playBtn?.click();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        video.currentTime = Math.max(0, video.currentTime - 1);
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        video.currentTime = Math.min(video.duration || 0, video.currentTime + 1);
+      } else if (e.key === 'i' || e.key === 'I') {
+        e.preventDefault();
+        btnSetStart?.click();
+      } else if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault();
+        btnSetEnd?.click();
+      }
+    });
+
+    // Klik langsung pada marker babak di scrubber timeline
+    for (let i = 0; i < 4; i++) {
+      const m = $(`smClip${i}`);
+      m?.addEventListener('click', e => {
+        e.stopPropagation();
+        targetClipIdx = i;
+        clipSeg?.querySelectorAll('button').forEach(btn => {
+          btn.classList.toggle('active', parseInt(btn.dataset.clip, 10) === i);
+        });
+        const v = state.currentProduct?.variants?.[state.activeVariantKey];
+        const clip = v?.clips?.[i];
+        if (clip) {
+          video.currentTime = clip.startSec || 0;
+          if (timeEl) timeEl.textContent = formatScrubTime(video.currentTime);
+          range.value = String(video.currentTime);
+        }
+      });
+    }
+
+    document.addEventListener('clipsUpdated', updateScrubberMarkers);
+    document.addEventListener('productLoaded', updateScrubberMarkers);
+
+    el.selectProductVideo?.addEventListener('change', syncScrubberSource);
+    document.addEventListener('productLoaded', syncScrubberSource);
+    setTimeout(syncScrubberSource, 400);
+  }
+
+  function initMonitorDrawer() {
+    const drawer = $('monitorDrawer');
+    const toggle = $('monitorToggle');
+    if (!drawer || !toggle) return;
+
+    toggle.addEventListener('click', () => {
+      const isOpen = drawer.dataset.open === 'true';
+      drawer.dataset.open = isOpen ? 'false' : 'true';
+      toggle.setAttribute('aria-expanded', !isOpen);
+      try { localStorage.setItem('studio.monitorDrawerOpen', !isOpen ? '1' : '0'); } catch (_) {}
+    });
+
+    const saved = (() => {
+      try { return localStorage.getItem('studio.monitorDrawerOpen'); } catch (_) { return null; }
+    })() || '0';
+    drawer.dataset.open = saved === '1' ? 'true' : 'false';
+    toggle.setAttribute('aria-expanded', saved === '1');
+  }
+
   // -------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------
   async function init() {
     initAllCustomSelects();
     initLivePreview();
+    initCapcutPicker();
+    initWorkflowSubTabs();
+    initPlayerModeSwitcher();
+    initSourceScrubber();
+    initMonitorDrawer();
     initBanks();
     await loadAppConfig();
     await loadAssets();
