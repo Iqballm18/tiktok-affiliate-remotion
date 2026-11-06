@@ -16,6 +16,99 @@ interface Waypoint {
     y: number;
 }
 
+interface WatermarkItem {
+    platform: 'tiktok' | 'instagram' | 'none';
+    handle: string;
+}
+
+const TikTokIcon: React.FC<{ size?: number; color?: string }> = ({
+    size = 20,
+    color = '#FFFFFF',
+}) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill={color}
+        style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+    >
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.85.12V9.4a6.33 6.33 0 0 0-.85-.06A6.34 6.34 0 0 0 3.14 15.7a6.34 6.34 0 0 0 10.83 4.46 6.3 6.3 0 0 0 1.85-4.49V8.62a8.17 8.17 0 0 0 4.77 1.52v-3.45z" />
+    </svg>
+);
+
+const InstagramIcon: React.FC<{ size?: number; color?: string }> = ({
+    size = 20,
+    color = '#FFFFFF',
+}) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+    >
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+    </svg>
+);
+
+function parseWatermarkItems(rawText: string): WatermarkItem[] {
+    const raw = (rawText || '').trim();
+    if (!raw) {
+        return [
+            { platform: 'tiktok', handle: 'inanikma_' },
+            { platform: 'instagram', handle: 'spillbyna_' },
+        ];
+    }
+
+    const parts = raw.split('|').map((p) => p.trim()).filter(Boolean);
+    if (parts.length === 0) {
+        return [
+            { platform: 'tiktok', handle: 'inanikma_' },
+            { platform: 'instagram', handle: 'spillbyna_' },
+        ];
+    }
+
+    return parts.map((part) => {
+        const clean = part.replace(/^@/, '').trim();
+        const lower = clean.toLowerCase();
+
+        // 1. Akun TikTok (khusus @inanikma_ atau prefix tiktok/tt)
+        if (
+            lower.includes('inanikma') ||
+            lower.startsWith('tt:') ||
+            lower.startsWith('tiktok:')
+        ) {
+            const handle = clean
+                .replace(/^(tt|tiktok):/i, '')
+                .replace(/^@/, '')
+                .trim();
+            return { platform: 'tiktok', handle };
+        }
+
+        // 2. Akun Instagram (khusus @spillbyna_ atau prefix ig/instagram)
+        if (
+            lower.includes('spillbyna') ||
+            lower.startsWith('ig:') ||
+            lower.startsWith('instagram:')
+        ) {
+            const handle = clean
+                .replace(/^(ig|instagram):/i, '')
+                .replace(/^@/, '')
+                .trim();
+            return { platform: 'instagram', handle };
+        }
+
+        // 3. Fallback jika ada format lain
+        return { platform: 'none', handle: part };
+    });
+}
+
 export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
     text = '@inanikma_ | @spillbyna_',
     opacity = 0.7,
@@ -29,13 +122,13 @@ export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
         return renderWatermarkBadge(text, 64, 120, opacity, frame);
     }
     if (position === 'top_right') {
-        return renderWatermarkBadge(text, 560, 120, opacity, frame);
+        return renderWatermarkBadge(text, 520, 120, opacity, frame);
     }
     if (position === 'mid_left') {
         return renderWatermarkBadge(text, 64, 680, opacity, frame);
     }
     if (position === 'mid_right') {
-        return renderWatermarkBadge(text, 540, 680, opacity, frame);
+        return renderWatermarkBadge(text, 500, 680, opacity, frame);
     }
 
     // Default 'floating': Bagi total durasi menjadi 5 interval posisi dinamis
@@ -48,11 +141,11 @@ export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
     // Oleh karena itu, Watermark diletakkan di zona bersih (y: 660 s/d 840) pada Babak 1-3,
     // dan di area atas (y: 260) pada Babak 4 (saat headline sudah hilang).
     const waypoints: Waypoint[] = [
-        { startFrame: 0, endFrame: intervalLength, x: 75, y: 680 }, // Interval 1 (Hook): Tengah Kiri (Di bawah Headline, jauh di atas Subtitle)
-        { startFrame: intervalLength, endFrame: intervalLength * 2, x: 520, y: 680 }, // Interval 2 (Demo): Tengah Kanan (Aman)
-        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 75, y: 840 }, // Interval 3 (Spec): Tengah Kiri (Area bersih)
-        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 520, y: 840 }, // Interval 4 (Spec/Proof): Tengah Kanan (Jauh di atas Subtitle)
-        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 75, y: 260 }, // Interval 5 (CTA): Atas Kiri (Headline sudah hilang, CTA di bawah)
+        { startFrame: 0, endFrame: intervalLength, x: 75, y: 680 }, // Interval 1 (Hook): Tengah Kiri
+        { startFrame: intervalLength, endFrame: intervalLength * 2, x: 500, y: 680 }, // Interval 2 (Demo): Tengah Kanan
+        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 75, y: 840 }, // Interval 3 (Spec): Tengah Kiri
+        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 500, y: 840 }, // Interval 4 (Spec/Proof): Tengah Kanan
+        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 75, y: 260 }, // Interval 5 (CTA): Atas Kiri
     ];
 
     // Temukan waypoint aktif saat ini
@@ -102,6 +195,7 @@ function renderWatermarkBadge(
     // Efek mengambang (floating/drifting) halus agar dinamis
     const driftX = Math.sin(frame / 40) * 8;
     const driftY = Math.cos(frame / 45) * 6;
+    const items = parseWatermarkItems(text);
 
     return (
         <div
@@ -114,42 +208,58 @@ function renderWatermarkBadge(
                 zIndex: 90, // z-index tinggi di atas seluruh layer
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
-                padding: '6px 14px',
+                gap: 12,
+                padding: '7px 16px',
                 borderRadius: 999,
-                background: 'rgba(12, 10, 18, 0.78)',
-                border: '1px solid rgba(255, 255, 255, 0.25)',
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.45)',
+                background: 'rgba(12, 10, 18, 0.82)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
             }}
         >
-            {/* Subtle lock/shield icon indicator */}
-            <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="rgba(255, 255, 255, 0.95)"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            >
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            <span
-                style={{
-                    fontFamily:
-                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                    fontSize: 22,
-                    fontWeight: 700,
-                    letterSpacing: 0.4,
-                    color: '#FFFFFF',
-                    textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)',
-                    whiteSpace: 'nowrap',
-                }}
-            >
-                {text}
-            </span>
+            {items.map((item, idx) => (
+                <React.Fragment key={idx}>
+                    {idx > 0 && (
+                        <div
+                            style={{
+                                width: 1,
+                                height: 16,
+                                background: 'rgba(255, 255, 255, 0.35)',
+                                margin: '0 1px',
+                            }}
+                        />
+                    )}
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                        }}
+                    >
+                        {item.platform === 'tiktok' && (
+                            <TikTokIcon size={20} color="#FFFFFF" />
+                        )}
+                        {item.platform === 'instagram' && (
+                            <InstagramIcon size={20} color="#FFFFFF" />
+                        )}
+                        <span
+                            style={{
+                                fontFamily:
+                                    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                                fontSize: 21,
+                                fontWeight: 700,
+                                letterSpacing: 0.3,
+                                color: '#FFFFFF',
+                                textShadow: '0 1px 4px rgba(0, 0, 0, 0.8)',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {item.handle}
+                        </span>
+                    </div>
+                </React.Fragment>
+            ))}
         </div>
     );
 }
