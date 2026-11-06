@@ -26,6 +26,19 @@ import { Caption } from '@remotion/captions';
 // Muat Inter + JetBrains Mono sekali saat bundle dibuka (render tetap menunggu via delayRender).
 loadThemeFonts();
 
+// Daftar transisi dipakai skema Zod (di bawah) sekaligus sistem transisi (LAYER 2).
+export const TRANSITION_TYPES = [
+    'zoom_flash', // zoom punch + lens flare (default hook)
+    'whip_pan', // geser cepat + motion blur + streak
+    'light_leak', // kebocoran cahaya hangat
+    'glitch', // RGB-split, jitter, slice digital
+    'blur_zoom', // zoom menembus + speed lines
+    'push_up', // geser vertikal ala scroll TikTok
+    'flash_cut', // kilatan putih + hard cut
+    'shutter', // rana kamera menutup lalu membuka
+    'none',
+] as const;
+export type TransitionType = (typeof TRANSITION_TYPES)[number];
 export const timedSubtitleSchema = z.object({
     text: z.string(),
     startSec: z.number().optional(),
@@ -68,7 +81,9 @@ export const affiliateSchema = z.object({
     showProgressBar: z.boolean().optional(),
     enableSfx: z.boolean().optional(),
     sfxPreset: z.enum(['viral', 'beauty', 'tech', 'minimal']).optional(),
-    ctaSound: z.enum(['kaching', 'ding', 'glockenspiel', 'sparkle']).optional(),
+    ctaSound: z.enum(['kaching', 'ding', 'glockenspiel', 'sparkle', 'notify']).optional(),
+    // SFX khas per layout kartu hook (struk = tick printer, catatan tempel = kertas, chat = notifikasi). Default aktif.
+    cardSfx: z.boolean().optional(),
     sfxVolume: z.number().optional(),
     showSafeZoneGuide: z.boolean().optional(),
     watermarkText: z.string().optional(),
@@ -81,7 +96,10 @@ export const affiliateSchema = z.object({
     hookVolume: z.number().optional(),
     showHookHeadline: z.boolean().optional(),
     karaokeHighlight: z.boolean().optional(),
-    hookTransition: z.enum(['zoom_flash', 'whip_pan', 'light_leak', 'none']).optional(),
+    // Transisi hook -> klip produk pertama. Lihat TRANSITION_TYPES.
+    hookTransition: z.enum(TRANSITION_TYPES).optional(),
+    // Transisi antarklip produk (demo -> spec -> CTA). 'auto' = dipilih dari preset SFX/tema.
+    clipTransition: z.enum([...TRANSITION_TYPES, 'auto']).optional(),
     hookSubtitle: z.string().optional(),
     hookSubtitles: z.array(z.union([z.string(), timedSubtitleSchema])).optional(),
     hookCaptions: z.array(captionSchema).optional(),
@@ -240,6 +258,240 @@ const CinematicOverlays: React.FC<{ theme: ThemeDefinition }> = ({ theme }) => {
 };
 
 // ==========================================
+// SISTEM TRANSISI (efek keluar klip A + efek masuk klip B + overlay + SFX)
+// ==========================================
+type ActiveTransition = Exclude<TransitionType, 'none'>;
+type SfxPresetId = 'viral' | 'beauty' | 'tech' | 'minimal';
+
+// Pilihan otomatis transisi antarklip produk (demo -> spec -> CTA) berdasarkan preset SFX/tema.
+const AUTO_CLIP_TRANSITION: Record<SfxPresetId, TransitionType> = {
+    beauty: 'light_leak',
+    tech: 'glitch',
+    viral: 'push_up',
+    minimal: 'blur_zoom',
+};
+
+// SFX per transisi. `at` = detik relatif ke titik cut (negatif = sebelum cut, agar puncak suara jatuh PAS di cut).
+// Volume sudah disetel relatif antar-file (glitch.wav jauh lebih keras dari whoosh, jadi dikecilkan).
+interface SfxCue {
+    file: string;
+    at: number;
+    vol: number;
+}
+const TRANSITION_SFX: Record<TransitionType, SfxCue[]> = {
+    zoom_flash: [
+        { file: 'swish-fast', at: -0.117, vol: 0.55 },
+        { file: 'boom-sub', at: 0, vol: 0.3 },
+    ],
+    whip_pan: [{ file: 'swish-fast', at: -0.117, vol: 0.55 }],
+    light_leak: [{ file: 'shimmer-up', at: -0.12, vol: 0.35 }],
+    glitch: [{ file: 'glitch', at: -0.1, vol: 0.38 }],
+    blur_zoom: [
+        { file: 'reverse-swell', at: -0.5, vol: 0.45 },
+        { file: 'boom-sub', at: 0, vol: 0.4 },
+    ],
+    push_up: [{ file: 'swipe-soft', at: -0.1, vol: 0.6 }],
+    flash_cut: [
+        { file: 'swipe-soft', at: -0.08, vol: 0.4 },
+        { file: 'boom-sub', at: 0, vol: 0.45 },
+    ],
+    shutter: [{ file: 'camera-shutter', at: -0.03, vol: 0.5 }],
+    none: [{ file: 'transition', at: 0, vol: 0.45 }],
+};
+
+// SFX khas layout kartu hook, diputar saat kartu muncul. Tipis & pendek: pelengkap, bukan fokus.
+const CARD_SFX: Record<string, SfxCue[]> = {
+    receipt: [
+        { file: 'tick', at: 0.3, vol: 0.4 },
+        { file: 'tick', at: 0.42, vol: 0.4 },
+        { file: 'tick', at: 0.54, vol: 0.4 },
+    ],
+    label_tape: [
+        { file: 'tick', at: 0.3, vol: 0.45 },
+        { file: 'tick', at: 0.5, vol: 0.45 },
+    ],
+    sticky_note: [{ file: 'paper-flip', at: 0.25, vol: 0.45 }],
+    chat_thread: [{ file: 'notify-ping', at: 0.35, vol: 0.4 }],
+};
+
+interface TransitionFx {
+    scale: number;
+    x: number;
+    y: number;
+    blur: number;
+    brightness: number;
+    hue: number;
+    contrast: number;
+    saturate: number;
+}
+
+// Noise deterministik per frame (render harus identik antar-run, jadi tidak boleh Math.random).
+const frameNoise = (seed: number): number => {
+    const s = Math.sin(seed * 127.1 + 311.7) * 43758.5453;
+    return s - Math.floor(s);
+};
+
+const CLAMP = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
+
+// Efek visual pada klip yang sedang KELUAR (frame mendekati akhir klip).
+const computeOutFx = (
+    type: TransitionType,
+    frame: number,
+    durationInFrames: number,
+    fps: number,
+    theme: ThemeDefinition
+): Partial<TransitionFx> => {
+    const outroDuration = Math.min(14, Math.round(0.22 * fps));
+    const outroStart = Math.max(0, durationInFrames - outroDuration);
+    const range: [number, number] = [outroStart, durationInFrames];
+    const eased = { easing: theme.easings.inCubic, ...CLAMP };
+
+    switch (type) {
+        case 'whip_pan':
+            return {
+                x: interpolate(frame, range, [0, -140], eased),
+                blur: interpolate(frame, range, [0, 8], CLAMP),
+            };
+        case 'zoom_flash':
+        case 'light_leak':
+            return {
+                scale: interpolate(frame, range, [1.0, 1.07], eased),
+                blur: interpolate(frame, range, [0, 5], CLAMP),
+            };
+        case 'glitch': {
+            const amp = interpolate(frame, range, [0, 1], CLAMP);
+            return glitchFx(frame, amp);
+        }
+        case 'blur_zoom':
+            return {
+                scale: interpolate(frame, range, [1.0, 1.28], eased),
+                blur: interpolate(frame, range, [0, 14], eased),
+                brightness: interpolate(frame, range, [1.0, 1.12], CLAMP),
+            };
+        case 'push_up':
+            return {
+                y: interpolate(frame, range, [0, -260], eased),
+                blur: interpolate(frame, range, [0, 6], CLAMP),
+                brightness: interpolate(frame, range, [1.0, 0.8], CLAMP),
+            };
+        case 'flash_cut': {
+            const r: [number, number] = [Math.max(0, durationInFrames - Math.round(0.1 * fps)), durationInFrames];
+            return { brightness: interpolate(frame, r, [1.0, 1.9], eased) };
+        }
+        case 'shutter':
+            return {
+                scale: interpolate(frame, range, [1.0, 0.985], eased),
+                brightness: interpolate(frame, range, [1.0, 0.5], eased),
+            };
+        default:
+            return {};
+    }
+};
+
+// Efek visual pada klip yang sedang MASUK (frame awal klip).
+const computeInFx = (
+    type: TransitionType,
+    frame: number,
+    fps: number,
+    theme: ThemeDefinition
+): Partial<TransitionFx> => {
+    const introDuration = Math.min(14, Math.round(0.24 * fps));
+    const settle = Math.round(0.12 * fps);
+    const easedIntro = { easing: theme.easings.outExpo, extrapolateRight: 'clamp' } as const;
+
+    switch (type) {
+        case 'whip_pan':
+            return {
+                x: interpolate(frame, [0, introDuration], [140, 0], easedIntro),
+                blur: interpolate(frame, [0, introDuration], [8, 0], easedIntro),
+                brightness: interpolate(frame, [0, settle], [1.25, 1.0], easedIntro),
+            };
+        case 'zoom_flash':
+        case 'light_leak': {
+            const settleSpring = spring({
+                fps,
+                frame,
+                config: { damping: 16, mass: 0.75, stiffness: 210 },
+            });
+            return {
+                scale: interpolate(settleSpring, [0, 1], [1.09, 1.0], { extrapolateRight: 'clamp' }),
+                blur: interpolate(frame, [0, settle], [7, 0], easedIntro),
+                brightness: interpolate(frame, [0, settle], [1.32, 1.0], easedIntro),
+            };
+        }
+        case 'glitch': {
+            const amp = 1 - interpolate(frame, [0, introDuration], [0, 1], CLAMP);
+            return { ...glitchFx(frame, amp), brightness: 1 + amp * 0.25 };
+        }
+        case 'blur_zoom':
+            return {
+                scale: interpolate(frame, [0, introDuration], [1.28, 1.0], easedIntro),
+                blur: interpolate(frame, [0, introDuration], [14, 0], easedIntro),
+                brightness: interpolate(frame, [0, introDuration], [1.2, 1.0], easedIntro),
+            };
+        case 'push_up':
+            return {
+                y: interpolate(frame, [0, introDuration], [260, 0], easedIntro),
+                blur: interpolate(frame, [0, introDuration], [6, 0], easedIntro),
+                brightness: interpolate(frame, [0, introDuration], [0.85, 1.0], easedIntro),
+            };
+        case 'flash_cut':
+            return {
+                scale: interpolate(frame, [0, Math.round(0.14 * fps)], [1.05, 1.0], easedIntro),
+                brightness: interpolate(frame, [0, Math.round(0.14 * fps)], [2.4, 1.0], easedIntro),
+            };
+        case 'shutter':
+            return {
+                scale: interpolate(frame, [0, introDuration], [1.05, 1.0], easedIntro),
+                brightness: interpolate(frame, [0, introDuration], [0.4, 1.0], easedIntro),
+            };
+        default:
+            // 'none' = standar cut antarklip: snap kecil + kilatan brightness singkat
+            return {
+                scale: interpolate(frame, [0, Math.round(0.1 * fps)], [1.03, 1.0], easedIntro),
+                brightness: interpolate(frame, [0, Math.round(0.08 * fps)], [1.16, 1.0], easedIntro),
+            };
+    }
+};
+
+// Glitch dipakai dua arah (keluar: amp naik, masuk: amp turun) dengan formula yang sama.
+const glitchFx = (frame: number, amp: number): Partial<TransitionFx> => ({
+    x: (frameNoise(frame) - 0.5) * 2 * amp * 46,
+    y: (frameNoise(frame + 91) - 0.5) * amp * 14,
+    scale: 1 + amp * 0.03 * frameNoise(frame + 53),
+    hue: (frameNoise(frame + 37) - 0.5) * amp * 70,
+    contrast: 1 + amp * 0.35,
+    saturate: 1 + amp * 0.8,
+    blur: amp * 1.5,
+});
+
+// Gabungkan efek keluar + masuk. Di luar jendelanya masing-masing, hasil interpolate yang
+// di-clamp otomatis netral, jadi keduanya aman dihitung setiap frame.
+const composeFx = (
+    inType: TransitionType | undefined,
+    outType: TransitionType | undefined,
+    frame: number,
+    durationInFrames: number,
+    fps: number,
+    theme: ThemeDefinition
+): TransitionFx => {
+    const fx: TransitionFx = { scale: 1, x: 0, y: 0, blur: 0, brightness: 1, hue: 0, contrast: 1, saturate: 1 };
+    const merge = (p: Partial<TransitionFx>) => {
+        if (p.scale !== undefined) fx.scale *= p.scale;
+        if (p.x !== undefined) fx.x += p.x;
+        if (p.y !== undefined) fx.y += p.y;
+        if (p.blur !== undefined) fx.blur = Math.max(fx.blur, p.blur);
+        if (p.brightness !== undefined) fx.brightness *= p.brightness;
+        if (p.hue !== undefined) fx.hue += p.hue;
+        if (p.contrast !== undefined) fx.contrast *= p.contrast;
+        if (p.saturate !== undefined) fx.saturate *= p.saturate;
+    };
+    if (outType && outType !== 'none') merge(computeOutFx(outType, frame, durationInFrames, fps, theme));
+    if (inType) merge(computeInFx(inType, frame, fps, theme));
+    return fx;
+};
+
+// ==========================================
 // LAYER 2: FOOTAGE DENGAN SUBTLE KEN BURNS & TRANSISI DINAMIS
 // ==========================================
 // ==========================================
@@ -291,7 +543,10 @@ const FootageClip: React.FC<{
     theme: ThemeDefinition;
     isHookClip?: boolean;
     isFirstProductClip?: boolean;
-    hookTransition?: 'zoom_flash' | 'whip_pan' | 'light_leak' | 'none';
+    // Transisi di awal klip ini (dari klip sebelumnya). undefined = tanpa efek masuk, 'none' = cut standar.
+    inType?: TransitionType;
+    // Transisi di akhir klip ini (ke klip berikutnya). undefined/'none' = tanpa efek keluar.
+    outType?: TransitionType;
     clipStartFrame?: number;
     voStartFrame?: number;
     captions?: Caption[];
@@ -301,7 +556,8 @@ const FootageClip: React.FC<{
     theme,
     isHookClip,
     isFirstProductClip,
-    hookTransition = 'zoom_flash',
+    inType,
+    outType,
     clipStartFrame = 0,
     voStartFrame = 0,
     captions,
@@ -337,133 +593,7 @@ const FootageClip: React.FC<{
             }
         );
 
-        let snapScale = 1.0;
-        let cutBrightness = 1.0;
-        let blurAmount = 0;
-        let translateX = 0;
-
-        if (isHookClip && hookTransition !== 'none') {
-            // Outro transition pada klip YouTube hook menjelang pergantian ke klip produk
-            const outroDuration = Math.min(14, Math.round(0.22 * fps));
-            const outroStart = Math.max(0, durationInFrames - outroDuration);
-
-            if (hookTransition === 'whip_pan') {
-                translateX = interpolate(
-                    frame,
-                    [outroStart, durationInFrames],
-                    [0, -140],
-                    {
-                        easing: theme.easings.inCubic,
-                        extrapolateLeft: 'clamp',
-                        extrapolateRight: 'clamp',
-                    }
-                );
-                blurAmount = interpolate(
-                    frame,
-                    [outroStart, durationInFrames],
-                    [0, 8],
-                    {
-                        extrapolateLeft: 'clamp',
-                        extrapolateRight: 'clamp',
-                    }
-                );
-            } else {
-                // zoom_flash & light_leak: Zoom punch-in dramatis ke pembicara sebelum cut
-                const punchScale = interpolate(
-                    frame,
-                    [outroStart, durationInFrames],
-                    [1.0, 1.07],
-                    {
-                        easing: theme.easings.inCubic,
-                        extrapolateLeft: 'clamp',
-                        extrapolateRight: 'clamp',
-                    }
-                );
-                snapScale *= punchScale;
-                blurAmount = interpolate(
-                    frame,
-                    [outroStart, durationInFrames],
-                    [0, 5],
-                    {
-                        extrapolateLeft: 'clamp',
-                        extrapolateRight: 'clamp',
-                    }
-                );
-            }
-        } else if (isFirstProductClip && hookTransition !== 'none') {
-            // Intro transition pada klip produk pertama saat masuk dari YouTube hook
-            const introDuration = Math.min(14, Math.round(0.24 * fps));
-
-            if (hookTransition === 'whip_pan') {
-                translateX = interpolate(
-                    frame,
-                    [0, introDuration],
-                    [140, 0],
-                    {
-                        easing: theme.easings.outExpo,
-                        extrapolateRight: 'clamp',
-                    }
-                );
-                blurAmount = interpolate(
-                    frame,
-                    [0, introDuration],
-                    [8, 0],
-                    {
-                        easing: theme.easings.outExpo,
-                        extrapolateRight: 'clamp',
-                    }
-                );
-                cutBrightness = interpolate(
-                    frame,
-                    [0, Math.round(0.12 * fps)],
-                    [1.25, 1.0],
-                    {
-                        easing: theme.easings.outExpo,
-                        extrapolateRight: 'clamp',
-                    }
-                );
-            } else {
-                // zoom_flash & light_leak: Spring zoom settle dari 1.09 ke 1.0 + settling blur & brightness
-                const settleSpring = spring({
-                    fps,
-                    frame,
-                    config: { damping: 16, mass: 0.75, stiffness: 210 },
-                });
-                const enterScale = interpolate(settleSpring, [0, 1], [1.09, 1.0], {
-                    extrapolateRight: 'clamp',
-                });
-                snapScale *= enterScale;
-
-                blurAmount = interpolate(
-                    frame,
-                    [0, Math.round(0.12 * fps)],
-                    [7, 0],
-                    {
-                        easing: theme.easings.outExpo,
-                        extrapolateRight: 'clamp',
-                    }
-                );
-                cutBrightness = interpolate(
-                    frame,
-                    [0, Math.round(0.12 * fps)],
-                    [1.32, 1.0],
-                    {
-                        easing: theme.easings.outExpo,
-                        extrapolateRight: 'clamp',
-                    }
-                );
-            }
-        } else {
-            // Standar cut antarklip produk berikutnya
-            snapScale = interpolate(frame, [0, Math.round(0.1 * fps)], [1.03, 1.0], {
-                easing: theme.easings.outExpo,
-                extrapolateRight: 'clamp',
-            });
-            cutBrightness = interpolate(frame, [0, Math.round(0.08 * fps)], [1.16, 1.0], {
-                easing: theme.easings.outExpo,
-                extrapolateRight: 'clamp',
-            });
-        }
+        const fx = composeFx(inType, outType, frame, durationInFrames, fps, theme);
 
         // Dynamic Keyword Punch-In Zoom saat kata kunci penting diucapkan oleh Voice Over
         const keywordPunch = computeKeywordPunchScale(
@@ -472,7 +602,6 @@ const FootageClip: React.FC<{
             voStartFrame,
             captions
         );
-        snapScale *= keywordPunch;
 
         // Default: muted: true jika tidak didefinisikan (agar rekaman b-roll produk hening tanpa noise),
         // atau muted: false jika klip memiliki suara penting (seperti klip podcast/YouTube sebagai hook)
@@ -501,11 +630,16 @@ const FootageClip: React.FC<{
         return (
             <AbsoluteFill
                 style={{
-                    transform: `scale(${kenBurnsScale * snapScale}) translateX(${translateX}px) translateY(${driftY}px)`,
-                    filter:
-                        blurAmount > 0
-                            ? `brightness(${cutBrightness}) blur(${blurAmount}px)`
-                            : `brightness(${cutBrightness})`,
+                    transform: `scale(${kenBurnsScale * fx.scale * keywordPunch}) translateX(${fx.x}px) translateY(${driftY + fx.y}px)`,
+                    filter: [
+                        `brightness(${fx.brightness})`,
+                        fx.blur > 0 ? `blur(${fx.blur}px)` : '',
+                        fx.hue !== 0 ? `hue-rotate(${fx.hue}deg)` : '',
+                        fx.contrast !== 1 ? `contrast(${fx.contrast})` : '',
+                        fx.saturate !== 1 ? `saturate(${fx.saturate})` : '',
+                    ]
+                        .filter(Boolean)
+                        .join(' '),
                 }}
             >
                 {clip.isPlaceholder || !clip.src ? (
@@ -552,15 +686,158 @@ const FootageClip: React.FC<{
     };
 
 // ==========================================
-// LAYER 2.5: TRANSISI KHUSUS HOOK (YOUTUBE/PODCAST) KE PRODUK
+// LAYER 2.5: OVERLAY TRANSISI (hook -> produk dan antarklip produk)
 // ==========================================
-const HookTransitionOverlay: React.FC<{
+// Durasi overlay dalam detik (0.3s = 18 frame @60fps), puncak tepat di titik cut (0.133s = 8 frame).
+const TRANSITION_OVERLAY_SEC = 0.3;
+const TRANSITION_PEAK_SEC = 0.1333;
+const transitionOverlayFrames = (fps: number) => Math.round(TRANSITION_OVERLAY_SEC * fps);
+const transitionPeakFrames = (fps: number) => Math.round(TRANSITION_PEAK_SEC * fps);
+
+const TransitionOverlay: React.FC<{
     theme: ThemeDefinition;
-    type: 'zoom_flash' | 'whip_pan' | 'light_leak';
+    type: ActiveTransition;
 }> = ({ theme, type }) => {
     const frame = useCurrentFrame();
-    const midPoint = 8;
-    const totalFrames = 18;
+    const { fps } = useVideoConfig();
+    const midPoint = transitionPeakFrames(fps);
+    const totalFrames = transitionOverlayFrames(fps);
+
+    // Naik ke puncak di midPoint lalu turun: 0 -> 1 -> 0
+    const pulse = interpolate(frame, [0, midPoint, totalFrames], [0, 1, 0], CLAMP);
+
+    if (type === 'glitch') {
+        const bars = Array.from({ length: 7 }, (_, i) => {
+            const seed = frame * 7 + i * 13;
+            return {
+                top: frameNoise(seed) * 96,
+                height: 1.5 + frameNoise(seed + 3) * 8,
+                shift: (frameNoise(seed + 5) - 0.5) * 36,
+                visible: frameNoise(seed + 9) > 0.3,
+                color: i % 2 === 0 ? '#00FFF0' : '#FF2BD6',
+            };
+        });
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden', mixBlendMode: 'screen' }}>
+                {bars.map((b, i) =>
+                    b.visible ? (
+                        <div
+                            key={i}
+                            style={{
+                                position: 'absolute',
+                                left: `${b.shift}%`,
+                                width: '100%',
+                                top: `${b.top}%`,
+                                height: `${b.height}%`,
+                                background: b.color,
+                                opacity: pulse * 0.4,
+                            }}
+                        />
+                    ) : null
+                )}
+                {/* Kilatan statis tipis di puncak */}
+                <AbsoluteFill style={{ background: '#FFFFFF', opacity: pulse * pulse * 0.12 }} />
+            </AbsoluteFill>
+        );
+    }
+
+    if (type === 'blur_zoom') {
+        const grow = interpolate(frame, [0, totalFrames], [0.9, 1.4], CLAMP);
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', mixBlendMode: 'screen', overflow: 'hidden' }}>
+                {/* Speed lines radial yang memudar di tengah */}
+                <AbsoluteFill
+                    style={{
+                        background:
+                            'repeating-conic-gradient(from 0deg at 50% 50%, rgba(255,255,255,0) 0deg 3.2deg, rgba(255,255,255,0.4) 3.6deg 4deg)',
+                        WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 18%, #000 82%)',
+                        maskImage: 'radial-gradient(circle at 50% 50%, transparent 18%, #000 82%)',
+                        opacity: pulse * 0.7,
+                        transform: `scale(${grow})`,
+                    }}
+                />
+                <AbsoluteFill
+                    style={{
+                        background:
+                            'radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 30%, rgba(255,255,255,0.5) 100%)',
+                        opacity: pulse * 0.55,
+                    }}
+                />
+            </AbsoluteFill>
+        );
+    }
+
+    if (type === 'push_up') {
+        // Garis aksen menyapu naik mengikuti arah geser klip
+        const lineY = interpolate(frame, [0, totalFrames], [112, -12], CLAMP);
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: `${lineY}%`,
+                        height: 140,
+                        marginTop: -70,
+                        background: `linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.18) 45%, ${theme.colors.indicatorColor} 50%, rgba(255,255,255,0.18) 55%, transparent 100%)`,
+                        opacity: Math.min(1, pulse * 1.4) * 0.7,
+                        filter: 'blur(10px)',
+                    }}
+                />
+            </AbsoluteFill>
+        );
+    }
+
+    if (type === 'flash_cut') {
+        const flash = interpolate(
+            frame,
+            [0, midPoint - 1, midPoint, midPoint + 4, totalFrames],
+            [0, 0.5, 0.95, 0.2, 0],
+            CLAMP
+        );
+        return <AbsoluteFill style={{ pointerEvents: 'none', background: '#FFFFFF', opacity: flash }} />;
+    }
+
+    if (type === 'shutter') {
+        // Dua lembar rana: menutup menuju tengah (inCubic) lalu membuka (outExpo)
+        const closing = interpolate(frame, [0, midPoint], [0, 50], {
+            easing: theme.easings.inCubic,
+            ...CLAMP,
+        });
+        const opening = interpolate(frame, [midPoint, totalFrames], [50, 0], {
+            easing: theme.easings.outExpo,
+            ...CLAMP,
+        });
+        const h = frame < midPoint ? closing : opening;
+        const edge = `0 0 18px 4px ${theme.colors.indicatorColor}`;
+        return (
+            <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${h}%`,
+                        background: '#050505',
+                        boxShadow: h > 0.5 ? edge : 'none',
+                    }}
+                />
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: `${h}%`,
+                        background: '#050505',
+                        boxShadow: h > 0.5 ? edge : 'none',
+                    }}
+                />
+            </AbsoluteFill>
+        );
+    }
 
     if (type === 'whip_pan') {
         const streakX = interpolate(frame, [0, totalFrames], [-120, 120], {
@@ -1508,6 +1785,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     enableSfx,
     sfxPreset,
     ctaSound,
+    cardSfx,
     sfxVolume,
     showSafeZoneGuide,
     watermarkText,
@@ -1521,6 +1799,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     showHookHeadline,
     karaokeHighlight,
     hookTransition = 'zoom_flash',
+    clipTransition = 'auto',
     hookSubtitle,
     hookSubtitles,
     hookCaptions,
@@ -1553,7 +1832,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     let accumulatedFrames = 0;
 
     // Deteksi preset SFX aktif secara otomatis berdasarkan themeStyle jika tidak diset
-    const activePreset: 'viral' | 'beauty' | 'tech' | 'minimal' =
+    const activePreset: SfxPresetId =
         sfxPreset ||
         (themeStyle === 'pastel'
             ? 'beauty'
@@ -1605,6 +1884,21 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const durationInSeconds = Math.max(1, totalClipsSec);
     const totalDurationInFrames = Math.round(durationInSeconds * fps);
 
+    // Transisi: boundary i (i >= 1) = titik cut tempat klip ke-i dimulai.
+    // Boundary 1 (hook -> produk) memakai hookTransition; sisanya memakai clipTransition.
+    const resolvedClipTransition: TransitionType =
+        clipTransition === 'auto' ? AUTO_CLIP_TRANSITION[activePreset] : clipTransition;
+    const boundaryType = (i: number): TransitionType =>
+        i === 1 ? hookTransition : resolvedClipTransition;
+    const boundaries: { index: number; frame: number; type: TransitionType }[] = [];
+    {
+        let cursor = 0;
+        for (let i = 1; i < clips.length; i++) {
+            cursor += Math.round((clips[i - 1].endSec - clips[i - 1].startSec) * fps);
+            boundaries.push({ index: i, frame: cursor, type: boundaryType(i) });
+        }
+    }
+
     return (
         <AbsoluteFill style={{ backgroundColor: theme.colors.bg }}>
             {/* L1 & L2: FOOTAGE DENGAN KEN BURNS PUSH-IN */}
@@ -1638,7 +1932,14 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             theme={theme}
                             isHookClip={idx === 0}
                             isFirstProductClip={idx === 1}
-                            hookTransition={hookTransition}
+                            inType={
+                                idx === 0
+                                    ? hookTransition === 'none'
+                                        ? 'none'
+                                        : undefined
+                                    : boundaryType(idx)
+                            }
+                            outType={idx < clips.length - 1 ? boundaryType(idx + 1) : undefined}
                             clipStartFrame={fromFrame}
                             voStartFrame={voStartFrame}
                             captions={voiceOverCaptions as Caption[] | undefined}
@@ -1647,17 +1948,18 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                 );
             })}
 
-            {/* TRANSISI DINAMIS HOOK YOUTUBE KE PRODUK (OVERLAY LENS FLARE / WHIP STREAK) */}
-            {hookTransition !== 'none' && clips.length > 1 && (
-                <Sequence
-                    from={Math.max(0, hookDuration - 8)}
-                    durationInFrames={18}
-                >
-                    <HookTransitionOverlay
-                        theme={theme}
-                        type={hookTransition}
-                    />
-                </Sequence>
+            {/* OVERLAY TRANSISI DI SETIAP TITIK CUT (hook -> produk, demo -> spec, spec -> CTA) */}
+            {boundaries.map(
+                (b) =>
+                    b.type !== 'none' && (
+                        <Sequence
+                            key={`transition-${b.index}`}
+                            from={Math.max(0, b.frame - transitionPeakFrames(fps))}
+                            durationInFrames={transitionOverlayFrames(fps)}
+                        >
+                            <TransitionOverlay theme={theme} type={b.type} />
+                        </Sequence>
+                    )
             )}
 
             {/* L4 & L5: COLOR GRADE, VIGNETTE */}
@@ -1715,10 +2017,43 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                         />
                     </Sequence>
 
-                    {/* Transisi Audio: Hook YouTube ke Produk (Whoosh mendahului cut visual agar apex audio pas) */}
-                    <Sequence from={Math.max(0, hookDuration - 7)} durationInFrames={Math.round(0.45 * fps)}>
-                        <Audio src={staticFile('sfx/swish-fast.wav')} volume={0.55 * vol} />
-                    </Sequence>
+                    {/* SFX transisi di setiap titik cut: mengikuti jenis transisi, puncak suara dibuat jatuh pas di cut.
+                        Boundary terakhir (spec -> CTA) dikecilkan karena berbarengan dengan riser & ka-ching. */}
+                    {boundaries.map((b) => (
+                        <React.Fragment key={`tsfx-${b.index}`}>
+                            {TRANSITION_SFX[b.type].map((cue, ci) => (
+                                <Sequence
+                                    key={ci}
+                                    from={Math.max(0, b.frame + Math.round(cue.at * fps))}
+                                    durationInFrames={Math.round(1.0 * fps)}
+                                >
+                                    <Audio
+                                        src={staticFile(`sfx/${cue.file}.wav`)}
+                                        volume={cue.vol * vol * (b.index > 1 && b.index === clips.length - 1 ? 0.6 : 1)}
+                                    />
+                                </Sequence>
+                            ))}
+                        </React.Fragment>
+                    ))}
+
+                    {/* SFX khas layout kartu hook (tick struk, kertas, notifikasi chat) */}
+                    {cardSfx !== false &&
+                        (CARD_SFX[cardStyle ?? ''] ?? []).map((cue, ci) => (
+                            <Sequence
+                                key={`csfx-${ci}`}
+                                from={Math.round(cue.at * fps)}
+                                durationInFrames={Math.round(0.8 * fps)}
+                            >
+                                <Audio
+                                    src={staticFile(`sfx/${cue.file}.wav`)}
+                                    volume={
+                                        cue.vol *
+                                        vol *
+                                        (unmuteHook || clips[0]?.muted === false ? 0.35 : 1.0)
+                                    }
+                                />
+                            </Sequence>
+                        ))}
                     <Sequence from={hookDuration} durationInFrames={Math.round(0.35 * fps)}>
                         <Audio
                             src={staticFile(
@@ -1741,9 +2076,6 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     </Sequence>
 
                     {/* Babak 3: Spesifikasi & Fitur */}
-                    <Sequence from={hookDuration + demoDuration} durationInFrames={Math.round(0.4 * fps)}>
-                        <Audio src={staticFile('sfx/transition.wav')} volume={0.45 * vol} />
-                    </Sequence>
                     <Sequence from={hookDuration + demoDuration + 4} durationInFrames={Math.round(0.5 * fps)}>
                         <Audio
                             src={staticFile(
@@ -1777,7 +2109,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     <Sequence from={hookDuration + demoDuration + specDuration} durationInFrames={Math.round(1.2 * fps)}>
                         <Audio
                             src={staticFile(
-                                ctaSound === 'ding'
+                                ctaSound === 'notify'
+                                    ? 'sfx/notify-ping.wav'
+                                    : ctaSound === 'ding'
                                     ? 'sfx/ding.wav'
                                     : ctaSound === 'glockenspiel'
                                         ? 'sfx/glockenspiel.wav'

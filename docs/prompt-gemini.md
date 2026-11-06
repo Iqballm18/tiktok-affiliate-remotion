@@ -156,6 +156,12 @@ DUA VARIASI A/B TESTING:
 - Variasi 2 (v2): Sudut pandang "Value & Hemat / First Impression" atau "Event Promo" jika MODE EVENT diisi. Desain = pilihan CADANGAN (atau receipt jika ada event). cardStyle v2 HARUS berbeda dari v1.
 - sfxPreset: "beauty" untuk pastel, "tech" untuk editorial, "viral" untuk flash_sale, "minimal" untuk minimal.
 
+PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
+- hookTransition: Transisi dari hook ke produk pertama. Pilihan: "zoom_flash" (default reveal), "whip_pan" (geser cepat), "light_leak" (cahaya lembut/skincare), "glitch" (efek digital/tech), "blur_zoom" (zoom dramatis), "push_up" (swipe scroll FYP), "flash_cut" (kilat putih), "shutter" (kamera), atau "none".
+- clipTransition: Transisi antarklip produk (demo -> spec -> CTA). Isi "auto" (default, otomatis ikut sfxPreset) atau pilih salah satu jenis transisi di atas.
+- ctaSound: Suara saat kartu CTA muncul. Pilihan: "kaching" (kasir), "ding" (bel ringkas), "glockenspiel" (melodi ceria), "sparkle" (kilau lembut), "notify" (ping notifikasi HP).
+- cardSfx: true (default, memutar SFX khas struk printer/kertas/label sesuai cardStyle).
+
 ================================================================================
 OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
 ================================================================================
@@ -198,8 +204,11 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "themeStyle": "minimal",
       "cardStyle": "sticky_note",
       "captionStyle": "outline_pop",
+      "hookTransition": "zoom_flash",
+      "clipTransition": "auto",
       "sfxPreset": "minimal",
       "ctaSound": "kaching",
+      "cardSfx": true,
       "enableSfx": true,
       "sfxVolume": 1.0,
       "showProgressBar": true,
@@ -231,8 +240,11 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "themeStyle": "flash_sale",
       "cardStyle": "receipt",
       "captionStyle": "marker_sweep",
+      "hookTransition": "push_up",
+      "clipTransition": "auto",
       "sfxPreset": "viral",
       "ctaSound": "kaching",
+      "cardSfx": true,
       "enableSfx": true,
       "sfxVolume": 1.0,
       "showProgressBar": true,

@@ -127,5 +127,6 @@ Untuk draf cepat, render dengan `npm run render:fast` (30 fps).
 ## 📖 Dokumentasi Lanjutan
 
 * **[`docs/prompt-gemini.md`](docs/prompt-gemini.md)**: Master prompt Gemini untuk generate naskah ElevenLabs & JSON produk otomatis.
+* **[`docs/sfx-transitions.md`](docs/sfx-transitions.md)**: Katalog 8 transisi (`hookTransition` / `clipTransition`), 8 SFX baru, dan SFX khas per layout kartu.
 * **[`docs/architecture.md`](docs/architecture.md)**: Arsitektur 5-Layer Stack, Auto-Fit Duration, dan alur subtitle karaoke Whisper AI.
 * **[`config.json`](config.json)**: Konfigurasi global (watermark default, port web studio, FPS default).
