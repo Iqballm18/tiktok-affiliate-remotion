@@ -124,27 +124,13 @@
                   <p class="panel-sub" id="activeProductBreadcrumb">Memuat data produk...</p>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                  <button class="btn small" id="btnOpenImportModal" type="button" title="Tempel JSON hasil Gemini untuk membuat / mengisi produk">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Import JSON Gemini
+                  </button>
                   <button class="btn small" id="btnRefreshProducts" title="Muat ulang daftar file JSON di folder products/"><svg class="ic" aria-hidden="true"><use href="#i-refresh"></use></svg></button>
                   <button class="btn small" id="btnNewProduct"><svg class="ic" aria-hidden="true"><use href="#i-plus"></use></svg> Produk Baru</button>
                   <button class="btn small danger" id="btnDeleteProduct" title="Hapus produk yang aktif saat ini"><svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg> Hapus</button>
                   <button class="btn small primary" id="btnSaveProduct"><svg class="ic" aria-hidden="true"><use href="#i-save"></use></svg> Simpan Produk</button>
-                </div>
-              </div>
-
-              <!-- Dedicated AI Gemini Assistant Workflow Strip -->
-              <div class="gemini-workflow-strip">
-                <div class="gw-label">
-                  <span class="gw-badge"><svg class="ic" style="width: 12px; height: 12px;" aria-hidden="true"><use href="#i-sparkles"></use></svg> Alur Gemini</span>
-                  <span>Siapkan storyboard &amp; naskah otomatis:</span>
-                </div>
-                <div class="gw-actions">
-                  <button class="btn small" id="btnCopyGeminiPrompt" type="button" title="Salin Master Prompt Gemini dengan durasi video otomatis terisi">
-                    <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> 1. Salin Prompt (+ Durasi Video)
-                  </button>
-                  <span class="gw-arrow">➔</span>
-                  <button class="btn small" id="btnOpenImportModal" type="button" title="Tempel JSON hasil Gemini untuk membuat / mengisi produk" style="border-color: rgba(59, 130, 246, 0.4); color: #93c5fd;">
-                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> 2. Import JSON Gemini
-                  </button>
                 </div>
               </div>
 
