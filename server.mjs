@@ -116,6 +116,8 @@ const renderState = {
     percent: 0,
     eta: '-',
   },
+  lastOutputs: [],
+  lastError: null,
   logs: [],
 };
 
@@ -254,6 +256,8 @@ const server = http.createServer(async (req, res) => {
       activeVariant: renderState.activeVariant,
       fps: renderState.fps,
       progress: renderState.currentProgress,
+      lastOutputs: renderState.lastOutputs || [],
+      lastError: renderState.lastError || null,
     }));
     return;
   }
@@ -1915,6 +1919,8 @@ const server = http.createServer(async (req, res) => {
         renderState.activeProduct = resolvedTitle;
         renderState.activeVariant = target || 'v1';
         renderState.fps = parseInt(fps || '60', 10);
+        renderState.lastOutputs = [];
+        renderState.lastError = null;
         renderState.currentProgress = {
           step: 'Mempersiapkan Bundle & Props',
           frame: 0,
@@ -1952,10 +1958,12 @@ const server = http.createServer(async (req, res) => {
               if (vResult?.outFileName) renderedOutputs.push(vResult.outFileName);
             }
 
+            renderState.lastOutputs = renderedOutputs;
             renderState.isRendering = false;
             appendLog(`[RENDER SELESAI] Semua variasi berhasil diproduksi!`);
             broadcast('done', { code: 0, outputs: renderedOutputs });
           } catch (err) {
+            renderState.lastError = err.message;
             renderState.isRendering = false;
             appendLog(`[RENDER ERROR] ${err.message}`);
             broadcast('done', { code: 1, error: err.message });

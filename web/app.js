@@ -5419,8 +5419,8 @@
           const st = await res.json();
           if (!st.isRendering) {
             clearInterval(checkInterval);
-            if (st.step === 'error') {
-              reject(new Error(st.error || 'Render gagal'));
+            if (st.lastError || st.progress?.step === 'error' || st.step === 'error') {
+              reject(new Error(st.lastError || st.progress?.step || st.error || 'Render gagal'));
             } else {
               resolve(st);
             }
@@ -5469,22 +5469,60 @@
         if (!res.ok) throw new Error(data.error || `Gagal memulai render ${pid}`);
 
         // Tunggu hingga proses render produk ini selesai
-        await waitForRenderComplete();
+        const renderStatus = await waitForRenderComplete();
         successCount++;
 
-        // Jika opsi auto-upload GDrive dicentang, unggah video terbaru milik produk ini
+        // Jika opsi auto-upload GDrive dicentang, unggah SEMUA video hasil render (v1 & v2)
         if (autoUploadGdrive) {
           await loadVideos();
-          const latestVid = state.videos?.[0];
-          if (latestVid) {
-            if (el.batchQueueStatus) {
-              el.batchQueueStatus.textContent = `☁️ Mengunggah hasil "${latestVid.name}" ke Google Drive...`;
+
+          // Kumpulkan semua file video yang dihasilkan untuk produk ini
+          let videosToUpload = [];
+          if (Array.isArray(renderStatus?.lastOutputs) && renderStatus.lastOutputs.length > 0) {
+            videosToUpload = [...renderStatus.lastOutputs];
+          } else {
+            // Fallback cerdas: cari video yang sesuai dari state.videos
+            const prod = (state.products || []).find(p => p.id === pid);
+            const titlePrefix = (prod?.name || pid).toLowerCase().slice(0, 15);
+            const matchingVids = (state.videos || []).filter(v =>
+              v.name.toLowerCase().includes(pid.toLowerCase()) ||
+              v.name.toLowerCase().includes(titlePrefix)
+            );
+            if (matchingVids.length > 0) {
+              if (variantScope === 'both') {
+                videosToUpload = matchingVids.slice(0, 2).map(v => v.name).reverse();
+              } else {
+                videosToUpload = [matchingVids[0].name];
+              }
+            } else if (state.videos?.[0]) {
+              videosToUpload = [state.videos[0].name];
             }
-            await fetch('/api/gdrive-upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ videoName: latestVid.name }),
-            }).catch(() => {});
+          }
+
+          appendLog(`[BATCH GDRIVE] Total ${videosToUpload.length} varian video disiapkan untuk diunggah ke Google Drive: ${videosToUpload.join(', ')}`, true);
+
+          for (let vi = 0; vi < videosToUpload.length; vi++) {
+            const vidName = videosToUpload[vi];
+            if (el.batchQueueStatus) {
+              el.batchQueueStatus.textContent = `☁️ [${i + 1}/${selectedIds.length}] Mengunggah varian (${vi + 1}/${videosToUpload.length}): "${vidName}" ke Google Drive...`;
+            }
+            appendLog(`[BATCH GDRIVE] Mengunggah (${vi + 1}/${videosToUpload.length}) "${vidName}" ke Google Drive...`, true);
+
+            try {
+              const upRes = await fetch('/api/gdrive-upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoName: vidName }),
+              });
+              const upData = await upRes.json().catch(() => ({}));
+              if (!upRes.ok || upData.error) {
+                appendLog(`[BATCH GDRIVE WARN] Gagal mengunggah "${vidName}": ${upData.error || 'Terjadi kesalahan saat upload'}`);
+              } else {
+                appendLog(`[BATCH GDRIVE OK] Sukses terunggah: "${vidName}"`);
+              }
+            } catch (upErr) {
+              appendLog(`[BATCH GDRIVE ERROR] Error saat upload "${vidName}": ${upErr.message}`);
+            }
           }
         }
       }
