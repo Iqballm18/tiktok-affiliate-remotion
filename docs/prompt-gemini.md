@@ -180,14 +180,14 @@ Karena kita memproduksi 2 video berbeda untuk A/B testing materi TikTok, buatkan
 
 ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT):
 1. DILARANG membuat caption panjang atau bertele-tele! Caption panjang akan tertutup tombol "...more" dan menutupi keranjang kuning di layar HP.
-2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-120 karakter).
-3. Struktur standar: [1 Kalimat Hook/Solusi Menarik] + [CTA Singkat ke Keranjang Kuning] + [Cukup 3-4 Hashtag Relevan & FYP].
+2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-130 karakter).
+3. Struktur standar: [1 Kalimat Hook/Solusi Menarik] + [CTA Singkat ke Keranjang Kuning] + [Tepat 5 Hashtag Relevan & FYP (gabungan niche produk, kata kunci masalah, racuntiktok, belanja di tiktok, & fyp)].
 
 CAPTION POSTINGAN VIDEO 1 (Variasi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
-- Contoh format: "Nyesel baru tau trik ini sekarang! 😭 Cek promonya di keranjang kuning mumpung ready 👇🛒 #racuntiktok #[katakunci] #fyp"
+- Contoh format: "Nyesel baru tau trik ini sekarang! 😭 Cek promonya di keranjang kuning mumpung ready 👇🛒 #racuntiktok #[katakunci] #beliditiktok #tiktokaffiliate #fyp"
 
 CAPTION POSTINGAN VIDEO 2 (Variasi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
-- Contoh format: "Mumpung lagi promo diskon bundle! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #fyp"
+- Contoh format: "Mumpung lagi promo diskon bundle! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #[katakunci] #beliditiktok #fyp"
 
 BAGIAN 3: JSON DATA PRODUK LENGKAP (SIAP IMPORT KE WEB STUDIO)
 Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur persis seperti ini (perhatikan: TIDAK ADA field videoSource atau voiceOver, dan TIDAK ADA field src di clips). Nilai cardStyle, hookVariant, captionStyle, captionVariant, dan themeStyle di bawah hanyalah CONTOH; isi sesuai hasil PEMILIHAN DESAIN OTOMATIS untuk video ini:
@@ -218,7 +218,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 1 di sini untuk auto-correct subtitle otomatis di Web Studio",
-      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Cek promonya di keranjang kuning kiri bawah 👇🛒 #racuntiktok #penyeraplembap #fyp",
+      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Cek promonya di keranjang kuning kiri bawah 👇🛒 #racuntiktok #penyeraplembap #antijamur #beliditiktok #fyp",
       "badgeText": "Ibu-ibu wajib tau",
       "demoBadge": "Demo langsung",
       "specBadge": "Kapasitas jumbo",
@@ -257,7 +257,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 2 (sudut pandang event promo / diskon tanggal kembar) di sini untuk auto-correct subtitle otomatis di Web Studio",
-      "tiktokCaption": "Mumpung promo diskon bundle lagi jalan! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #fyp",
+      "tiktokCaption": "Mumpung promo diskon bundle lagi jalan! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #diskon1111 #beliditiktok #fyp",
       "badgeText": "Promo 11.11 hari ini",
       "demoBadge": "Bukti nyata",
       "specBadge": "Paket bundle",
