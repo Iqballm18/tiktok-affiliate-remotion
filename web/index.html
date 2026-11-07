@@ -337,8 +337,8 @@
                 <!-- Visual Video Source (Shared across variants) -->
                 <div class="form-group">
                   <label class="form-label" for="selectProductVideo">
-                    <span>File Video Produk Mentah (public/)</span>
-                    <span style="font-size: 11px; color: var(--text-faint);">Dipakai oleh klip Babak 1 s/d 4</span>
+                    <span>File Video Utama Produk (public/)</span>
+                    <span style="font-size: 11px; color: var(--text-faint);">Default untuk semua babak (bisa diganti per babak di Storyboard)</span>
                   </label>
                   <select class="input" id="selectProductVideo">
                     <!-- Populated dynamically from public/*.mp4 -->
@@ -691,6 +691,12 @@
 
                       <!-- Klip Timing Bar -->
                       <div class="storyboard-timing-bar">
+                        <div class="timing-field video-field">
+                          <span class="timing-label">Sumber:</span>
+                          <select class="input clip-video-select" data-clip="0" title="Pilih video mentah spesifik untuk Babak 1 (atau gunakan Video Utama)">
+                            <option value="">(Gunakan Video Utama)</option>
+                          </select>
+                        </div>
                         <div class="timing-field">
                           <span class="timing-label">Mulai:</span>
                           <input type="text" class="input clip-time-input" data-clip="0" data-field="start" value="0s">
@@ -772,6 +778,12 @@
 
                       <!-- Klip Timing Bar -->
                       <div class="storyboard-timing-bar">
+                        <div class="timing-field video-field">
+                          <span class="timing-label">Sumber:</span>
+                          <select class="input clip-video-select" data-clip="1" title="Pilih video mentah spesifik untuk Babak 2 (atau gunakan Video Utama)">
+                            <option value="">(Gunakan Video Utama)</option>
+                          </select>
+                        </div>
                         <div class="timing-field">
                           <span class="timing-label">Mulai:</span>
                           <input type="text" class="input clip-time-input" data-clip="1" data-field="start" value="5s">
@@ -823,6 +835,12 @@
 
                       <!-- Klip Timing Bar -->
                       <div class="storyboard-timing-bar">
+                        <div class="timing-field video-field">
+                          <span class="timing-label">Sumber:</span>
+                          <select class="input clip-video-select" data-clip="2" title="Pilih video mentah spesifik untuk Babak 3 (atau gunakan Video Utama)">
+                            <option value="">(Gunakan Video Utama)</option>
+                          </select>
+                        </div>
                         <div class="timing-field">
                           <span class="timing-label">Mulai:</span>
                           <input type="text" class="input clip-time-input" data-clip="2" data-field="start" value="12s">
@@ -874,6 +892,12 @@
 
                       <!-- Klip Timing Bar -->
                       <div class="storyboard-timing-bar">
+                        <div class="timing-field video-field">
+                          <span class="timing-label">Sumber:</span>
+                          <select class="input clip-video-select" data-clip="3" title="Pilih video mentah spesifik untuk Babak 4 (atau gunakan Video Utama)">
+                            <option value="">(Gunakan Video Utama)</option>
+                          </select>
+                        </div>
                         <div class="timing-field">
                           <span class="timing-label">Mulai:</span>
                           <input type="text" class="input clip-time-input" data-clip="3" data-field="start" value="19s">

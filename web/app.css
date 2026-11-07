@@ -1863,6 +1863,37 @@ audio {
   text-align: center;
 }
 
+.timing-field.video-field {
+  flex: 1 1 200px;
+  min-width: 170px;
+}
+
+.timing-field select.clip-video-select {
+  width: 100%;
+  height: 26px;
+  padding: 0 8px;
+  font-size: 11px;
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-rule);
+  border-radius: 4px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  transition: all 0.15s ease;
+}
+
+.timing-field select.clip-video-select:focus {
+  border-color: var(--accent-gold);
+  outline: none;
+}
+
+.timing-field select.clip-video-select.custom-active {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fef08a;
+  font-weight: 600;
+}
+
 .storyboard-dur-badge {
   margin-left: auto;
   font-size: 11.5px;

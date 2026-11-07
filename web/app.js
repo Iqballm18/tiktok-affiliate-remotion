@@ -397,6 +397,13 @@
         });
       }
 
+      // Update dropdown video per babak di storyboard
+      const activeClips = state.currentProduct?.variants?.[state.activeVariantKey]?.clips || [];
+      document.querySelectorAll('.clip-video-select').forEach(sel => {
+        const idx = parseInt(sel.dataset.clip, 10);
+        populateClipVideoSelect(sel, activeClips[idx]?.src);
+      });
+
       // Update Voiceover selector
       el.selectVoiceOver.innerHTML = '';
       if (data.voiceOvers.length === 0) {
@@ -655,6 +662,34 @@
     document.dispatchEvent(new CustomEvent('clipsUpdated'));
   }
 
+  function populateClipVideoSelect(sel, currentClipSrc) {
+    if (!sel) return;
+    const mainVideo = state.currentProduct?.videoSource || '';
+    const mainShort = mainVideo.length > 22 ? mainVideo.slice(0, 20) + '...' : mainVideo;
+    const mainLabel = mainVideo ? `(Gunakan Video Utama: ${mainShort})` : '(Gunakan Video Utama)';
+
+    const videos = state.assets?.videos || [];
+    let html = `<option value="">${escapeHtml(mainLabel)}</option>`;
+
+    videos.forEach(v => {
+      const isSelected = currentClipSrc && (currentClipSrc === v.name || currentClipSrc === v.path);
+      const isMain = v.name === mainVideo;
+      const tag = isMain ? ' ★ Video Utama' : '';
+      const durText = v.durationSec ? ` [${v.durationSec}s]` : '';
+      html += `<option value="${escapeHtml(v.name)}"${isSelected ? ' selected' : ''}>${escapeHtml(v.name)}${durText}${tag}</option>`;
+    });
+
+    sel.innerHTML = html;
+
+    const isCustom = Boolean(currentClipSrc && currentClipSrc !== mainVideo);
+    if (isCustom) {
+      sel.value = currentClipSrc;
+    } else {
+      sel.value = '';
+    }
+    sel.classList.toggle('custom-active', isCustom);
+  }
+
   function renderClipsTable(clips) {
     const totalClips = 4;
     let totalSec = 0;
@@ -669,10 +704,12 @@
       const startInp = document.querySelector(`.clip-time-input[data-clip="${i}"][data-field="start"]`);
       const endInp = document.querySelector(`.clip-time-input[data-clip="${i}"][data-field="end"]`);
       const durEl = $(`clipDur_${i}`);
+      const vidSel = document.querySelector(`.clip-video-select[data-clip="${i}"]`);
 
       if (startInp) startInp.value = formatTimeDisplay(c.startSec);
       if (endInp) endInp.value = formatTimeDisplay(c.endSec);
       if (durEl) durEl.textContent = `${dur.toFixed(1)}s`;
+      if (vidSel) populateClipVideoSelect(vidSel, c.src);
     }
 
     // Update timeline strip widths
@@ -2085,7 +2122,14 @@
       const parsed = parseTimeInput(inp.value);
       if (field === 'start') v.clips[idx].startSec = parsed;
       if (field === 'end') v.clips[idx].endSec = parsed;
-      v.clips[idx].src = state.currentProduct.videoSource || v.clips[idx].src;
+    });
+
+    document.querySelectorAll('.clip-video-select').forEach(sel => {
+      const idx = parseInt(sel.dataset.clip, 10);
+      if (v.clips && v.clips[idx]) {
+        const customSrc = sel.value.trim();
+        v.clips[idx].src = customSrc || state.currentProduct.videoSource || v.clips[idx].src || '';
+      }
     });
   }
 
@@ -2611,15 +2655,46 @@
 
   el.selectProductVideo.addEventListener('change', () => {
     if (state.currentProduct) {
-      state.currentProduct.videoSource = el.selectProductVideo.value;
-      // Also update clips src
+      const oldMain = state.currentProduct.videoSource;
+      const newMain = el.selectProductVideo.value;
+      state.currentProduct.videoSource = newMain;
+
+      // Update klip yang tidak memakai video kustom
       ['v1', 'v2'].forEach(vk => {
         const v = state.currentProduct.variants?.[vk];
         if (v && v.clips) {
-          v.clips.forEach(c => { c.src = el.selectProductVideo.value; });
+          v.clips.forEach(c => {
+            if (!c.src || c.src === oldMain) {
+              c.src = newMain;
+            }
+          });
         }
       });
+
+      // Refresh dropdown per-babak
+      const activeClips = state.currentProduct.variants?.[state.activeVariantKey]?.clips || [];
+      renderClipsTable(activeClips);
       triggerAutoSave();
+    }
+  });
+
+  // Listener untuk dropdown video per-babak di Storyboard
+  document.addEventListener('change', e => {
+    const sel = e.target.closest('.clip-video-select');
+    if (!sel) return;
+    const idx = parseInt(sel.dataset.clip, 10);
+    const v = state.currentProduct?.variants?.[state.activeVariantKey];
+    if (v && v.clips && v.clips[idx]) {
+      const chosen = sel.value.trim();
+      v.clips[idx].src = chosen || state.currentProduct.videoSource || '';
+      sel.classList.toggle('custom-active', Boolean(chosen && chosen !== state.currentProduct.videoSource));
+      triggerAutoSave();
+      showToast({
+        type: 'info',
+        title: `Babak ${idx + 1}`,
+        message: chosen ? `Menggunakan video: ${chosen}` : 'Mengikuti Video Utama produk',
+        duration: 2500
+      });
     }
   });
 
