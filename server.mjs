@@ -33,24 +33,24 @@ const PORT = parseInt(process.env.PORT || config.webPort || '3100', 10);
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 function syncBundlePublic() {
-  getOrBuildBundle().then(b => syncPublicToBundle(b)).catch(() => {});
+  getOrBuildBundle().then(b => syncPublicToBundle(b)).catch(() => { });
 }
 
 function safeReplaceFile(src, dest) {
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
       fs.copyFileSync(src, dest);
-      try { if (fs.existsSync(src)) fs.unlinkSync(src); } catch (_) {}
+      try { if (fs.existsSync(src)) fs.unlinkSync(src); } catch (_) { }
       return true;
     } catch (_) {
       try {
         fs.renameSync(src, dest);
         return true;
-      } catch (_) {}
+      } catch (_) { }
     }
     if (attempt < 2) {
       const start = Date.now();
-      while (Date.now() - start < 100) {}
+      while (Date.now() - start < 100) { }
     }
   }
   return false;
@@ -384,7 +384,7 @@ const server = http.createServer(async (req, res) => {
               try {
                 const data = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
                 if (Array.isArray(data)) wordsCount = data.length;
-              } catch {}
+              } catch { }
             }
             voiceOvers.push({
               name: relName,
@@ -430,7 +430,7 @@ const server = http.createServer(async (req, res) => {
               bgms.push({ name: `bgm/${bf}`, displayName: bf });
             }
           }
-        } catch {}
+        } catch { }
       }
       for (const vo of voiceOvers) {
         if (/bgm|music|backsound|soundtrack|instrumental/i.test(vo.name)) {
@@ -537,7 +537,7 @@ const server = http.createServer(async (req, res) => {
           if (fs.existsSync(jsonPath)) {
             try {
               wordsCount = JSON.parse(fs.readFileSync(jsonPath, 'utf8')).length;
-            } catch {}
+            } catch { }
           }
           appendLog(`[WHISPER] Transkripsi selesai (code ${code}). Kata tersinkron: ${wordsCount}`);
           broadcast('transcribe-done', { filename: relFilename, jsonFile, wordsCount });
@@ -591,7 +591,7 @@ const server = http.createServer(async (req, res) => {
 
         child.on('close', code => {
           if (code !== 0 || !fs.existsSync(tempPath)) {
-            try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
+            try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) { }
             appendLog(`[ERROR] Gagal memotong jeda napas: code ${code}`);
             res.writeHead(500, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: `FFmpeg gagal (code ${code}): ${errLog.slice(-200)}` }));
@@ -672,7 +672,7 @@ const server = http.createServer(async (req, res) => {
                   });
                   const timer = setTimeout(() => {
                     appendLog(`[WARN] FFmpeg potong napas timeout 20s, lanjut ke Whisper.`);
-                    try { child.kill(); } catch (_) {}
+                    try { child.kill(); } catch (_) { }
                     resolve();
                   }, 20000);
 
@@ -695,7 +695,7 @@ const server = http.createServer(async (req, res) => {
                           appendLog(`[SMART-VO 1/3] Jeda napas dipotong: ${oldDur.toFixed(1)}s → ${newDur.toFixed(1)}s`);
                         }
                       } else {
-                        try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) {}
+                        try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) { }
                         appendLog(`[SMART-VO 1/3] Lewati potong napas (FFmpeg kode ${code})`);
                       }
                     } catch (e) {
@@ -718,7 +718,7 @@ const server = http.createServer(async (req, res) => {
               });
               const timer = setTimeout(() => {
                 appendLog(`[WARN] Whisper AI melebihi batas waktu 120s.`);
-                try { child.kill(); } catch (_) {}
+                try { child.kill(); } catch (_) { }
                 resolve();
               }, 120000);
 
@@ -1333,8 +1333,8 @@ const server = http.createServer(async (req, res) => {
             if (initData.success && initData.sessionUrl) {
               sessionUrl = initData.sessionUrl;
             }
-          } catch (_) {}
-        } catch (_) {}
+          } catch (_) { }
+        } catch (_) { }
 
         if (sessionUrl) {
           // ========================================================
@@ -1472,7 +1472,7 @@ const server = http.createServer(async (req, res) => {
         });
 
         if (isTempFile && fs.existsSync(uploadFilePath)) {
-          try { fs.unlinkSync(uploadFilePath); } catch (_) {}
+          try { fs.unlinkSync(uploadFilePath); } catch (_) { }
         }
 
         broadcast('gdrive_upload_progress', {
@@ -1781,7 +1781,7 @@ const server = http.createServer(async (req, res) => {
           previewDataUrl = `data:image/png;base64,${imgBuffer.toString('base64')}`;
           try {
             fs.unlinkSync(result.previewPath);
-          } catch (_) {}
+          } catch (_) { }
         }
 
         broadcast('still_progress', {
@@ -1850,7 +1850,7 @@ const server = http.createServer(async (req, res) => {
             }
           };
           checkStamp(PUBLIC_DIR);
-        } catch (_) {}
+        } catch (_) { }
 
         const key = crypto
           .createHash('sha1')
@@ -1867,17 +1867,17 @@ const server = http.createServer(async (req, res) => {
             productOrId: productData,
             variantKey: targetVariant,
             frame: targetFrame,
-            onLog: () => {},
-            onProgress: () => {},
+            onLog: () => { },
+            onProgress: () => { },
           });
           if (!result.previewPath || !fs.existsSync(result.previewPath)) {
             throw new Error('Frame pratinjau tidak ditemukan setelah render.');
           }
           const dataUrl = `data:image/png;base64,${fs.readFileSync(result.previewPath).toString('base64')}`;
-          try { fs.unlinkSync(result.previewPath); } catch (_) {}
+          try { fs.unlinkSync(result.previewPath); } catch (_) { }
           return dataUrl;
         });
-        liveChain = job.catch(() => {});
+        liveChain = job.catch(() => { });
 
         const dataUrl = await job;
         liveCache.set(key, dataUrl);
@@ -1942,7 +1942,7 @@ const server = http.createServer(async (req, res) => {
             for (const vk of variantsToRender) {
               if (!renderState.isRendering) break; // cancelled
               appendLog(`[RENDER] Memulai rendering varian ${vk} untuk ${resolvedTitle}...`);
-              
+
               const vResult = await renderProductVariant({
                 productOrId: product,
                 variantKey: vk,
