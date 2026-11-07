@@ -3484,6 +3484,38 @@ body {
   }
 }
 
+/* ==========================================================================
+   SAFETY TRUNCATION UNTUK PREVIEW HOOK DINAMIS
+   Mencegah teks produk panjang merusak proporsi kartu panggung mini
+   ========================================================================== */
+.cc-stage [class*="cc-anim-"] {
+  max-width: 126px;
+  box-sizing: border-box;
+}
+
+.cc-stage [class*="cc-anim-"] > div,
+.cc-stage [class*="cc-slam-"],
+.cc-stage [class*="cc-struck-"],
+.cc-stage [class*="cc-sticky-"],
+.cc-stage [class*="cc-receipt-"],
+.cc-stage [class*="cc-chat-"],
+.cc-stage [class*="cc-dymo-"],
+.cc-stage [class*="cc-cyber-"],
+.cc-stage [class*="cc-serif-"],
+.cc-stage .cc-mask-text,
+.cc-stage .cc-marker-hl-line,
+.cc-stage .cc-marker-sweep-bar,
+.cc-stage .cc-tilt-badge,
+.cc-stage .cc-coupon-gold,
+.cc-stage .cc-catalog-pill,
+.cc-stage .cc-frame-box {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
 /* 1. STICKY NOTE (v1: Post-It, v2: Grid Memo + Push-Pin, v3: Dual Layered) */
 .cc-anim-sticky-v1 {
   width: 112px;

@@ -493,17 +493,26 @@
       });
 
       // Prioritas pemilihan:
-      // 1. state.activeProductId jika masih ada di list
-      // 2. localStorage 'studio_active_product' jika valid
-      // 3. Produk paling pertama (yang paling baru diubah/dibuat)
+      // 1. URL parameter ?product=... atau ?pid=...
+      // 2. state.activeProductId jika masih ada di list
+      // 3. localStorage 'studio_active_product' jika valid
+      // 4. Produk paling pertama (yang paling baru diubah/dibuat)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPid = urlParams.get('product') || urlParams.get('pid');
+      const urlVar = urlParams.get('variant') || urlParams.get('v');
       const savedPid = localStorage.getItem('studio_active_product');
       let targetId = state.activeProductId;
-      if (!targetId || !products.some(p => p.id === targetId)) {
+      if (urlPid && products.some(p => p.id === urlPid)) {
+        targetId = urlPid;
+      } else if (!targetId || !products.some(p => p.id === targetId)) {
         if (savedPid && products.some(p => p.id === savedPid)) {
           targetId = savedPid;
         } else {
           targetId = products[0].id;
         }
+      }
+      if (urlVar && (urlVar === 'v1' || urlVar === 'v2')) {
+        state.activeVariantKey = urlVar;
       }
 
       await selectProduct(targetId);
@@ -660,6 +669,7 @@
     renderClipsTable(v.clips || []);
     checkDurationMatch(v);
     document.dispatchEvent(new CustomEvent('clipsUpdated'));
+    updateThemeVisualPreview();
   }
 
   function populateClipVideoSelect(sel, currentClipSrc) {
@@ -1163,61 +1173,81 @@
     { id: 'blur_zoom', title: 'Blur Zoom', sub: ' Transisi fokus lembut sinematik' }
   ];
 
+  function getActiveHookCopy() {
+    const v = state.currentProduct?.variants?.[state.activeVariantKey] || {};
+    const rawBadge = (el.inputBadgeText && typeof el.inputBadgeText.value === 'string' && el.inputBadgeText.value.trim())
+      ? el.inputBadgeText.value.trim()
+      : (v.badgeText || '').trim();
+    const rawLine1 = (el.inputHookLine1 && typeof el.inputHookLine1.value === 'string' && el.inputHookLine1.value.trim())
+      ? el.inputHookLine1.value.trim()
+      : (v.hookLine1 || '').trim();
+    const rawHighlight = (el.inputHookHighlight && typeof el.inputHookHighlight.value === 'string' && el.inputHookHighlight.value.trim())
+      ? el.inputHookHighlight.value.trim()
+      : (v.hookHighlight || '').trim();
+
+    return {
+      badge: rawBadge || 'Rekomendasi Spesial',
+      line1: rawLine1 || 'Mau coba produk ini?',
+      highlight: rawHighlight || 'Solusi praktis terbaik!'
+    };
+  }
+
   function buildHookStageHtml(style, ver) {
+    const copy = getActiveHookCopy();
     if (style === 'marker_highlight') {
-      return `<div class="cc-anim-marker-highlight"><div style="font-size:7.5px;color:#9A3412;font-weight:700;">✦ Skincare & Bumil</div><div style="font-size:8px;color:#333;">Serum Wajah</div><div class="cc-marker-hl-line">Glow Bebas Kusam</div></div>`;
+      return `<div class="cc-anim-marker-highlight"><div style="font-size:7.5px;color:#9A3412;font-weight:700;">✦ ${escapeHtml(copy.badge)}</div><div style="font-size:8px;color:#333;">${escapeHtml(copy.line1)}</div><div class="cc-marker-hl-line">${escapeHtml(copy.highlight)}</div></div>`;
     }
     if (style === 'stack_slam') {
-      return `<div class="cc-anim-stack-slam"><div class="cc-slam-plate1">FLASH SALE VIRAL</div><div class="cc-slam-plate2">HEMAT SAMPAI 70%!</div></div>`;
+      return `<div class="cc-anim-stack-slam"><div class="cc-slam-plate1">${escapeHtml(copy.line1.toUpperCase())}</div><div class="cc-slam-plate2">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
     }
     if (style === 'struck_swap') {
-      return `<div class="cc-anim-struck-swap"><div class="cc-struck-old">Cara Lama Bikin Ribet</div><div class="cc-struck-new">Ini Solusi Praktisnya! ➔</div></div>`;
+      return `<div class="cc-anim-struck-swap"><div class="cc-struck-old">${escapeHtml(copy.line1)}</div><div class="cc-struck-new">${escapeHtml(copy.highlight)} ➔</div></div>`;
     }
     if (style === 'tilt_card') {
-      return `<div class="cc-anim-tilt-card"><span class="cc-tilt-badge">BEST SELLER</span><div style="font-size:8px;color:#555;">Review Jujur</div><div style="font-size:9px;font-weight:800;color:#111;">Hasil Terasa Cepat</div></div>`;
+      return `<div class="cc-anim-tilt-card"><span class="cc-tilt-badge">${escapeHtml(copy.badge.toUpperCase())}</span><div style="font-size:8px;color:#555;">${escapeHtml(copy.line1)}</div><div style="font-size:9px;font-weight:800;color:#111;">${escapeHtml(copy.highlight)}</div></div>`;
     }
     if (style === 'mask_wipe') {
-      return `<div class="cc-anim-mask-wipe"><div style="font-size:7.5px;color:#94A3B8;">TECH & FASHION</div><div class="cc-mask-text">GAYA TERBARU 2026</div></div>`;
+      return `<div class="cc-anim-mask-wipe"><div style="font-size:7.5px;color:#94A3B8;">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-mask-text">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
     }
     const key = `${style}-${ver}`;
     switch (key) {
       case 'sticky_note-v1':
-        return `<div class="cc-anim-sticky-v1"><div style="color:#DC2626;font-size:8px;">Ibu wajib tau!</div><div>Air langsung terserap!</div></div>`;
+        return `<div class="cc-anim-sticky-v1"><div style="color:#DC2626;font-size:8px;">${escapeHtml(copy.badge)}</div><div>${escapeHtml(copy.highlight || copy.line1)}</div></div>`;
       case 'sticky_note-v2':
-        return `<div class="cc-anim-sticky-v2"><span class="cc-pin-dot"></span><div>Lemari bau apek?</div><span class="cc-marker-sweep-bar">Cukup 1 kotak ini!</span></div>`;
+        return `<div class="cc-anim-sticky-v2"><span class="cc-pin-dot"></span><div>${escapeHtml(copy.line1)}</div><span class="cc-marker-sweep-bar">${escapeHtml(copy.highlight)}</span></div>`;
       case 'sticky_note-v3':
-        return `<div class="cc-anim-sticky-v3"><div class="cc-sticky-back">01 · Masalah lembap?</div><div class="cc-sticky-front">Tuntas dalam 1 malam!</div></div>`;
+        return `<div class="cc-anim-sticky-v3"><div class="cc-sticky-back">01 · ${escapeHtml(copy.line1)}</div><div class="cc-sticky-front">${escapeHtml(copy.highlight)}</div></div>`;
       case 'receipt-v1':
-        return `<div class="cc-anim-receipt-v1"><div>*** FLASH SALE ***</div><div>Hemat 50% Hari Ini</div><div class="cc-receipt-inv">TOTAL: KLIK DI BAWAH</div></div>`;
+        return `<div class="cc-anim-receipt-v1"><div>*** ${escapeHtml(copy.badge.toUpperCase())} ***</div><div>${escapeHtml(copy.line1)}</div><div class="cc-receipt-inv">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
       case 'receipt-v2':
-        return `<div class="cc-anim-receipt-v2"><div>VOUCHER 11.11</div><div class="cc-coupon-gold">DISKON + GRATIS ONGKIR</div></div>`;
+        return `<div class="cc-anim-receipt-v2"><div>${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-coupon-gold">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
       case 'receipt-v3':
-        return `<div class="cc-anim-receipt-v3"><div class="cc-catalog-head">01 // HOOK PRODUK</div><div>Kualitas di atas harga</div><div class="cc-catalog-pill">Wajib punya sekarang!</div></div>`;
+        return `<div class="cc-anim-receipt-v3"><div class="cc-catalog-head">01 // ${escapeHtml(copy.badge.toUpperCase())}</div><div>${escapeHtml(copy.line1)}</div><div class="cc-catalog-pill">${escapeHtml(copy.highlight)}</div></div>`;
       case 'chat_thread-v1':
-        return `<div class="cc-anim-chat-v1"><div class="cc-chat-q">Kok bisa awet wangi?</div><div class="cc-chat-a">Rahasianya cuma ini!</div></div>`;
+        return `<div class="cc-anim-chat-v1"><div class="cc-chat-q">${escapeHtml(copy.line1)}</div><div class="cc-chat-a">${escapeHtml(copy.highlight)}</div></div>`;
       case 'chat_thread-v2':
-        return `<div class="cc-anim-chat-v2"><div class="cc-tt-reply-sub"><span class="cc-tt-reply-dot"></span>Membalas @user</div><div style="font-weight:700;margin-top:2px;">Spill dong kak belinya!</div><div style="background:var(--cc-accent);color:#000;font-weight:800;padding:2px 4px;border-radius:3px;margin-top:3px;">Cek keranjang kuning!</div></div>`;
+        return `<div class="cc-anim-chat-v2"><div class="cc-tt-reply-sub"><span class="cc-tt-reply-dot"></span>Membalas @user</div><div style="font-weight:700;margin-top:2px;">${escapeHtml(copy.line1)}</div><div style="background:var(--cc-accent);color:#000;font-weight:800;padding:2px 4px;border-radius:3px;margin-top:3px;">${escapeHtml(copy.highlight)}</div></div>`;
       case 'chat_thread-v3':
-        return `<div class="cc-anim-chat-v3"><div class="cc-wave-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div style="font-weight:700;">"Asli ini penyelamat!"</div></div>`;
+        return `<div class="cc-anim-chat-v3"><div class="cc-wave-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div style="font-weight:700;">"${escapeHtml(copy.highlight || copy.line1)}"</div></div>`;
       case 'type_stack-v1':
-        return `<div class="cc-anim-type-v1"><div>Jangan salah pilih</div><div style="color:var(--cc-accent);">Hasilnya secepat ini!</div><div class="cc-brush-line"></div></div>`;
+        return `<div class="cc-anim-type-v1"><div>${escapeHtml(copy.line1)}</div><div style="color:var(--cc-accent);">${escapeHtml(copy.highlight)}</div><div class="cc-brush-line"></div></div>`;
       case 'type_stack-v2':
-        return `<div class="cc-anim-type-v2"><div>Capek coba yang lain?</div><div class="cc-kinetic-pill-wrap"><span class="cc-kinetic-pill-bg"></span>Ini solusi akhirnya!<span class="cc-sparkle-star">✦</span></div></div>`;
+        return `<div class="cc-anim-type-v2"><div>${escapeHtml(copy.line1)}</div><div class="cc-kinetic-pill-wrap"><span class="cc-kinetic-pill-bg"></span>${escapeHtml(copy.highlight)}<span class="cc-sparkle-star">✦</span></div></div>`;
       case 'type_stack-v3':
-        return `<div class="cc-anim-type-v3"><div class="cc-strike-row">Cara lama yang ribet<span class="cc-strike-bar"></span></div><div class="cc-frame-box">3× Lebih Praktis!</div></div>`;
+        return `<div class="cc-anim-type-v3"><div class="cc-strike-row">${escapeHtml(copy.line1)}<span class="cc-strike-bar"></span></div><div class="cc-frame-box">${escapeHtml(copy.highlight)}</div></div>`;
       case 'label_tape-v1':
-        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1">SPEK UNGGULAN</div><div class="cc-dymo-row2">MATERIAL ANTI KARAT</div></div>`;
+        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-dymo-row2">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
       case 'label_tape-v2':
-        return `<div class="cc-anim-tape-v2"><div class="cc-cyber-bar">01 // UJI KETAHANAN</div><div class="cc-cyber-bar2">TAHAN PANAS & DINGIN</div></div>`;
+        return `<div class="cc-anim-tape-v2"><div class="cc-cyber-bar">01 // ${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-cyber-bar2">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
       case 'label_tape-v3':
-        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1" style="border-radius:99px;background:rgba(255,255,255,0.14);">FITUR UTAMA</div><div class="cc-dymo-row2" style="border-radius:5px;">DESAIN COMPACT</div></div>`;
+        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1" style="border-radius:99px;background:rgba(255,255,255,0.14);">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-dymo-row2" style="border-radius:5px;">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
       case 'quiet_serif-v1':
-        return `<div class="cc-anim-serif-v1"><div class="cc-serif-line1">Perawatan kulit tenang</div><div class="cc-serif-rule"></div><div class="cc-serif-italic">Kembalikan glow alami</div></div>`;
+        return `<div class="cc-anim-serif-v1"><div class="cc-serif-line1">${escapeHtml(copy.line1)}</div><div class="cc-serif-rule"></div><div class="cc-serif-italic">${escapeHtml(copy.highlight)}</div></div>`;
       case 'quiet_serif-v2':
-        return `<div class="cc-anim-serif-v2"><div class="cc-serif-line1">EDISI PILIHAN</div><div class="cc-serif-italic">Tekstur ringan meresap</div></div>`;
+        return `<div class="cc-anim-serif-v2"><div class="cc-serif-line1">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-serif-italic">${escapeHtml(copy.highlight || copy.line1)}</div></div>`;
       case 'quiet_serif-v3':
       default:
-        return `<div class="cc-anim-serif-v3"><div style="font-size:8px;color:#52525B;">KANTONG KERTAS</div><div class="cc-serif-italic" style="color:#111;font-weight:700;">Lembut sejak tetes pertama</div><div class="cc-serif-rule" style="width:100%;"></div></div>`;
+        return `<div class="cc-anim-serif-v3"><div style="font-size:8px;color:#52525B;">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-serif-italic" style="color:#111;font-weight:700;">${escapeHtml(copy.highlight || copy.line1)}</div><div class="cc-serif-rule" style="width:100%;"></div></div>`;
     }
   }
 
