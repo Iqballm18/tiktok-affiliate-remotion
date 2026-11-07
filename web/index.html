@@ -352,14 +352,21 @@
               <div class="panel-header" style="align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                   <div class="segmented" id="variantSegmented">
-                    <button class="active" data-variant="v1">Variasi 1 (v1)</button>
-                    <button data-variant="v2">Variasi 2 (v2)</button>
+                    <button class="active" data-variant="v1">
+                      <span class="v-badge">V1</span>
+                      <span>Versi 1</span>
+                    </button>
+                    <button data-variant="v2">
+                      <span class="v-badge">V2</span>
+                      <span>Versi 2</span>
+                    </button>
                   </div>
+                  <span id="activeVariantBadge" class="variant-concept-pill v1">Versi 1</span>
                   <button class="btn small" id="btnSyncClipsBetweenVariants" type="button"
-                    title="Salin waktu klip babak 1-4 dari variasi ini ke variasi lainnya">
+                    title="Salin waktu klip babak 1-4 dari versi ini ke versi lainnya">
                     <svg class="ic" aria-hidden="true">
                       <use href="#i-repeat"></use>
-                    </svg> Salin Klip v1 ⇄ v2
+                    </svg> Salin Klip V1 ⇄ V2
                   </button>
                   <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
                 </div>
@@ -433,7 +440,7 @@
                         style="background: linear-gradient(135deg, #10B981, #059669); border-color: #10B981; color: #fff; font-weight: 600;">
                         <svg class="ic" aria-hidden="true">
                           <use href="#i-sparkles"></use>
-                        </svg> ⚡ Proses Pintar VO
+                        </svg> Proses Pintar VO
                       </button>
                       <span style="font-size: 11px; color: var(--text-faint);">1-Klik: Potong Napas + Whisper +
                         Auto-Koreksi Naskah</span>
@@ -1934,44 +1941,44 @@
             <span>Pilih Video yang Akan Dirender</span>
           </label>
           <div style="display: flex; flex-direction: column; gap: 8px;" id="renderScopeOptions">
-            <!-- Option: Variasi 1 Saja -->
+            <!-- Option: Versi 1 Saja -->
             <label class="render-scope-card" id="cardScopeV1">
               <input type="radio" name="renderTargetOption" value="v1">
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                  <strong style="font-size: 13px; color: #fff;">Hanya Variasi 1 (Pastel)</strong>
-                  <span class="pill emerald" style="font-size: 10px; padding: 1px 6px;">v1</span>
+                  <strong style="font-size: 13px; color: #fff;">Hanya Versi 1 (V1)</strong>
+                  <span class="v-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 800;">V1</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV1Title">
-                  Problem-Solution • Format Pastel Aesthetic
+                  Problem-Solution • Format Video 1
                 </div>
               </div>
             </label>
 
-            <!-- Option: Variasi 2 Saja -->
+            <!-- Option: Versi 2 Saja -->
             <label class="render-scope-card" id="cardScopeV2">
               <input type="radio" name="renderTargetOption" value="v2">
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                  <strong style="font-size: 13px; color: #fff;">Hanya Variasi 2 (Bold)</strong>
-                  <span class="pill amber" style="font-size: 10px; padding: 1px 6px;">v2</span>
+                  <strong style="font-size: 13px; color: #fff;">Hanya Versi 2 (V2)</strong>
+                  <span class="v-badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 800;">V2</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV2Title">
-                  Value & Quality • Format Editorial Minimal
+                  Value & Quality • Format Video 2
                 </div>
               </div>
             </label>
 
-            <!-- Option: Semua Variasi Sekaligus -->
+            <!-- Option: Semua Versi Sekaligus -->
             <label class="render-scope-card active" id="cardScopeAll">
               <input type="radio" name="renderTargetOption" value="all" checked>
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
-                  <strong style="font-size: 13px; color: #fff;">Semua Variasi Sekaligus (v1 & v2)</strong>
+                  <strong style="font-size: 13px; color: #fff;">Kedua Versi Sekaligus (V1 & V2)</strong>
                   <span class="pill rose" style="font-size: 10px; padding: 1px 6px;">Rekomendasi</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4;">
-                  Merender Variasi 1 dan Variasi 2 secara berurutan untuk materi A/B testing TikTok.
+                  Merender Versi 1 dan Versi 2 secara berurutan untuk materi A/B testing TikTok.
                 </div>
               </div>
             </label>

@@ -514,7 +514,7 @@
       const prod = await res.json();
       state.activeProductId = id;
       state.currentProduct = prod;
-      try { localStorage.setItem('studio_active_product', id); } catch (_) {}
+      try { localStorage.setItem('studio_active_product', id); } catch (_) { }
 
       el.selectProduct.value = id;
       renderProductToForm(prod);
@@ -559,6 +559,14 @@
       btn.classList.toggle('active', btn.dataset.variant === variantKey);
     });
 
+    // Update pill nama konsep aktif (V1 vs V2)
+    const badgeEl = $('activeVariantBadge');
+    if (badgeEl) {
+      badgeEl.className = `variant-concept-pill ${variantKey}`;
+      const defaultTitle = variantKey === 'v1' ? 'Problem-Solution' : 'Value & Promo';
+      badgeEl.textContent = v.title ? `${variantKey.toUpperCase()} · ${v.title}` : `Versi ${variantKey === 'v1' ? '1' : '2'} · ${defaultTitle}`;
+    }
+
     if (el.btnSyncClipsBetweenVariants) {
       const otherKey = variantKey === 'v1' ? 'v2' : 'v1';
       el.btnSyncClipsBetweenVariants.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Salin Klip ${variantKey.toUpperCase()} ➔ ${otherKey.toUpperCase()}`;
@@ -589,7 +597,7 @@
 
     // Update label Voice Over sesuai varian aktif
     if (el.labelVoiceOver) {
-      el.labelVoiceOver.textContent = `Voice Over untuk ${variantKey.toUpperCase()} (${variantKey === 'v1' ? 'Variasi 1' : 'Variasi 2'})`;
+      el.labelVoiceOver.textContent = `Voice Over untuk ${variantKey.toUpperCase()} (${variantKey === 'v1' ? 'Versi 1' : 'Versi 2'})`;
     }
 
     // Smart auto-detection of Voice Over jika belum diset
@@ -1018,7 +1026,7 @@
 
   try {
     ccState.collapsed = localStorage.getItem('studio.ccPickerCollapsed') === '1';
-  } catch (_) {}
+  } catch (_) { }
 
   const THEME_ACCENTS = {
     pastel: '#FF4D6D',
@@ -1256,9 +1264,9 @@
     // Update version seg active button based on current tab
     const currentTabVer =
       ccState.tab === 'presets' ? activePresetVer :
-      ccState.tab === 'hooks' ? activeHookVer :
-      ccState.tab === 'captions' ? activeCapVer :
-      activeTransVer;
+        ccState.tab === 'hooks' ? activeHookVer :
+          ccState.tab === 'captions' ? activeCapVer :
+            activeTransVer;
 
     verSeg?.querySelectorAll('button[data-ver]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.ver === currentTabVer);
@@ -1407,14 +1415,14 @@
       ccState.tab = btn.dataset.tab;
       if (ccState.collapsed) {
         ccState.collapsed = false;
-        try { localStorage.setItem('studio.ccPickerCollapsed', '0'); } catch (_) {}
+        try { localStorage.setItem('studio.ccPickerCollapsed', '0'); } catch (_) { }
       }
       renderCapcutPicker();
     });
 
     $('btnToggleCcDrawer')?.addEventListener('click', () => {
       ccState.collapsed = !ccState.collapsed;
-      try { localStorage.setItem('studio.ccPickerCollapsed', ccState.collapsed ? '1' : '0'); } catch (_) {}
+      try { localStorage.setItem('studio.ccPickerCollapsed', ccState.collapsed ? '1' : '0'); } catch (_) { }
       renderCapcutPicker();
     });
 
@@ -2306,7 +2314,7 @@
     });
     try {
       localStorage.setItem('studio_player_size', size);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Load saved size or default to 'md' (340px desktop standard)
@@ -2652,7 +2660,7 @@
 
       state.activeProductId = null;
       state.currentProduct = null;
-      try { localStorage.removeItem('studio_active_product'); } catch (_) {}
+      try { localStorage.removeItem('studio_active_product'); } catch (_) { }
       await loadProductsList();
     } catch (err) {
       showToast({ type: 'error', title: 'Gagal Menghapus', message: err.message });
@@ -2909,7 +2917,7 @@
       appendLog(`[IMPORT] JSON disimpan permanen ke products/${safePid}.json`, true);
       await loadProductsList();
       el.selectProduct.value = safePid;
-      try { localStorage.setItem('studio_active_product', safePid); } catch (_) {}
+      try { localStorage.setItem('studio_active_product', safePid); } catch (_) { }
     }).catch(err => {
       console.warn('Gagal menyimpan otomatis produk baru:', err);
     });
@@ -3482,7 +3490,7 @@
       box.style.display = 'block';
 
       if (data.step === 'init' || data.step === 'compress' || data.step === 'compress_done' ||
-          data.step === 'packaging' || data.step === 'uploading' || data.step === 'processing') {
+        data.step === 'packaging' || data.step === 'uploading' || data.step === 'processing') {
         if (actionsEl) actionsEl.style.display = 'none';
         if (pulseEl) {
           pulseEl.style.display = 'inline-block';
@@ -4323,7 +4331,7 @@
             ? 'AMD Radeon GPU (AMF h264) akan digunakan untuk proses render.'
             : 'Render akan menggunakan CPU (libx264).'
         });
-      } catch (_) {}
+      } catch (_) { }
     });
   }
 
@@ -4358,8 +4366,8 @@
         }
 
         const labelTarget = target === 'all'
-          ? 'Semua Variasi (v1 & v2)'
-          : (target === 'v2' ? 'Hanya Variasi 2 (Bold)' : 'Hanya Variasi 1 (Pastel)');
+          ? 'Kedua Versi (V1 & V2)'
+          : (target === 'v2' ? 'Hanya Versi 2 (V2)' : 'Hanya Versi 1 (V1)');
         const engineLabel = useGpu ? 'GPU AMD Radeon' : 'CPU';
         const qLabel = quality === 'high' ? 'Tinggi (CRF 17)' : (quality === 'eco' ? 'Hemat (CRF 24)' : 'Standar (CRF 20)');
         appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
@@ -4715,8 +4723,8 @@
             const isV1 = v.name.includes('v1');
             const isV2 = v.name.includes('v2');
             const variantPill = isV1
-              ? '<span class="pill emerald">Variasi 1 (Pastel)</span>'
-              : (isV2 ? '<span class="pill amber">Variasi 2 (Bold)</span>' : '<span class="pill neutral">Video MP4</span>');
+              ? '<span class="pill" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); font-weight: 700;">Versi 1 (V1)</span>'
+              : (isV2 ? '<span class="pill" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); font-weight: 700;">Versi 2 (V2)</span>' : '<span class="pill neutral">Video MP4</span>');
             const dateStr = new Date(v.mtime).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'medium' });
 
             const tr = document.createElement('tr');
@@ -5424,7 +5432,7 @@
         if (chk) chk.checked = gpuEnabled;
         if (row) row.classList.toggle('gpu-active', gpuEnabled);
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // -------------------------------------------------------------
@@ -5450,7 +5458,7 @@
         el.subtitleAudioPlayer.removeAttribute('src');
         el.subtitleAudioPlayer.load();
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const res = await fetch('/api/smart-process-vo', {
@@ -5499,7 +5507,7 @@
         el.subtitleAudioPlayer.removeAttribute('src');
         el.subtitleAudioPlayer.load();
       }
-    } catch (_) {}
+    } catch (_) { }
 
     try {
       const res = await fetch('/api/trim-silence', {
@@ -5648,7 +5656,7 @@
               resolve(st);
             }
           }
-        } catch (_) {}
+        } catch (_) { }
       }, 1500);
     });
   }
@@ -5792,7 +5800,7 @@
       document.querySelectorAll('.wf-pane').forEach(p => {
         p.classList.toggle('active', p.dataset.pane === paneId);
       });
-      try { localStorage.setItem('studio.activeWorkflowPane', paneId); } catch (_) {}
+      try { localStorage.setItem('studio.activeWorkflowPane', paneId); } catch (_) { }
     }
 
     tabs.addEventListener('click', e => {
@@ -5831,7 +5839,7 @@
       document.querySelectorAll('.player-mode-pane').forEach(p => {
         p.classList.toggle('active', p.dataset.mode === mode);
       });
-      try { localStorage.setItem('studio.playerMode', mode); } catch (_) {}
+      try { localStorage.setItem('studio.playerMode', mode); } catch (_) { }
     });
 
     const savedMode = (() => {
@@ -5938,7 +5946,7 @@
     });
 
     playBtn?.addEventListener('click', () => {
-      if (video.paused) video.play().catch(() => {});
+      if (video.paused) video.play().catch(() => { });
       else video.pause();
     });
 
@@ -5997,7 +6005,7 @@
       const clip = v?.clips?.[targetClipIdx];
       if (clip) {
         video.currentTime = clip.startSec || 0;
-        video.play().catch(() => {});
+        video.play().catch(() => { });
       }
     });
 
@@ -6058,7 +6066,7 @@
       const isOpen = drawer.dataset.open === 'true';
       drawer.dataset.open = isOpen ? 'false' : 'true';
       toggle.setAttribute('aria-expanded', !isOpen);
-      try { localStorage.setItem('studio.monitorDrawerOpen', !isOpen ? '1' : '0'); } catch (_) {}
+      try { localStorage.setItem('studio.monitorDrawerOpen', !isOpen ? '1' : '0'); } catch (_) { }
     });
 
     const saved = (() => {
