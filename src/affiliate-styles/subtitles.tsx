@@ -131,12 +131,16 @@ const wordSpring = (s: State, w: SubWord, damping = 12, stiffness = 210) =>
 const Layer: React.FC<{bottom: number; children: React.ReactNode}> = ({bottom, children}) => (
   <AbsoluteFill
     style={{
+      boxSizing: 'border-box',
+      width: '100%',
+      height: '100%',
       justifyContent: 'flex-end',
       alignItems: 'center',
       paddingBottom: bottom,
       paddingLeft: SAFE.side,
       paddingRight: SAFE.side,
       fontFamily: FONT.display,
+      pointerEvents: 'none',
     }}
   >
     {children}
@@ -144,7 +148,7 @@ const Layer: React.FC<{bottom: number; children: React.ReactNode}> = ({bottom, c
 );
 
 const Row: React.FC<{children: React.ReactNode; gap?: string}> = ({children, gap = '6px 14px'}) => (
-  <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap, maxWidth: '100%'}}>
+  <div style={{boxSizing: 'border-box', display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap, maxWidth: '100%'}}>
     {children}
   </div>
 );
@@ -367,9 +371,20 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
   const s = useSubtitleState(words, maxWords);
   if (!s) return null;
   return (
-    <AbsoluteFill style={{justifyContent: 'flex-end', fontFamily: FONT.serif}}>
+    <AbsoluteFill
+      style={{
+        boxSizing: 'border-box',
+        width: '100%',
+        height: '100%',
+        justifyContent: 'flex-end',
+        fontFamily: FONT.serif,
+        pointerEvents: 'none',
+      }}
+    >
       <div
         style={{
+          boxSizing: 'border-box',
+          width: '100%',
           marginBottom: bottom - 24,
           background: withAlpha(palette.ink, 0.62),
           padding: `14px ${SAFE.side}px`,

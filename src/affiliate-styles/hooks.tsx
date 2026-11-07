@@ -62,11 +62,15 @@ const Frame: React.FC<{
   return (
     <AbsoluteFill
       style={{
+        boxSizing: 'border-box',
+        width: '100%',
+        height: '100%',
         padding: `${SAFE.top}px ${SAFE.side}px 0 ${SAFE.side}px`,
         alignItems: align,
         opacity: exit.opacity,
         transform: `translateY(${exit.y}px)`,
         fontFamily: FONT.display,
+        pointerEvents: 'none',
       }}
     >
       {children}
@@ -98,6 +102,7 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
     <Frame durationInFrames={durationInFrames}>
       <div
         style={{
+          boxSizing: 'border-box',
           background: palette.paper,
           color: palette.ink,
           padding: '24px 32px 28px',
@@ -112,13 +117,14 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
             {badge}
           </div>
         ) : null}
-        <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22}}>{line1}</div>
+        <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word'}}>{line1}</div>
         <div
           style={{
             marginTop: 10,
             fontSize: 52,
             fontWeight: 900,
             lineHeight: 1.15,
+            wordBreak: 'break-word',
             opacity: Math.min(1, hl * 2),
             transform: `translateY(${(1 - hl) * 24}px)`,
           }}
@@ -169,12 +175,14 @@ export const StackSlamHook: React.FC<HookProps> = ({
     <Frame durationInFrames={durationInFrames}>
       <div
         style={{
+          boxSizing: 'border-box',
           ...slam(a, shake(frame, 0), 0),
           background: palette.ink,
           color: palette.paper,
           fontSize: 42,
           fontWeight: 800,
           lineHeight: 1.15,
+          wordBreak: 'break-word',
           padding: '14px 22px',
           borderRadius: 12,
           alignSelf: 'flex-start',
@@ -185,12 +193,14 @@ export const StackSlamHook: React.FC<HookProps> = ({
       </div>
       <div
         style={{
+          boxSizing: 'border-box',
           ...slam(b, shake(frame, 9), -1.5),
           background: palette.accent,
           color: palette.accentInk,
           fontSize: 54,
           fontWeight: 900,
           lineHeight: 1.1,
+          wordBreak: 'break-word',
           padding: '16px 26px',
           borderRadius: 14,
           marginTop: 8,
@@ -228,12 +238,14 @@ export const StruckSwapHook: React.FC<HookProps> = ({
     <Frame durationInFrames={durationInFrames}>
       <div
         style={{
+          boxSizing: 'border-box',
           position: 'relative',
           background: palette.paper,
           color: palette.ink,
           fontSize: 40,
           fontWeight: 700,
           lineHeight: 1.2,
+          wordBreak: 'break-word',
           padding: '16px 24px',
           borderRadius: 14,
           maxWidth: '100%',
@@ -260,12 +272,14 @@ export const StruckSwapHook: React.FC<HookProps> = ({
       </div>
       <div
         style={{
+          boxSizing: 'border-box',
           marginTop: 10,
           background: palette.accent,
           color: palette.accentInk,
           fontSize: 52,
           fontWeight: 900,
           lineHeight: 1.1,
+          wordBreak: 'break-word',
           padding: '18px 28px',
           borderRadius: 16,
           maxWidth: '100%',
@@ -303,7 +317,14 @@ export const TiltCardHook: React.FC<HookProps> = ({
 
   return (
     <Frame durationInFrames={durationInFrames}>
-      <div style={{position: 'relative', maxWidth: '100%', paddingTop: badge ? 20 : 0}}>
+      <div
+        style={{
+          position: 'relative',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          paddingTop: badge ? 20 : 0,
+        }}
+      >
         {badge ? (
           <div
             style={{
@@ -325,18 +346,30 @@ export const TiltCardHook: React.FC<HookProps> = ({
         ) : null}
         <div
           style={{
+            boxSizing: 'border-box',
+            maxWidth: '100%',
             background: palette.paper,
             color: palette.ink,
-            padding: '26px 30px 26px',
+            padding: '24px 28px 26px',
             borderRadius: 18,
             opacity: Math.min(1, p * 1.6),
             filter: `blur(${(1 - Math.min(1, p)) * 14}px)`,
-            transform: `perspective(1400px) rotateX(${(1 - p) * 16}deg) rotateY(${-5 + (1 - p) * -10}deg) scale(${push})`,
-            transformOrigin: 'left center',
+            transform: `perspective(1400px) rotateX(${(1 - p) * 12}deg) rotateY(${-3 + (1 - p) * -8}deg) scale(${push})`,
+            transformOrigin: 'center center',
           }}
         >
-          <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22}}>{line1}</div>
-          <div style={{marginTop: 10, fontSize: 52, fontWeight: 900, lineHeight: 1.15}}>
+          <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word'}}>
+            {line1}
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              fontSize: 52,
+              fontWeight: 900,
+              lineHeight: 1.15,
+              wordBreak: 'break-word',
+            }}
+          >
             <span
               style={{
                 backgroundImage: `linear-gradient(${palette.accent}, ${palette.accent})`,
@@ -377,14 +410,16 @@ export const MaskWipeHook: React.FC<HookProps> = ({
 
   return (
     <Frame durationInFrames={durationInFrames}>
-      <div style={{overflow: 'hidden', borderRadius: 8, maxWidth: '100%'}}>
+      <div style={{boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, maxWidth: '100%'}}>
         <div
           style={{
+            boxSizing: 'border-box',
             background: palette.ink,
             color: palette.paper,
             fontSize: 40,
             fontWeight: 700,
             lineHeight: 1.2,
+            wordBreak: 'break-word',
             padding: '14px 22px',
             transform: `translateY(${(1 - rise1) * 105}%)`,
           }}
@@ -392,14 +427,16 @@ export const MaskWipeHook: React.FC<HookProps> = ({
           {line1}
         </div>
       </div>
-      <div style={{overflow: 'hidden', borderRadius: 8, marginTop: 8, maxWidth: '100%'}}>
+      <div style={{boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, marginTop: 8, maxWidth: '100%'}}>
         <div
           style={{
+            boxSizing: 'border-box',
             background: palette.accent,
             color: palette.accentInk,
             fontSize: 52,
             fontWeight: 900,
             lineHeight: 1.1,
+            wordBreak: 'break-word',
             padding: '16px 26px',
             transform: `translateY(${(1 - rise2) * 105}%)`,
             clipPath: `inset(0 ${(1 - wipe) * 100}% 0 0)`,
