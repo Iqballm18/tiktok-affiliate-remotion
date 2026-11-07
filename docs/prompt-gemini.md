@@ -19,7 +19,10 @@ Analisis visual video produk mentah yang saya lampirkan di chat ini. Tentukan de
 ================================================================================
 INFORMASI VIDEO MENTAH & ATURAN BATAS DURASI (WAJIB DIPATUHI):
 ================================================================================
-DURASI ASLI VIDEO: [TULIS DURASI VIDEO ANDA DI SINI, contoh: 95 detik (01:35)]
+DURASI ASLI VIDEO: [TULIS DURASI VIDEO DI SINI, contoh: 95 detik (01:35)]
+*(Jika mengunggah 2 video berbeda untuk Hook + Produk, tulis seperti ini:*
+*  DURASI VIDEO 1 (HOOK / PODCAST / REVIEW): XX detik*
+*  DURASI VIDEO 2 (PRODUK UTAMA): XX detik)*
 *(Jika bagian ini tidak diisi, periksa timeline video di player dan sebutkan durasi totalnya terlebih dahulu).*
 
 INFORMASI EVENT PROMO (OPSIONAL - TANGGAL KEMBAR / GAJIAN):
@@ -31,14 +34,14 @@ ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
 2. DILARANG KERAS mengarang angka detik yang melebihi durasi video!
    - Contoh Nyata: Jika video berdurasi 95 detik, detik klip TERAKHIR (endSec) maksimal adalah 95 detik (contoh: 86 s/d 93). Angka seperti 120, 127, atau 133 adalah ERROR FATAL karena video sudah selesai di detik ke-95!
 3. URUTAN 4 BABAK KLIP DALAM RENTANG PANJANG VIDEO:
-   - Klip 1 (Babak 1: Hook): Detik awal pembuka (durasi ~5-6s, contoh: 0 s/d 6).
-   - Klip 2 (Babak 2: Solusi & Demo Tekstur): Momen saat produk dicoba/dipakai di sepertiga video (durasi ~7-8s, contoh: 20 s/d 28).
-   - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail botol/kemasan di paruh kedua video (durasi ~7-8s, contoh: 50 s/d 58).
-   - Klip 4 (Babak 4: CTA Keranjang Kuning): Momen closing kemasan utuh SEBELUM video berakhir (durasi ~5-6s, contoh: 86 s/d 93 dari video 95s).
+   - Klip 1 (Babak 1: Hook): Detik pembuka terbaik (~5-6s, contoh: 0 s/d 6). Jika user melampirkan 2 video, potong Babak 1 dari VIDEO 1 (Hook / Podcast / Reaksi / Review).
+   - Klip 2 (Babak 2: Solusi & Demo Tekstur): Momen saat produk dicoba/dipakai di sepertiga video produk (~7-8s, contoh: 20 s/d 28).
+   - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail botol/kemasan di paruh kedua video produk (~7-8s, contoh: 50 s/d 58).
+   - Klip 4 (Babak 4: CTA Keranjang Kuning): Momen closing kemasan utuh SEBELUM video produk berakhir (~5-6s, contoh: 86 s/d 93 dari video 95s).
    * Total gabungan durasi 4 babak berkisar 24-28 detik.
 4. FORMAT OBJEK KLIP:
    - HANYA berisi: { "startSec": number, "endSec": number }
-   - JANGAN cantumkan "src" di dalam objek clips!
+   - JANGAN cantumkan "src" di dalam objek clips! File video dipilih langsung oleh pengguna secara visual di Web Studio Remotion (bisa memilih video berbeda per babak di tab Storyboard).
 5. JANGAN cantumkan "videoSource" atau "voiceOver" di root JSON!
    - File video dan voice over dipilih langsung oleh pengguna secara visual di Web Studio Remotion.
 
@@ -193,7 +196,7 @@ OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
 ================================================================================
 
 BAGIAN 1: DURASI VIDEO & NASKAH SCRIPT VOICE OVER (UNTUK ELEVENLABS TTS)
-Sebutkan durasi total video yang terdeteksi: "DURASI TOTAL VIDEO: XX detik"
+Sebutkan durasi total video yang terdeteksi: "DURASI TOTAL VIDEO: XX detik" (atau jika 2 video: "DURASI VIDEO 1 (HOOK): XX detik | DURASI VIDEO 2 (PRODUK): XX detik").
 Sebutkan analisis desain singkat (3 baris): kategori produk, kondisi sepertiga atas layar, dan desain yang dipilih untuk v1 dan v2 beserta alasannya.
 Tuliskan 2 naskah narasi suara yang mengalir, natural, dan persuasif untuk disalin ke ElevenLabs (durasi baca ~15-22 detik):
 - Naskah Versi 1 (v1 - Simpan audio sebagai "public/voiceover_v1.mp3"):
