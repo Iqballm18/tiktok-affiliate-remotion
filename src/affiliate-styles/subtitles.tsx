@@ -162,7 +162,7 @@ const outline = (size: number, color: string): React.CSSProperties => ({
 export const KaraokeBlockSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 76,
+  fontSize = 50,
   bottom = SAFE.bottom,
   maxWords = 3,
   uppercase = true,
@@ -183,8 +183,8 @@ export const KaraokeBlockSubtitle: React.FC<SubtitleProps> = ({
                 fontWeight: 900,
                 lineHeight: 1.15,
                 textTransform: uppercase ? 'uppercase' : 'none',
-                padding: '0 16px',
-                borderRadius: 16,
+                padding: '2px 12px',
+                borderRadius: 10,
                 color: active ? palette.accentInk : palette.paper,
                 background: active ? palette.accent : 'transparent',
                 transform: active ? `scale(${1 + 0.08 * p}) rotate(${-2 * p}deg)` : 'none',
@@ -208,7 +208,7 @@ export const KaraokeBlockSubtitle: React.FC<SubtitleProps> = ({
 export const PopScaleSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 150,
+  fontSize = 80,
   bottom = SAFE.bottom + 40,
   maxWords = 3,
   uppercase = true,
@@ -248,7 +248,7 @@ export const PopScaleSubtitle: React.FC<SubtitleProps> = ({
 export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 64,
+  fontSize = 44,
   bottom = SAFE.bottom,
   maxWords = 4,
   uppercase = false,
@@ -260,12 +260,12 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
       <div
         style={{
           background: withAlpha(palette.ink, 0.9),
-          borderRadius: 26,
-          padding: '22px 34px',
+          borderRadius: 16,
+          padding: '14px 22px',
           maxWidth: '100%',
         }}
       >
-        <Row gap="4px 12px">
+        <Row gap="4px 10px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
             const p = active ? Math.min(1, wordSpring(s, w, 16, 240)) : i < s.wordIndex ? 1 : 0;
@@ -277,8 +277,8 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
                   fontWeight: 800,
                   lineHeight: 1.2,
                   textTransform: uppercase ? 'uppercase' : 'none',
-                  padding: '0 10px',
-                  borderRadius: 8,
+                  padding: '2px 8px',
+                  borderRadius: 6,
                   color: active ? palette.accentInk : palette.paper,
                   opacity: i > s.wordIndex ? 0.6 : 1,
                   backgroundImage: `linear-gradient(${palette.accent}, ${palette.accent})`,
@@ -304,7 +304,7 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
 export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 72,
+  fontSize = 50,
   bottom = SAFE.bottom,
   maxWords = 3,
   uppercase = true,
@@ -359,7 +359,7 @@ export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
 export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 62,
+  fontSize = 44,
   bottom = SAFE.bottom,
   maxWords = 5,
   uppercase = false,
@@ -372,11 +372,11 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
         style={{
           marginBottom: bottom - 24,
           background: withAlpha(palette.ink, 0.62),
-          padding: `26px ${SAFE.side}px`,
+          padding: `14px ${SAFE.side}px`,
           textAlign: 'center',
         }}
       >
-        <Row gap="4px 16px">
+        <Row gap="4px 14px">
           {s.chunk.words.map((w, i) => {
             const shown = i <= s.wordIndex;
             const age = s.frame - Math.round(w.start * s.fps);
@@ -417,7 +417,7 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
 export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 68,
+  fontSize = 46,
   bottom = SAFE.bottom,
   maxWords = 3,
   uppercase = false,
@@ -435,15 +435,15 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
       <div
         style={{
           background: palette.paper,
-          border: `6px solid ${palette.ink}`,
-          borderRadius: 20,
-          padding: '16px 32px',
+          border: `3.5px solid ${palette.ink}`,
+          borderRadius: 14,
+          padding: '10px 20px',
           maxWidth: '100%',
           opacity: Math.min(1, p * 2),
           transform: `translateY(${(1 - p) * 26}px) scale(${0.85 + 0.15 * p}) rotate(${tilt}deg)`,
         }}
       >
-        <Row gap="2px 14px">
+        <Row gap="2px 10px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
             return (
@@ -456,8 +456,8 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
                   textTransform: uppercase ? 'uppercase' : 'none',
                   color: active ? palette.accentInk : palette.ink,
                   background: active ? palette.accent : 'transparent',
-                  borderRadius: 10,
-                  padding: '0 10px',
+                  borderRadius: 6,
+                  padding: '2px 8px',
                 }}
               >
                 {w.text}

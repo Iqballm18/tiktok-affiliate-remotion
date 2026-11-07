@@ -100,25 +100,25 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
         style={{
           background: palette.paper,
           color: palette.ink,
-          padding: '38px 46px 44px',
-          borderRadius: 30,
+          padding: '24px 32px 28px',
+          borderRadius: 20,
           opacity: Math.min(1, card * 2),
           transform: `translateY(${(1 - card) * -50}px) scale(${0.92 + 0.08 * card})`,
           maxWidth: '100%',
         }}
       >
         {badge ? (
-          <div style={{fontSize: 30, fontWeight: 600, opacity: 0.65, marginBottom: 14}}>
+          <div style={{fontSize: 22, fontWeight: 700, opacity: 0.7, marginBottom: 8}}>
             {badge}
           </div>
         ) : null}
-        <div style={{fontSize: 58, fontWeight: 600, lineHeight: 1.18}}>{line1}</div>
+        <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22}}>{line1}</div>
         <div
           style={{
-            marginTop: 18,
-            fontSize: 84,
+            marginTop: 10,
+            fontSize: 52,
             fontWeight: 900,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             opacity: Math.min(1, hl * 2),
             transform: `translateY(${(1 - hl) * 24}px)`,
           }}
@@ -172,11 +172,11 @@ export const StackSlamHook: React.FC<HookProps> = ({
           ...slam(a, shake(frame, 0), 0),
           background: palette.ink,
           color: palette.paper,
-          fontSize: 70,
+          fontSize: 42,
           fontWeight: 800,
-          lineHeight: 1.12,
-          padding: '24px 38px',
-          borderRadius: 18,
+          lineHeight: 1.15,
+          padding: '14px 22px',
+          borderRadius: 12,
           alignSelf: 'flex-start',
           maxWidth: '100%',
         }}
@@ -188,12 +188,12 @@ export const StackSlamHook: React.FC<HookProps> = ({
           ...slam(b, shake(frame, 9), -1.5),
           background: palette.accent,
           color: palette.accentInk,
-          fontSize: 100,
+          fontSize: 54,
           fontWeight: 900,
-          lineHeight: 1.04,
-          padding: '28px 44px',
-          borderRadius: 22,
-          marginTop: 16,
+          lineHeight: 1.1,
+          padding: '16px 26px',
+          borderRadius: 14,
+          marginTop: 8,
           alignSelf: 'flex-start',
           maxWidth: '100%',
         }}
@@ -231,11 +231,11 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           position: 'relative',
           background: palette.paper,
           color: palette.ink,
-          fontSize: 62,
+          fontSize: 40,
           fontWeight: 700,
-          lineHeight: 1.18,
-          padding: '28px 42px',
-          borderRadius: 24,
+          lineHeight: 1.2,
+          padding: '16px 24px',
+          borderRadius: 14,
           maxWidth: '100%',
           opacity: Math.min(1, first * 2) * (1 - 0.45 * dim),
           transform: `translateX(${(1 - first) * -80}px) scale(${1 - 0.06 * dim})`,
@@ -246,13 +246,13 @@ export const StruckSwapHook: React.FC<HookProps> = ({
         <div
           style={{
             position: 'absolute',
-            left: 22,
-            right: 22,
+            left: 16,
+            right: 16,
             top: '50%',
-            height: 9,
-            marginTop: -4,
+            height: 6,
+            marginTop: -3,
             background: palette.alert,
-            borderRadius: 5,
+            borderRadius: 4,
             transformOrigin: 'left center',
             transform: `scaleX(${strike}) rotate(-1deg)`,
           }}
@@ -260,14 +260,14 @@ export const StruckSwapHook: React.FC<HookProps> = ({
       </div>
       <div
         style={{
-          marginTop: 22,
+          marginTop: 10,
           background: palette.accent,
           color: palette.accentInk,
-          fontSize: 92,
+          fontSize: 52,
           fontWeight: 900,
-          lineHeight: 1.05,
-          padding: '30px 46px',
-          borderRadius: 28,
+          lineHeight: 1.1,
+          padding: '18px 28px',
+          borderRadius: 16,
           maxWidth: '100%',
           opacity: Math.min(1, second * 3),
           transform: `scale(${0.7 + 0.3 * second}) rotate(${-1.5 * second}deg)`,
@@ -303,20 +303,20 @@ export const TiltCardHook: React.FC<HookProps> = ({
 
   return (
     <Frame durationInFrames={durationInFrames}>
-      <div style={{position: 'relative', maxWidth: '100%', paddingTop: badge ? 30 : 0}}>
+      <div style={{position: 'relative', maxWidth: '100%', paddingTop: badge ? 20 : 0}}>
         {badge ? (
           <div
             style={{
               position: 'absolute',
               top: 0,
-              left: 34,
+              left: 24,
               zIndex: 2,
               background: palette.accent,
               color: palette.accentInk,
-              fontSize: 32,
+              fontSize: 22,
               fontWeight: 800,
-              padding: '8px 22px',
-              borderRadius: 12,
+              padding: '6px 14px',
+              borderRadius: 8,
               transform: `scale(${sticker}) rotate(-4deg)`,
             }}
           >
@@ -327,16 +327,16 @@ export const TiltCardHook: React.FC<HookProps> = ({
           style={{
             background: palette.paper,
             color: palette.ink,
-            padding: '56px 50px 50px',
-            borderRadius: 28,
+            padding: '26px 30px 26px',
+            borderRadius: 18,
             opacity: Math.min(1, p * 1.6),
             filter: `blur(${(1 - Math.min(1, p)) * 14}px)`,
             transform: `perspective(1400px) rotateX(${(1 - p) * 16}deg) rotateY(${-5 + (1 - p) * -10}deg) scale(${push})`,
             transformOrigin: 'left center',
           }}
         >
-          <div style={{fontSize: 54, fontWeight: 600, lineHeight: 1.2}}>{line1}</div>
-          <div style={{marginTop: 20, fontSize: 82, fontWeight: 900, lineHeight: 1.1}}>
+          <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22}}>{line1}</div>
+          <div style={{marginTop: 10, fontSize: 52, fontWeight: 900, lineHeight: 1.15}}>
             <span
               style={{
                 backgroundImage: `linear-gradient(${palette.accent}, ${palette.accent})`,
@@ -382,25 +382,25 @@ export const MaskWipeHook: React.FC<HookProps> = ({
           style={{
             background: palette.ink,
             color: palette.paper,
-            fontSize: 64,
+            fontSize: 40,
             fontWeight: 700,
-            lineHeight: 1.15,
-            padding: '22px 36px',
+            lineHeight: 1.2,
+            padding: '14px 22px',
             transform: `translateY(${(1 - rise1) * 105}%)`,
           }}
         >
           {line1}
         </div>
       </div>
-      <div style={{overflow: 'hidden', borderRadius: 8, marginTop: 12, maxWidth: '100%'}}>
+      <div style={{overflow: 'hidden', borderRadius: 8, marginTop: 8, maxWidth: '100%'}}>
         <div
           style={{
             background: palette.accent,
             color: palette.accentInk,
-            fontSize: 92,
+            fontSize: 52,
             fontWeight: 900,
-            lineHeight: 1.05,
-            padding: '26px 40px',
+            lineHeight: 1.1,
+            padding: '16px 26px',
             transform: `translateY(${(1 - rise2) * 105}%)`,
             clipPath: `inset(0 ${(1 - wipe) * 100}% 0 0)`,
           }}

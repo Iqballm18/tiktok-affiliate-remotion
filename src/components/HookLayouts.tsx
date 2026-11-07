@@ -1550,7 +1550,7 @@ const TypeStack: React.FC<HeadlineLayoutProps> = (p) => {
                     easing={p.theme.easings.outExpo}
                     style={{
                         fontFamily: FONT.grotesk,
-                        fontSize: isHook ? 100 : 86,
+                        fontSize: isHook ? 64 : 54,
                         fontWeight: 800,
                         letterSpacing: -3,
                         lineHeight: 0.98,
@@ -1910,7 +1910,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
                     <div
                         style={{
                             fontFamily: FONT.serifItalic,
-                            fontSize: isHook ? 108 : 92,
+                            fontSize: isHook ? 66 : 56,
                             fontWeight: 400,
                             letterSpacing: -1.4,
                             lineHeight: 0.98,
@@ -1977,7 +1977,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
                         <span
                             style={{
                                 fontFamily: FONT.serifItalic,
-                                fontSize: isHook ? 82 : 72,
+                                fontSize: isHook ? 56 : 48,
                                 fontWeight: 400,
                                 letterSpacing: -1.2,
                                 lineHeight: 1.02,
@@ -2048,7 +2048,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
                 <div
                     style={{
                         fontFamily: FONT.serifItalic,
-                        fontSize: isHook ? 118 : 100,
+                        fontSize: isHook ? 68 : 58,
                         fontWeight: 400,
                         letterSpacing: -1.5,
                         lineHeight: 0.98,

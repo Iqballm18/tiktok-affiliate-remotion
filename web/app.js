@@ -735,6 +735,60 @@
         v2: { themeStyle: 'pastel', cardStyle: 'quiet_serif', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'plate', captionVariant: 'v2', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v2' },
         v3: { themeStyle: 'minimal', cardStyle: 'receipt', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'marker_sweep', captionVariant: 'v2', hookTransition: 'split_wipe', clipTransition: 'shutter', transitionVariant: 'v3' }
       }
+    },
+    beauty_skincare: {
+      palette: 'pastel_rose', hookStyle: 'marker_highlight', subtitleStyle: 'highlighter_bar',
+      themeStyle: 'pastel_rose', cardStyle: 'marker_highlight', hookVariant: 'v1', badgeStyle: 'marker', captionStyle: 'highlighter_bar', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'pastel_rose', hookStyle: 'marker_highlight', subtitleStyle: 'highlighter_bar', themeStyle: 'pastel_rose', cardStyle: 'marker_highlight', hookVariant: 'v1', badgeStyle: 'marker', captionStyle: 'highlighter_bar', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1' },
+        v2: { palette: 'fresh_mint', hookStyle: 'marker_highlight', subtitleStyle: 'karaoke_block', themeStyle: 'fresh_mint', cardStyle: 'marker_highlight', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'karaoke_block', captionVariant: 'v2', hookTransition: 'iris_pop', clipTransition: 'light_leak', transitionVariant: 'v2' },
+        v3: { palette: 'pastel_rose', hookStyle: 'tilt_card', subtitleStyle: 'highlighter_bar', themeStyle: 'pastel_rose', cardStyle: 'tilt_card', hookVariant: 'v3', badgeStyle: 'sticker', captionStyle: 'highlighter_bar', captionVariant: 'v3', hookTransition: 'whip_pan', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    flash_sale_viral: {
+      palette: 'sale_yellow', hookStyle: 'stack_slam', subtitleStyle: 'pop_scale',
+      themeStyle: 'sale_yellow', cardStyle: 'stack_slam', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'pop_scale', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'sale_yellow', hookStyle: 'stack_slam', subtitleStyle: 'pop_scale', themeStyle: 'sale_yellow', cardStyle: 'stack_slam', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'pop_scale', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v1' },
+        v2: { palette: 'sale_yellow', hookStyle: 'stack_slam', subtitleStyle: 'karaoke_block', themeStyle: 'sale_yellow', cardStyle: 'stack_slam', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'karaoke_block', captionVariant: 'v2', hookTransition: 'tilt_whip', clipTransition: 'zoom_flash', transitionVariant: 'v2' },
+        v3: { palette: 'sale_yellow', hookStyle: 'struck_swap', subtitleStyle: 'pop_scale', themeStyle: 'sale_yellow', cardStyle: 'struck_swap', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'pop_scale', captionVariant: 'v3', hookTransition: 'split_wipe', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    problem_solution: {
+      palette: 'ink_mono', hookStyle: 'struck_swap', subtitleStyle: 'fill_sweep',
+      themeStyle: 'minimal', cardStyle: 'struck_swap', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'fill_sweep', captionVariant: 'v1', hookTransition: 'split_wipe', clipTransition: 'whip_pan', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'ink_mono', hookStyle: 'struck_swap', subtitleStyle: 'fill_sweep', themeStyle: 'minimal', cardStyle: 'struck_swap', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'fill_sweep', captionVariant: 'v1', hookTransition: 'split_wipe', clipTransition: 'whip_pan', transitionVariant: 'v1' },
+        v2: { palette: 'fresh_mint', hookStyle: 'struck_swap', subtitleStyle: 'karaoke_block', themeStyle: 'fresh_mint', cardStyle: 'struck_swap', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'karaoke_block', captionVariant: 'v2', hookTransition: 'iris_pop', clipTransition: 'push_up', transitionVariant: 'v2' },
+        v3: { palette: 'pastel_rose', hookStyle: 'struck_swap', subtitleStyle: 'highlighter_bar', themeStyle: 'pastel_rose', cardStyle: 'struck_swap', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'highlighter_bar', captionVariant: 'v3', hookTransition: 'tilt_whip', clipTransition: 'light_leak', transitionVariant: 'v3' }
+      }
+    },
+    health_supplement: {
+      palette: 'fresh_mint', hookStyle: 'tilt_card', subtitleStyle: 'karaoke_block',
+      themeStyle: 'fresh_mint', cardStyle: 'tilt_card', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'karaoke_block', captionVariant: 'v1', hookTransition: 'iris_pop', clipTransition: 'blur_zoom', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'fresh_mint', hookStyle: 'tilt_card', subtitleStyle: 'karaoke_block', themeStyle: 'fresh_mint', cardStyle: 'tilt_card', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'karaoke_block', captionVariant: 'v1', hookTransition: 'iris_pop', clipTransition: 'blur_zoom', transitionVariant: 'v1' },
+        v2: { palette: 'fresh_mint', hookStyle: 'marker_highlight', subtitleStyle: 'highlighter_bar', themeStyle: 'fresh_mint', cardStyle: 'marker_highlight', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'highlighter_bar', captionVariant: 'v2', hookTransition: 'light_leak', clipTransition: 'push_up', transitionVariant: 'v2' },
+        v3: { palette: 'fresh_mint', hookStyle: 'tilt_card', subtitleStyle: 'sticker_label', themeStyle: 'fresh_mint', cardStyle: 'tilt_card', hookVariant: 'v3', badgeStyle: 'sticker', captionStyle: 'sticker_label', captionVariant: 'v3', hookTransition: 'whip_pan', clipTransition: 'light_leak', transitionVariant: 'v3' }
+      }
+    },
+    gadget_tech: {
+      palette: 'tech_blue', hookStyle: 'mask_wipe', subtitleStyle: 'sticker_label',
+      themeStyle: 'tech_blue', cardStyle: 'mask_wipe', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'sticker_label', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'shutter', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'tech_blue', hookStyle: 'mask_wipe', subtitleStyle: 'sticker_label', themeStyle: 'tech_blue', cardStyle: 'mask_wipe', hookVariant: 'v1', badgeStyle: 'alert', captionStyle: 'sticker_label', captionVariant: 'v1', hookTransition: 'zoom_flash', clipTransition: 'shutter', transitionVariant: 'v1' },
+        v2: { palette: 'tech_blue', hookStyle: 'stack_slam', subtitleStyle: 'pop_scale', themeStyle: 'tech_blue', cardStyle: 'stack_slam', hookVariant: 'v2', badgeStyle: 'alert', captionStyle: 'pop_scale', captionVariant: 'v2', hookTransition: 'split_wipe', clipTransition: 'tilt_whip', transitionVariant: 'v2' },
+        v3: { palette: 'tech_blue', hookStyle: 'mask_wipe', subtitleStyle: 'karaoke_block', themeStyle: 'tech_blue', cardStyle: 'mask_wipe', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'karaoke_block', captionVariant: 'v3', hookTransition: 'glitch_stamp', clipTransition: 'whip_pan', transitionVariant: 'v3' }
+      }
+    },
+    fashion_lifestyle: {
+      palette: 'pastel_rose', hookStyle: 'mask_wipe', subtitleStyle: 'typewriter_band',
+      themeStyle: 'pastel_rose', cardStyle: 'mask_wipe', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'typewriter_band', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'light_leak', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'pastel_rose', hookStyle: 'mask_wipe', subtitleStyle: 'typewriter_band', themeStyle: 'pastel_rose', cardStyle: 'mask_wipe', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'typewriter_band', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'light_leak', transitionVariant: 'v1' },
+        v2: { palette: 'ink_mono', hookStyle: 'tilt_card', subtitleStyle: 'typewriter_band', themeStyle: 'minimal', cardStyle: 'tilt_card', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'typewriter_band', captionVariant: 'v2', hookTransition: 'blur_zoom', clipTransition: 'shutter', transitionVariant: 'v2' },
+        v3: { palette: 'pastel_rose', hookStyle: 'marker_highlight', subtitleStyle: 'fill_sweep', themeStyle: 'pastel_rose', cardStyle: 'marker_highlight', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'fill_sweep', captionVariant: 'v3', hookTransition: 'light_leak', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
     }
   };
 
@@ -970,10 +1024,21 @@
     pastel: '#FF4D6D',
     editorial: '#E2FF32',
     flash_sale: '#FF2E54',
-    minimal: '#F2A93B'
+    minimal: '#F2A93B',
+    pastel_rose: '#F2A7BD',
+    fresh_mint: '#8FD6B5',
+    sale_yellow: '#FFD23F',
+    tech_blue: '#3D6DF2',
+    ink_mono: '#E8E3D5'
   };
 
   const CC_PRESETS_META = [
+    { id: 'beauty_skincare', title: 'Flat: Skincare & Bumil', sub: 'Marker Highlight • Highlighter Bar • Pastel Rose' },
+    { id: 'flash_sale_viral', title: 'Flat: Flash Sale Viral', sub: 'Stack Slam • Pop Scale • Sale Yellow' },
+    { id: 'problem_solution', title: 'Flat: Problem Solution', sub: 'Struck Swap • Fill Sweep • Ink Mono' },
+    { id: 'health_supplement', title: 'Flat: Review & Vitamin', sub: 'Tilt Card 3D • Karaoke Block • Fresh Mint' },
+    { id: 'gadget_tech', title: 'Flat: Gadget & Tech', sub: 'Mask Wipe • Sticker Label • Tech Blue' },
+    { id: 'fashion_lifestyle', title: 'Flat: Fashion Editorial', sub: 'Mask Wipe • Typewriter Band • Pastel Rose' },
     { id: 'skincare', title: 'Skincare & Clean', sub: 'Quiet Serif • Paper Pocket • Kinetic Pill' },
     { id: 'gadget', title: 'Gadget & Tech', sub: 'Label Tape • Cyber Spec • Strike Box' },
     { id: 'flash_sale', title: 'Flash Sale Promo', sub: 'Thermal Struk • Kupon • White Catalog' },
@@ -985,6 +1050,11 @@
   ];
 
   const CC_HOOKS_CATALOG = [
+    { style: 'marker_highlight', ver: 'v1', title: 'Marker Highlight · Flat', sub: 'Kartu kertas + stabilo tergambar (skincare/bumil)' },
+    { style: 'stack_slam', ver: 'v1', title: 'Stack Slam · Flat', sub: 'Dua plat menghantam layar bergantian + getar' },
+    { style: 'struck_swap', ver: 'v1', title: 'Struck Swap · Flat', sub: 'Masalah dicoret ➔ solusi menggantikan' },
+    { style: 'tilt_card', ver: 'v1', title: 'Tilt Card · Flat', sub: 'Kartu blur-in dengan tilt 3D + badge stiker' },
+    { style: 'mask_wipe', ver: 'v1', title: 'Mask Wipe · Flat', sub: 'Teks naik dari garis potong + plat menyapu' },
     { style: 'sticky_note', ver: 'v1', title: 'Sticky Note · v1', sub: 'Post-It kuning klasik dengan selotip atas' },
     { style: 'sticky_note', ver: 'v2', title: 'Grid Memo Pin · v2', sub: 'Kertas kotak + paku pin 3D + sapuan stabilo' },
     { style: 'sticky_note', ver: 'v3', title: 'Dual Layered Note · v3', sub: 'Dua kartu catatan bertumpuk kontras' },
@@ -1006,6 +1076,12 @@
   ];
 
   const CC_CAPTIONS_CATALOG = [
+    { style: 'karaoke_block', ver: 'v1', title: 'Karaoke Block · Flat', sub: 'Kata aktif jadi blok warna solid' },
+    { style: 'pop_scale', ver: 'v1', title: 'Pop Scale · Flat', sub: 'Satu kata besar memantul ritme cepat' },
+    { style: 'highlighter_bar', ver: 'v1', title: 'Highlighter Bar · Flat', sub: 'Plat gelap + stabilo menyapu kata aktif' },
+    { style: 'fill_sweep', ver: 'v1', title: 'Fill Sweep · Flat', sub: 'Warna mengisi kata sesuai durasi suara' },
+    { style: 'typewriter_band', ver: 'v1', title: 'Typewriter Band · Flat', sub: 'Pita tipis + serif miring editorial' },
+    { style: 'sticker_label', ver: 'v1', title: 'Sticker Label · Flat', sub: 'Label kertas bergaris miring bergantian' },
     { style: 'outline_pop', ver: 'v1', title: 'Outline Pop · v1', sub: 'Kontur hitam tegas & lompatan klasik FYP' },
     { style: 'outline_pop', ver: 'v2', title: 'Kinetic Bounce 3D · v2', sub: 'Kata aktif melompat miring + bayangan blok' },
     { style: 'outline_pop', ver: 'v3', title: 'Dot Indicator · v3', sub: 'Bar indikator menyala di atas kata aktif' },
@@ -1034,6 +1110,21 @@
   ];
 
   function buildHookStageHtml(style, ver) {
+    if (style === 'marker_highlight') {
+      return `<div class="cc-anim-marker-highlight"><div style="font-size:7.5px;color:#9A3412;font-weight:700;">✦ Skincare & Bumil</div><div style="font-size:8px;color:#333;">Serum Wajah</div><div class="cc-marker-hl-line">Glow Bebas Kusam</div></div>`;
+    }
+    if (style === 'stack_slam') {
+      return `<div class="cc-anim-stack-slam"><div class="cc-slam-plate1">FLASH SALE VIRAL</div><div class="cc-slam-plate2">HEMAT SAMPAI 70%!</div></div>`;
+    }
+    if (style === 'struck_swap') {
+      return `<div class="cc-anim-struck-swap"><div class="cc-struck-old">Cara Lama Bikin Ribet</div><div class="cc-struck-new">Ini Solusi Praktisnya! ➔</div></div>`;
+    }
+    if (style === 'tilt_card') {
+      return `<div class="cc-anim-tilt-card"><span class="cc-tilt-badge">BEST SELLER</span><div style="font-size:8px;color:#555;">Review Jujur</div><div style="font-size:9px;font-weight:800;color:#111;">Hasil Terasa Cepat</div></div>`;
+    }
+    if (style === 'mask_wipe') {
+      return `<div class="cc-anim-mask-wipe"><div style="font-size:7.5px;color:#94A3B8;">TECH & FASHION</div><div class="cc-mask-text">GAYA TERBARU 2026</div></div>`;
+    }
     const key = `${style}-${ver}`;
     switch (key) {
       case 'sticky_note-v1':
@@ -1077,6 +1168,24 @@
   }
 
   function buildCaptionStageHtml(style, ver) {
+    if (style === 'karaoke_block') {
+      return `<div class="cc-sub-row cc-sub-karaoke-block"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div>`;
+    }
+    if (style === 'pop_scale') {
+      return `<div class="cc-sub-row cc-sub-pop-scale"><span class="cc-sub-word" style="font-size:11px;color:var(--cc-accent);font-weight:900;">LEMBAP!</span></div>`;
+    }
+    if (style === 'highlighter_bar') {
+      return `<div class="cc-sub-highlighter-bar"><div class="cc-sub-row"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div></div>`;
+    }
+    if (style === 'fill_sweep') {
+      return `<div class="cc-sub-row cc-sub-fill-sweep"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div>`;
+    }
+    if (style === 'typewriter_band') {
+      return `<div class="cc-sub-typewriter-band"><div class="cc-sub-row"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div></div>`;
+    }
+    if (style === 'sticker_label') {
+      return `<div class="cc-sub-sticker-label"><div class="cc-sub-row"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div></div>`;
+    }
     const clsMap = {
       'outline_pop-v1': 'cc-sub-outline-v1',
       'outline_pop-v2': 'cc-sub-outline-v2',
@@ -1125,10 +1234,15 @@
     const activeHookTrans = el.selectHookTransition?.value || 'zoom_flash';
     const activeClipTrans = el.selectClipTransition?.value || 'auto';
     const activeTransVer = el.selectTransitionVariant?.value || 'v1';
+    const activePalette = el.selectPalette?.value || '';
+    const activeFlatHook = el.selectHookStyle?.value || '';
+    const activeFlatSub = el.selectSubtitleStyle?.value || '';
 
     if (summaryEl) {
       if (activePreset) {
         summaryEl.textContent = `Preset: ${activePreset} (${activePresetVer})`;
+      } else if (activeFlatHook || activeFlatSub) {
+        summaryEl.textContent = `Hook: ${activeFlatHook || activeCard} · Sub: ${activeFlatSub || activeCap || 'auto'}${activePalette ? ' · ' + activePalette : ''}`;
       } else {
         summaryEl.textContent = `Hook: ${activeCard} (${activeHookVer}) · Sub: ${activeCap || 'auto'} (${activeCapVer})`;
       }
@@ -1213,13 +1327,20 @@
         `;
       }).join('');
     } else if (ccState.tab === 'hooks') {
-      const items = CC_HOOKS_CATALOG.filter(item => ccState.verFilter === 'all' || item.ver === ccState.verFilter);
+      const items = CC_HOOKS_CATALOG.filter(item => {
+        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(item.style);
+        if (isFlat) return true;
+        return ccState.verFilter === 'all' || item.ver === ccState.verFilter;
+      });
       grid.innerHTML = items.map(item => {
-        const isSelected = activeCard === item.style && activeHookVer === item.ver;
+        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(item.style);
+        const isSelected = isFlat
+          ? (activeFlatHook === item.style)
+          : (!activeFlatHook && activeCard === item.style && activeHookVer === item.ver);
         return `
           <button type="button" class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-hook" data-style="${item.style}" data-ver="${item.ver}">
             <div class="cc-stage">
-              <span class="cc-stage-badge">${item.ver.toUpperCase()}</span>
+              <span class="cc-stage-badge">${isFlat ? 'FLAT' : item.ver.toUpperCase()}</span>
               ${buildHookStageHtml(item.style, item.ver)}
             </div>
             <div class="cc-card-meta">
@@ -1230,13 +1351,20 @@
         `;
       }).join('');
     } else if (ccState.tab === 'captions') {
-      const items = CC_CAPTIONS_CATALOG.filter(item => ccState.verFilter === 'all' || item.ver === ccState.verFilter);
+      const items = CC_CAPTIONS_CATALOG.filter(item => {
+        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(item.style);
+        if (isFlat) return true;
+        return ccState.verFilter === 'all' || item.ver === ccState.verFilter;
+      });
       grid.innerHTML = items.map(item => {
-        const isSelected = (activeCap || 'outline_pop') === item.style && activeCapVer === item.ver;
+        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(item.style);
+        const isSelected = isFlat
+          ? (activeFlatSub === item.style)
+          : (!activeFlatSub && (activeCap || 'outline_pop') === item.style && activeCapVer === item.ver);
         return `
           <button type="button" class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-caption" data-style="${item.style}" data-ver="${item.ver}">
             <div class="cc-stage">
-              <span class="cc-stage-badge">${item.ver.toUpperCase()}</span>
+              <span class="cc-stage-badge">${isFlat ? 'FLAT' : item.ver.toUpperCase()}</span>
               ${buildCaptionStageHtml(item.style, item.ver)}
             </div>
             <div class="cc-card-meta">
@@ -1317,7 +1445,12 @@
       const sw = e.target.closest('.cc-swatch');
       if (!sw || !sw.dataset.theme) return;
       live.armed = true;
-      syncSelectEl(el.selectThemeStyle, sw.dataset.theme);
+      const themeVal = sw.dataset.theme;
+      syncSelectEl(el.selectThemeStyle, themeVal);
+      const isFlatPalette = ['pastel_rose', 'fresh_mint', 'sale_yellow', 'tech_blue', 'ink_mono'].includes(themeVal);
+      if (isFlatPalette) {
+        syncSelectEl(el.selectPalette, themeVal);
+      }
       syncFormToVariant();
       updateThemeVisualPreview();
       triggerAutoSave();
@@ -1371,12 +1504,26 @@
         applySelectedPresetToFields();
       } else if (action === 'pick-hook') {
         syncSelectEl(el.selectPreset, '');
-        syncSelectEl(el.selectCardStyle, card.dataset.style);
-        syncSelectEl(el.selectHookVariant, card.dataset.ver);
+        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(card.dataset.style);
+        if (isFlat) {
+          syncSelectEl(el.selectHookStyle, card.dataset.style);
+          if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
+        } else {
+          syncSelectEl(el.selectHookStyle, '');
+          syncSelectEl(el.selectCardStyle, card.dataset.style);
+          syncSelectEl(el.selectHookVariant, card.dataset.ver);
+        }
       } else if (action === 'pick-caption') {
         syncSelectEl(el.selectPreset, '');
-        syncSelectEl(el.selectCaptionStyle, card.dataset.style);
-        syncSelectEl(el.selectCaptionVariant, card.dataset.ver);
+        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(card.dataset.style);
+        if (isFlat) {
+          syncSelectEl(el.selectSubtitleStyle, card.dataset.style);
+          if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
+        } else {
+          syncSelectEl(el.selectSubtitleStyle, '');
+          syncSelectEl(el.selectCaptionStyle, card.dataset.style);
+          syncSelectEl(el.selectCaptionVariant, card.dataset.ver);
+        }
       } else if (action === 'pick-transition') {
         if (ccState.transTarget === 'hook') {
           syncSelectEl(el.selectHookTransition, card.dataset.trans);
@@ -2273,6 +2420,9 @@
     if (!presetBase) return;
     const ver = el.selectPresetVariant?.value || 'v1';
     const cfg = presetBase.versions?.[ver] || presetBase;
+    syncSelectEl(el.selectPalette, cfg.palette || '');
+    syncSelectEl(el.selectHookStyle, cfg.hookStyle || '');
+    syncSelectEl(el.selectSubtitleStyle, cfg.subtitleStyle || '');
     syncSelectEl(el.selectThemeStyle, cfg.themeStyle);
     syncSelectEl(el.selectCardStyle, cfg.cardStyle);
     syncSelectEl(el.selectHookVariant, cfg.hookVariant || ver);

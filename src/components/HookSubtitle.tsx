@@ -186,7 +186,7 @@ const ring = (px: number, color = 'rgba(0, 0, 0, 0.92)'): string =>
         .map(([x, y]) => `${x}px ${y}px 0 ${color}`)
         .join(', ');
 
-const FONT_SIZE = 64;
+const FONT_SIZE = 52;
 
 const baseWordStyle: React.CSSProperties = {
     display: 'inline-block',
