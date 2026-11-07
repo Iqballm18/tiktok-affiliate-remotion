@@ -24,7 +24,7 @@ DURASI ASLI VIDEO: [TULIS DURASI VIDEO ANDA DI SINI, contoh: 95 detik (01:35)]
 
 INFORMASI EVENT PROMO (OPSIONAL - TANGGAL KEMBAR / GAJIAN):
 MODE EVENT: [TULIS JIKA LAGI EVENT: contoh: 11.11 / Tanggal Kembar / Payday 25 / Harbolnas 12.12 / Kosongkan jika hari biasa]
-*(Jika bagian ini diisi, OTOMATIS arahkan Badge, Hook, Spec, dan CTA ke sudut pandang FOMO promo diskon, voucher event, atau bundle hemat. Untuk desain, Variasi 2 wajib memakai receipt + flash_sale + marker_sweep, lihat bagian PEMILIHAN DESAIN OTOMATIS).*
+*(Jika bagian ini diisi, OTOMATIS arahkan Badge, Hook, Spec, dan CTA ke sudut pandang FOMO promo diskon, voucher event, atau bundle hemat. Untuk desain, Versi 2 wajib memakai receipt + flash_sale + marker_sweep, lihat bagian PEMILIHAN DESAIN OTOMATIS).*
 
 ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
 1. SEMUA nilai "startSec" dan "endSec" HARUS berada di dalam batas durasi video asli (0 sampai <durasi_maksimal>)!
@@ -79,18 +79,22 @@ LANGKAH 4 - PILIH themeStyle (warna progress bar dan karakter SFX):
 - `"minimal"`: rumah tangga, fashion, lifestyle, luxury, dan kategori lain
 
 LANGKAH 5 - GAYA FLAT MOTION-GRAPHICS (SANGAT DIREKOMENDASIKAN):
-Sertakan 3 field modern ini di setiap varian JSON:
-1. "palette" (5 Palet Flat Anti-Slop):
-   - `"pastel_rose"`: Skincare, kecantikan, bumil/busui, fashion wanita
-   - `"fresh_mint"`: Suplemen, vitamin, kesehatan, herbal, kesegaran
-   - `"sale_yellow"`: Flash sale, produk viral, promo tanggal kembar, diskon
-   - `"tech_blue"`: Gadget, elektronik, otomotif, perabot modern
-   - `"ink_mono"`: Editorial, problem-solution, luxury, monokrom
+Sertakan 3 field modern ini di setiap versi JSON:
+1. "palette" (Pilihan Palet Warna Terintegrasi):
+   - `"editorial"`: Neon Lime / Hijau Stabilo (Gadget, teknologi, tools, modern, visual berenergi tinggi)
+   - `"fresh_mint"`: Hijau Mint Segar (Suplemen, vitamin, kesehatan, herbal, kesegaran)
+   - `"sale_yellow"`: Kuning Promo (Flash sale, produk viral, promo tanggal kembar, diskon hemat)
+   - `"pastel_rose"`: Soft Rose Pink (Skincare, kecantikan, bumil/busui, fashion wanita)
+   - `"tech_blue"`: Biru Teknologi (Gadget, elektronik, otomotif, perabot modern)
+   - `"flash_sale"`: Crimson Red (Promo gila-gilaan, cuci gudang, urgensi diskon)
+   - `"ink_mono"`: Monokrom / Kertas Elegan (Luxury, lifestyle, editorial santai)
+   - `"pastel"`: Lilac / Ungu Pastel Lembut (Skincare estetik, produk relaksasi, wewangian)
+   - `"minimal"`: Dark Zinc Clean (Minimalis modern, premium aesthetic, sleek hardware)
 2. "hookStyle" (5 Animasi Hook Flat):
    - `"marker_highlight"`: Kartu kertas + stabilo tergambar (Skincare, bumil/busui, kebutuhan harian)
    - `"stack_slam"`: Dua plat menghantam layar bergantian + getar (Flash sale, produk viral)
    - `"struck_swap"`: Masalah dicoret lalu digantikan solusi (Problem-solution, sebelum/sesudah)
-   - `"tilt_card"`: Kartu blur-in 3D tilt + stiker badge (Review jujur, suplemen, vitamin)
+   - `"tilt_card"`: Kartu 3D tilt dengan stiker badge (Review jujur, suplemen, vitamin)
    - `"mask_wipe"`: Teks naik dari garis potong + plat menyapu (Gadget, fashion, lifestyle)
 3. "subtitleStyle" (6 Subtitle Kata-per-Kata Flat):
    - `"karaoke_block"`: Kata aktif jadi blok warna solid (Default aman segala footage)
@@ -101,9 +105,9 @@ Sertakan 3 field modern ini di setiap varian JSON:
    - `"sticker_label"`: Label bergaris miring bergantian (Review santai, gadget)
 
 ATURAN A/B TESTING DESAIN (`v1` vs `v2`):
-- Variasi 1 (`v1`) dan Variasi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` yang BERBEDA agar visualnya kontras untuk A/B testing!
-- Contoh: Jika Variasi 1 memakai `cardStyle: "sticky_note", hookVariant: "v1"`, maka Variasi 2 bisa memakai `cardStyle: "receipt", hookVariant: "v2"` atau `cardStyle: "type_stack", hookVariant: "v2"`.
-- Jika MODE EVENT diisi: Variasi 2 wajib memakai `cardStyle: "receipt"`, `hookVariant: "v2"` (kupon promo) atau `"v1"` (struk thermal), `themeStyle: "flash_sale"`, `captionStyle: "marker_sweep"`, `captionVariant: "v2"`.
+- Versi 1 (`v1`) dan Versi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` (atau `hookStyle` dan `subtitleStyle`) yang BERBEDA agar visualnya kontras untuk A/B testing!
+- Contoh: Jika Versi 1 memakai `cardStyle: "sticky_note", hookVariant: "v1"` (atau `hookStyle: "marker_highlight"`), maka Versi 2 memakai `cardStyle: "receipt", hookVariant: "v2"` (atau `hookStyle: "tilt_card"`).
+- Jika MODE EVENT diisi: Versi 2 wajib memakai sudut pandang event promo dengan `palette: "sale_yellow"` atau `"flash_sale"`, `hookStyle: "stack_slam"` (atau `cardStyle: "receipt"`).
 - DILARANG memakai cardStyle lama (`unified_glass`, `editorial_minimal`, `creator_aesthetic`, `clean_capsule`, `tiktok_native_ugc`, `top_banner_promo`) kecuali diminta eksplisit.
 
 TULIS "designReason": SATU kalimat (maks 140 karakter) yang menyebut kategori produk dan kondisi footage yang membuat desain itu dipilih. Contoh: "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel yang punya permukaan sendiri."
@@ -172,9 +176,9 @@ ATURAN NASKAH VOICE OVER (VO ELEVENLABS):
 - Durasi pembacaan VO pas 16-22 detik (sekitar 40-55 kata agar pas dengan ritme video TikTok yang energetik).
 - Auto-Looping: Buat kalimat terakhir CTA seolah mengalir kembali ke hook pembuka jika video di-loop.
 
-DUA VARIASI A/B TESTING:
-- Variasi 1 (v1): Sudut pandang "Curhat / Problem-Solving / Social Proof". Desain = pilihan UTAMA dari tabel.
-- Variasi 2 (v2): Sudut pandang "Value & Hemat / First Impression" atau "Event Promo" jika MODE EVENT diisi. Desain = pilihan CADANGAN (atau receipt jika ada event). cardStyle v2 HARUS berbeda dari v1.
+DUA VERSI A/B TESTING:
+- Versi 1 (v1): Sudut pandang "Curhat / Problem-Solving / Social Proof". Desain = pilihan UTAMA dari tabel.
+- Versi 2 (v2): Sudut pandang "Value & Hemat / First Impression" atau "Event Promo" jika MODE EVENT diisi. Desain = pilihan CADANGAN (atau receipt jika ada event). cardStyle v2 HARUS berbeda dari v1.
 - sfxPreset: "beauty" untuk pastel, "tech" untuk editorial, "viral" untuk flash_sale, "minimal" untuk minimal.
 
 PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
@@ -192,9 +196,9 @@ BAGIAN 1: DURASI VIDEO & NASKAH SCRIPT VOICE OVER (UNTUK ELEVENLABS TTS)
 Sebutkan durasi total video yang terdeteksi: "DURASI TOTAL VIDEO: XX detik"
 Sebutkan analisis desain singkat (3 baris): kategori produk, kondisi sepertiga atas layar, dan desain yang dipilih untuk v1 dan v2 beserta alasannya.
 Tuliskan 2 naskah narasi suara yang mengalir, natural, dan persuasif untuk disalin ke ElevenLabs (durasi baca ~15-22 detik):
-- Naskah Variasi 1 (v1 - Simpan audio sebagai "public/voiceover_v1.mp3"):
+- Naskah Versi 1 (v1 - Simpan audio sebagai "public/voiceover_v1.mp3"):
   "..."
-- Naskah Variasi 2 (v2 - Simpan audio sebagai "public/voiceover_v2.mp3"):
+- Naskah Versi 2 (v2 - Simpan audio sebagai "public/voiceover_v2.mp3"):
   "..."
 
 BAGIAN 2: DUA REKOMENDASI CAPTION TIKTOK SINGKAT & PADAT (UNTUK v1 & v2)
@@ -205,10 +209,10 @@ ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT):
 2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-130 karakter).
 3. Struktur standar: [1 Kalimat Hook/Solusi Menarik] + [CTA Singkat ke Keranjang Kuning] + [Tepat 5 Hashtag Relevan & FYP (gabungan niche produk, kata kunci masalah, racuntiktok, belanja di tiktok, & fyp)].
 
-CAPTION POSTINGAN VIDEO 1 (Variasi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
+CAPTION POSTINGAN VIDEO 1 (Versi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
 - Contoh format: "Nyesel baru tau trik ini sekarang! 😭 Cek promonya di keranjang kuning mumpung ready 👇🛒 #racuntiktok #[katakunci] #beliditiktok #tiktokaffiliate #fyp"
 
-CAPTION POSTINGAN VIDEO 2 (Variasi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
+CAPTION POSTINGAN VIDEO 2 (Versi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
 - Contoh format: "Mumpung lagi promo diskon bundle! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #[katakunci] #beliditiktok #fyp"
 
 BAGIAN 3: JSON DATA PRODUK LENGKAP (SIAP IMPORT KE WEB STUDIO)
@@ -242,7 +246,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "showSafeZoneGuide": false,
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
-      "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 1 di sini untuk auto-correct subtitle otomatis di Web Studio",
+      "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 1 di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
       "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Cek promonya di keranjang kuning kiri bawah 👇🛒 #racuntiktok #penyeraplembap #antijamur #beliditiktok #fyp",
       "badgeText": "Ibu-ibu wajib tau",
       "demoBadge": "Demo langsung",
@@ -284,7 +288,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "showSafeZoneGuide": false,
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
-      "voiceOverScript": "Tuliskan seluruh teks naskah voice over variasi 2 (sudut pandang event promo / diskon tanggal kembar) di sini untuk auto-correct subtitle otomatis di Web Studio",
+      "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 2 (sudut pandang event promo / diskon tanggal kembar) di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
       "tiktokCaption": "Mumpung promo diskon bundle lagi jalan! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #diskon1111 #beliditiktok #fyp",
       "badgeText": "Promo 11.11 hari ini",
       "demoBadge": "Bukti nyata",
