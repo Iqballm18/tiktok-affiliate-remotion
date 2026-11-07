@@ -93,6 +93,9 @@
     selectThemeStyle: $('selectThemeStyle'),
     selectCardStyle: $('selectCardStyle'),
     selectHookVariant: $('selectHookVariant'),
+    selectPalette: $('selectPalette'),
+    selectHookStyle: $('selectHookStyle'),
+    selectSubtitleStyle: $('selectSubtitleStyle'),
     selectPreset: $('selectPreset'),
     selectPresetVariant: $('selectPresetVariant'),
     selectCaptionStyle: $('selectCaptionStyle'),
@@ -561,6 +564,9 @@
 
     el.selectThemeStyle.value = v.themeStyle || 'pastel';
     el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
+    if (el.selectPalette) el.selectPalette.value = v.palette || '';
+    if (el.selectHookStyle) el.selectHookStyle.value = v.hookStyle || '';
+    if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = v.subtitleStyle || '';
     if (el.selectHookVariant) el.selectHookVariant.value = v.hookVariant || 'v1';
     if (el.selectPreset) el.selectPreset.value = v.preset || '';
     if (el.selectPresetVariant) el.selectPresetVariant.value = v.presetVariant || 'v1';
@@ -1863,6 +1869,9 @@
       const val = (value || '').trim();
       if (val) v[key] = val; else delete v[key];
     };
+    setOptional('palette', el.selectPalette?.value);
+    setOptional('hookStyle', el.selectHookStyle?.value);
+    setOptional('subtitleStyle', el.selectSubtitleStyle?.value);
     setOptional('preset', el.selectPreset?.value);
     setOptional('presetVariant', el.selectPresetVariant?.value);
     setOptional('hookVariant', el.selectHookVariant?.value);
@@ -2291,6 +2300,56 @@
     syncFormToVariant();
     updateThemeVisualPreview();
     triggerAutoSave();
+  });
+
+  const onFlatStyleChange = () => {
+    syncFormToVariant();
+    updateThemeVisualPreview();
+    triggerAutoSave();
+  };
+  el.selectPalette?.addEventListener('change', onFlatStyleChange);
+  el.selectHookStyle?.addEventListener('change', onFlatStyleChange);
+  el.selectSubtitleStyle?.addEventListener('change', onFlatStyleChange);
+
+  document.querySelectorAll('.btn-flat-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const p = btn.dataset.preset;
+      if (p === 'reset') {
+        if (el.selectPalette) el.selectPalette.value = '';
+        if (el.selectHookStyle) el.selectHookStyle.value = '';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = '';
+      } else if (p === 'beauty_skincare') {
+        if (el.selectPalette) el.selectPalette.value = 'pastel_rose';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'marker_highlight';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'highlighter_bar';
+      } else if (p === 'health_supplement') {
+        if (el.selectPalette) el.selectPalette.value = 'fresh_mint';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'tilt_card';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'karaoke_block';
+      } else if (p === 'flash_sale_viral') {
+        if (el.selectPalette) el.selectPalette.value = 'sale_yellow';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'stack_slam';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'pop_scale';
+      } else if (p === 'problem_solution') {
+        if (el.selectPalette) el.selectPalette.value = 'ink_mono';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'struck_swap';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'fill_sweep';
+      } else if (p === 'gadget_tech') {
+        if (el.selectPalette) el.selectPalette.value = 'tech_blue';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'mask_wipe';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'sticker_label';
+      } else if (p === 'fashion_lifestyle') {
+        if (el.selectPalette) el.selectPalette.value = 'pastel_rose';
+        if (el.selectHookStyle) el.selectHookStyle.value = 'mask_wipe';
+        if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'typewriter_band';
+      }
+      onFlatStyleChange();
+      showToast({
+        type: 'success',
+        title: 'Preset Flat Aktif',
+        message: `Gaya flat ${btn.textContent} aktif pada varian ini.`
+      });
+    });
   });
 
   el.selectPreset?.addEventListener('change', () => {

@@ -78,6 +78,28 @@ LANGKAH 4 - PILIH themeStyle (warna progress bar dan karakter SFX):
 - `"flash_sale"`: promo, event, diskon
 - `"minimal"`: rumah tangga, fashion, lifestyle, luxury, dan kategori lain
 
+LANGKAH 5 - GAYA FLAT MOTION-GRAPHICS (SANGAT DIREKOMENDASIKAN):
+Sertakan 3 field modern ini di setiap varian JSON:
+1. "palette" (5 Palet Flat Anti-Slop):
+   - `"pastel_rose"`: Skincare, kecantikan, bumil/busui, fashion wanita
+   - `"fresh_mint"`: Suplemen, vitamin, kesehatan, herbal, kesegaran
+   - `"sale_yellow"`: Flash sale, produk viral, promo tanggal kembar, diskon
+   - `"tech_blue"`: Gadget, elektronik, otomotif, perabot modern
+   - `"ink_mono"`: Editorial, problem-solution, luxury, monokrom
+2. "hookStyle" (5 Animasi Hook Flat):
+   - `"marker_highlight"`: Kartu kertas + stabilo tergambar (Skincare, bumil/busui, kebutuhan harian)
+   - `"stack_slam"`: Dua plat menghantam layar bergantian + getar (Flash sale, produk viral)
+   - `"struck_swap"`: Masalah dicoret lalu digantikan solusi (Problem-solution, sebelum/sesudah)
+   - `"tilt_card"`: Kartu blur-in 3D tilt + stiker badge (Review jujur, suplemen, vitamin)
+   - `"mask_wipe"`: Teks naik dari garis potong + plat menyapu (Gadget, fashion, lifestyle)
+3. "subtitleStyle" (6 Subtitle Kata-per-Kata Flat):
+   - `"karaoke_block"`: Kata aktif jadi blok warna solid (Default aman segala footage)
+   - `"pop_scale"`: Satu kata besar memantul ritme cepat (Voiceover cepat, produk viral)
+   - `"highlighter_bar"`: Plat gelap + stabilo menyapu kata aktif (Edukatif, penjelasan, skincare)
+   - `"fill_sweep"`: Warna mengisi kata sesuai durasi suara (Storytelling, narasi tenang)
+   - `"typewriter_band"`: Pita tipis + serif miring (Premium, fashion, parfum)
+   - `"sticker_label"`: Label bergaris miring bergantian (Review santai, gadget)
+
 ATURAN A/B TESTING DESAIN (`v1` vs `v2`):
 - Variasi 1 (`v1`) dan Variasi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` yang BERBEDA agar visualnya kontras untuk A/B testing!
 - Contoh: Jika Variasi 1 memakai `cardStyle: "sticky_note", hookVariant: "v1"`, maka Variasi 2 bisa memakai `cardStyle: "receipt", hookVariant: "v2"` atau `cardStyle: "type_stack", hookVariant: "v2"`.
@@ -199,6 +221,9 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
   "variants": {
     "v1": {
       "title": "Problem-Solution & Social Proof",
+      "palette": "pastel_rose",
+      "hookStyle": "marker_highlight",
+      "subtitleStyle": "highlighter_bar",
       "designReason": "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel dengan paku pin & stabilo yang punya permukaan sendiri.",
       "themeStyle": "minimal",
       "cardStyle": "sticky_note",
@@ -238,6 +263,9 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
     },
     "v2": {
       "title": "Event Promo Tanggal Kembar & Flash Sale",
+      "palette": "sale_yellow",
+      "hookStyle": "stack_slam",
+      "subtitleStyle": "pop_scale",
       "designReason": "Ada event 11.11, jadi kupon promo merah dengan garis sobek; subtitle kapsul mengembang + sparkle untuk energi tinggi.",
       "themeStyle": "flash_sale",
       "cardStyle": "receipt",

@@ -22,6 +22,10 @@ import { resolvePreset, resolveVariantVersion, VariantVersion } from './presets'
 import { loadThemeFonts } from './load-theme-fonts';
 import { FONT } from './load-hook-fonts';
 import { Caption } from '@remotion/captions';
+import { AffiliateHook, HookStyleName, HookStyles } from './affiliate-styles/hooks';
+import { AffiliateSubtitles, SubtitleStyleName, SubtitleStyles, toSubWords } from './affiliate-styles/subtitles';
+import { PALETTES, PaletteName, Palette } from './affiliate-styles/tokens';
+import { DEFAULT_PRESET, PRESETS as STYLE_PRESETS } from './affiliate-styles/registry';
 
 // Muat Inter + JetBrains Mono sekali saat bundle dibuka (render tetap menunggu via delayRender).
 loadThemeFonts();
@@ -74,6 +78,12 @@ export const affiliateSchema = z.object({
     preset: z.string().optional(),
     // Versi preset: v1 | v2 | v3.
     presetVariant: z.enum(['v1', 'v2', 'v3']).optional(),
+    // Palet warna flat motion-graphics: pastel_rose | fresh_mint | sale_yellow | tech_blue | ink_mono
+    palette: z.string().optional(),
+    // Gaya animasi hook flat: marker_highlight | stack_slam | struck_swap | tilt_card | mask_wipe
+    hookStyle: z.string().optional(),
+    // Gaya subtitle kata-per-kata flat: karaoke_block | pop_scale | highlighter_bar | fill_sweep | typewriter_band | sticker_label
+    subtitleStyle: z.string().optional(),
     themeStyle: z.string().optional(),
     // Layout hook. Baru: sticky_note | receipt | chat_thread | type_stack | label_tape | quiet_serif
     // (beserta alias spesifik: kinetic_pill, strike_box, white_catalog, comment_reply, grid_memo, paper_pocket, cyber_tape).
@@ -1952,6 +1962,9 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     watermarkText,
     showWatermark,
     watermarkOpacity,
+    palette: paletteProp,
+    hookStyle: hookStyleProp,
+    subtitleStyle: subtitleStyleProp,
     watermarkPosition,
     bgmTrack,
     bgmVolume,
@@ -1986,6 +1999,38 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const { fps } = useVideoConfig();
     // Preset mengisi yang kosong; field eksplisit selalu menang.
     const preset = resolvePreset(presetKey, presetVariant);
+    const flatStylePreset = presetKey && presetKey in STYLE_PRESETS ? STYLE_PRESETS[presetKey as keyof typeof STYLE_PRESETS] : null;
+
+    const useNewHook = Boolean(
+        (hookStyleProp && hookStyleProp in HookStyles) ||
+        (cardStyleProp && cardStyleProp in HookStyles) ||
+        (flatStylePreset && !cardStyleProp)
+    );
+    const finalHookStyle: HookStyleName = (
+        (hookStyleProp && hookStyleProp in HookStyles ? (hookStyleProp as HookStyleName) : null) ||
+        (cardStyleProp && cardStyleProp in HookStyles ? (cardStyleProp as HookStyleName) : null) ||
+        flatStylePreset?.hookStyle ||
+        DEFAULT_PRESET.hookStyle
+    );
+
+    const useNewSubtitle = Boolean(
+        (subtitleStyleProp && subtitleStyleProp in SubtitleStyles) ||
+        (captionStyleProp && captionStyleProp in SubtitleStyles) ||
+        (flatStylePreset && !captionStyleProp)
+    );
+    const finalSubtitleStyle: SubtitleStyleName = (
+        (subtitleStyleProp && subtitleStyleProp in SubtitleStyles ? (subtitleStyleProp as SubtitleStyleName) : null) ||
+        (captionStyleProp && captionStyleProp in SubtitleStyles ? (captionStyleProp as SubtitleStyleName) : null) ||
+        flatStylePreset?.subtitleStyle ||
+        DEFAULT_PRESET.subtitleStyle
+    );
+
+    const finalPaletteName: PaletteName = (
+        (paletteProp && paletteProp in PALETTES ? (paletteProp as PaletteName) : null) ||
+        flatStylePreset?.palette ||
+        DEFAULT_PRESET.palette
+    );
+    const finalPalette: Palette = PALETTES[finalPaletteName] ?? PALETTES.pastel_rose;
     const themeStyle = themeStyleProp ?? preset?.themeStyle;
     const cardStyle = cardStyleProp ?? preset?.cardStyle;
     const hookVariant: VariantVersion = resolveVariantVersion(hookVariantProp ?? preset?.hookVariant);
@@ -2340,18 +2385,29 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             <Sequence durationInFrames={hookDuration}>
                 {/* Sembunyikan headline card jika klip YouTube podcast (unmuteHook: true) agar wajah narasumber tidak terpotong */}
                 {(showHookHeadline ?? !unmuteHook) && (
-                    <EditorialHeadline
-                        badge={badgeText}
-                        line1={hookLine1}
-                        highlightLine={hookHighlight}
-                        durationInFrames={hookDuration}
-                        variant="hook"
-                        theme={theme}
-                        cardStyle={cardStyle}
-                        hookVariant={hookVariant}
-                        badgeStyle={badgeStyle}
-                        urgencyTag={urgencyTag}
-                    />
+                    useNewHook ? (
+                        <AffiliateHook
+                            variant={finalHookStyle}
+                            line1={hookLine1}
+                            highlight={hookHighlight}
+                            badge={badgeText}
+                            palette={finalPalette}
+                            durationInFrames={hookDuration}
+                        />
+                    ) : (
+                        <EditorialHeadline
+                            badge={badgeText}
+                            line1={hookLine1}
+                            highlightLine={hookHighlight}
+                            durationInFrames={hookDuration}
+                            variant="hook"
+                            theme={theme}
+                            cardStyle={cardStyle}
+                            hookVariant={hookVariant}
+                            badgeStyle={badgeStyle}
+                            urgencyTag={urgencyTag}
+                        />
+                    )
                 )}
                 {(hookCaptions || hookSubtitle || (hookSubtitles && hookSubtitles.length > 0)) && (
                     <HookSubtitle
@@ -2423,20 +2479,28 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     )}
                     name="VoiceOverCaptions"
                 >
-                    <HookSubtitle
-                        captions={voiceOverCaptions as Caption[]}
-                        durationInFrames={Math.max(
-                            1,
-                            totalDurationInFrames - voStartFrame
-                        )}
-                        theme={theme}
-                        karaokeHighlight={karaokeHighlight}
-                        captionStyle={captionStyle}
-                        captionVariant={captionVariant}
-                        // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
-                        liftFromFrame={ctaStartFrame - voStartFrame}
-                        liftPx={CAPTION_LIFT_IN_CTA}
-                    />
+                    {useNewSubtitle ? (
+                        <AffiliateSubtitles
+                            variant={finalSubtitleStyle}
+                            words={toSubWords(voiceOverCaptions)}
+                            palette={finalPalette}
+                        />
+                    ) : (
+                        <HookSubtitle
+                            captions={voiceOverCaptions as Caption[]}
+                            durationInFrames={Math.max(
+                                1,
+                                totalDurationInFrames - voStartFrame
+                            )}
+                            theme={theme}
+                            karaokeHighlight={karaokeHighlight}
+                            captionStyle={captionStyle}
+                            captionVariant={captionVariant}
+                            // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
+                            liftFromFrame={ctaStartFrame - voStartFrame}
+                            liftPx={CAPTION_LIFT_IN_CTA}
+                        />
+                    )}
                 </Sequence>
             )}
 

@@ -5,12 +5,21 @@ import {
   calculateAffiliateMetadata,
   defaultAffiliateProps,
 } from "./AffiliateVideo";
+import { StyleGallery, GALLERY_DURATION } from "./affiliate-styles/StyleGallery";
 
 // Each <Composition> is an entry in the sidebar!
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="StyleGallery"
+        component={StyleGallery}
+        durationInFrames={GALLERY_DURATION}
+        fps={30}
+        width={1080}
+        height={1920}
+      />
       <Composition
         id="TikTokAffiliate"
         component={AffiliateVideo}
