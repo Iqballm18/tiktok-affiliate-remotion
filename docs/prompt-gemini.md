@@ -39,11 +39,21 @@ ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
    - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail botol/kemasan di paruh kedua video produk (~7-8s, contoh: 50 s/d 58).
    - Klip 4 (Babak 4: CTA Keranjang Kuning): Momen closing kemasan utuh SEBELUM video produk berakhir (~5-6s, contoh: 86 s/d 93 dari video 95s).
    * Total gabungan durasi 4 babak berkisar 24-28 detik.
-4. FORMAT OBJEK KLIP:
-   - HANYA berisi: { "startSec": number, "endSec": number }
-   - JANGAN cantumkan "src" di dalam objek clips! File video dipilih langsung oleh pengguna secara visual di Web Studio Remotion (bisa memilih video berbeda per babak di tab Storyboard).
+4. FORMAT OBJEK KLIP (DUKUNGAN 1 VIDEO MAUPUN 2 VIDEO LANGSUNG):
+   - Jika HANYA 1 video diunggah:
+     { "startSec": number, "endSec": number }
+   - Jika 2 VIDEO DIUNGGAH (Multi-Footage: Video 1 & Video 2):
+     Sertakan "videoIndex": 1 atau "videoIndex": 2 di dalam setiap objek klip (atau cantumkan nama file aslinya di field "src").
+     Contoh Klip Multi-Video:
+     [
+       { "startSec": 0, "endSec": 6, "videoIndex": 1 },
+       { "startSec": 20, "endSec": 28, "videoIndex": 2 },
+       { "startSec": 50, "endSec": 58, "videoIndex": 1 },
+       { "startSec": 85, "endSec": 92, "videoIndex": 1 }
+     ]
+     *Web Studio Remotion akan LANGSUNG otomatis memetakan klip ke video yang sesuai saat JSON di-import!*
 5. JANGAN cantumkan "videoSource" atau "voiceOver" di root JSON!
-   - File video dan voice over dipilih langsung oleh pengguna secara visual di Web Studio Remotion.
+   - File video dan voice over di-resolve otomatis oleh Web Studio Remotion berdasarkan aset produk yang tersedia.
 
 ================================================================================
 PEMILIHAN DESAIN OTOMATIS (WAJIB - LAKUKAN SEBELUM MENULIS COPY):
@@ -262,10 +272,10 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "specHighlight": "Satu kotak tahan 1-2 bulan!",
       "ctaText": "Lagi promo diskon, klik keranjang!",
       "clips": [
-        { "startSec": 0, "endSec": 6 },
-        { "startSec": 20, "endSec": 28 },
-        { "startSec": 50, "endSec": 58 },
-        { "startSec": 85, "endSec": 92 }
+        { "startSec": 0, "endSec": 6, "videoIndex": 1 },
+        { "startSec": 20, "endSec": 28, "videoIndex": 2 },
+        { "startSec": 50, "endSec": 58, "videoIndex": 1 },
+        { "startSec": 85, "endSec": 92, "videoIndex": 1 }
       ]
     },
     "v2": {

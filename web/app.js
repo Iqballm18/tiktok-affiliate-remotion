@@ -2972,10 +2972,32 @@
         }
         if (Array.isArray(v.clips)) {
           v.clips.forEach((c, idx) => {
-            c.src = c.src || candidate.videoSource;
-            if (maxDur && c.endSec > maxDur) {
+            // Smart Multi-Video Resolver: Mendukung c.videoIndex (1 atau 2) atau c.src dari Gemini
+            if (state.assets.videos.length > 0) {
+              if (c.videoIndex === 2 && state.assets.videos.length > 1) {
+                c.src = state.assets.videos[1].name;
+              } else if (c.videoIndex === 1) {
+                c.src = state.assets.videos[0].name;
+              } else if (c.src) {
+                const sLower = c.src.toLowerCase();
+                const matched = state.assets.videos.find(vd => {
+                  const base = vd.name.split('/').pop().toLowerCase();
+                  return vd.name.toLowerCase().includes(sLower) || base.includes(sLower) || sLower.includes(base);
+                });
+                c.src = matched ? matched.name : (candidate.videoSource || state.assets.videos[0].name);
+              } else {
+                c.src = candidate.videoSource || state.assets.videos[0].name;
+              }
+            } else {
+              c.src = c.src || candidate.videoSource;
+            }
+
+            // Validasi & clamp batas detik terhadap durasi video yang bersangkutan
+            const clipVidObj = state.assets.videos.find(vd => vd.name === c.src) || vidObj;
+            const clipMaxDur = clipVidObj?.durationSec || maxDur;
+            if (clipMaxDur && c.endSec > clipMaxDur) {
               const desiredLen = Math.max(2, c.endSec - c.startSec);
-              c.endSec = Math.floor(maxDur * 10) / 10;
+              c.endSec = Math.floor(clipMaxDur * 10) / 10;
               c.startSec = Math.max(0, Math.round((c.endSec - desiredLen) * 10) / 10);
               clampedCount++;
             }
