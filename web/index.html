@@ -347,31 +347,34 @@
               </form>
             </section>
 
-            <!-- Panel 2: Editor Variasi & Babak Klip Video -->
-            <section class="studio-panel">
-              <div class="panel-header" style="align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                  <div class="segmented" id="variantSegmented">
-                    <button class="active" data-variant="v1">
+            <!-- Panel 2: Editor Versi Video & Babak Klip -->
+            <section class="studio-panel studio-panel-editor" id="panelEditor">
+              <div class="panel-header variant-header-bar">
+                <div class="variant-controls-group">
+                  <div class="segmented" id="variantSegmented" role="tablist" aria-label="Pilih Versi Video">
+                    <button class="active" data-variant="v1" type="button" role="tab" aria-selected="true">
                       <span class="v-badge">V1</span>
                       <span>Versi 1</span>
                     </button>
-                    <button data-variant="v2">
+                    <button data-variant="v2" type="button" role="tab" aria-selected="false">
                       <span class="v-badge">V2</span>
                       <span>Versi 2</span>
                     </button>
                   </div>
-                  <span id="activeVariantBadge" class="variant-concept-pill v1">Versi 1</span>
+                  <span id="activeVariantBadge" class="variant-concept-pill v1">
+                    <span class="v-status-dot"></span>
+                    <span>Versi 1 · Problem-Solution (Utama)</span>
+                  </span>
+                </div>
+                <div class="variant-actions-group">
+                  <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
                   <button class="btn small" id="btnSyncClipsBetweenVariants" type="button"
                     title="Salin waktu klip babak 1-4 dari versi ini ke versi lainnya">
                     <svg class="ic" aria-hidden="true">
                       <use href="#i-repeat"></use>
-                    </svg> Salin Klip V1 ⇄ V2
+                    </svg> Salin Klip V1 ➔ V2
                   </button>
-                  <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
                 </div>
-                <div class="panel-sub" style="margin: 0; font-size: 12px; color: var(--text-faint);">4 Babak Klip +
-                  Copywriting Presisi</div>
               </div>
 
               <!-- Sub-tab alur kerja: 1 Audio & Desain → 2 Storyboard → 3 Caption & Output -->
@@ -398,8 +401,8 @@
                       <div
                         style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
                         <label class="form-label" for="selectVoiceOver" style="margin: 0;">
-                          <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">Voice over untuk Variasi 1
-                            (v1)</span>
+                          <span id="labelVoiceOver" style="font-weight: 600; color: #fff;">Voice over untuk Versi 1
+                            (V1)</span>
                         </label>
                         <span id="pillVoiceOverStatus" class="pill emerald" style="cursor: pointer;"
                           title="Klik untuk membuka &amp; mengedit transkrip subtitle">Memeriksa...</span>
@@ -1947,7 +1950,7 @@
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
                   <strong style="font-size: 13px; color: #fff;">Hanya Versi 1 (V1)</strong>
-                  <span class="v-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 800;">V1</span>
+                  <span class="v-badge v1">V1</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV1Title">
                   Problem-Solution • Format Video 1
@@ -1961,7 +1964,7 @@
               <div style="flex: 1;">
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px;">
                   <strong style="font-size: 13px; color: #fff;">Hanya Versi 2 (V2)</strong>
-                  <span class="v-badge" style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 800;">V2</span>
+                  <span class="v-badge v2">V2</span>
                 </div>
                 <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;" id="renderModalV2Title">
                   Value & Quality • Format Video 2

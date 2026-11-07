@@ -784,33 +784,65 @@ textarea.input {
 }
 
 /* ==========================================================================
-   Switcher Versi 1 (V1 - Cyan) & Versi 2 (V2 - Violet)
+   Switcher Versi 1 (V1 - Studio Amber) & Versi 2 (V2 - Studio Emerald)
+   High-contrast, anti-slop design system
    ========================================================================== */
+.variant-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.variant-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.variant-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 #variantSegmented {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 17, 23, 0.9);
+  background: #11131a;
   padding: 3px;
-  border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
   gap: 3px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 #variantSegmented button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   height: 30px;
-  padding: 0 14px;
+  padding: 0 12px;
   border-radius: 6px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-muted);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
+  user-select: none;
+}
+
+#variantSegmented button:hover {
+  color: #f1f5f9;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 #variantSegmented .v-badge {
@@ -818,88 +850,89 @@ textarea.input {
   align-items: center;
   justify-content: center;
   font-size: 10px;
-  font-weight: 800;
-  padding: 1px 6px;
+  font-weight: 700;
+  padding: 1px 5px;
   border-radius: 4px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   line-height: 1.3;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.16s ease;
 }
 
-/* Versi 1: Tema Biru Cyan (#38bdf8) */
-#variantSegmented button[data-variant="v1"] .v-badge {
-  background: rgba(56, 189, 248, 0.18);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.35);
-}
-
-#variantSegmented button[data-variant="v1"]:hover {
-  color: #e0f2fe;
-  background: rgba(56, 189, 248, 0.08);
-}
-
+/* Versi 1: Warm Studio Amber (#f59e0b) - Versi Utama */
 #variantSegmented button[data-variant="v1"].active {
-  background: rgba(2, 132, 199, 0.22);
+  background: #1d1b17;
   color: #ffffff;
-  border: 1px solid rgba(56, 189, 248, 0.55);
-  box-shadow: 0 2px 12px rgba(2, 132, 199, 0.25), inset 0 -2px 0 #38bdf8;
+  font-weight: 600;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 -2px 0 #f59e0b;
 }
 
 #variantSegmented button[data-variant="v1"].active .v-badge {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #38bdf8;
-  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.45);
 }
 
-/* Versi 2: Tema Ungu Violet (#c084fc) */
-#variantSegmented button[data-variant="v2"] .v-badge {
-  background: rgba(168, 85, 247, 0.18);
-  color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.35);
-}
-
-#variantSegmented button[data-variant="v2"]:hover {
-  color: #f3e8ff;
-  background: rgba(168, 85, 247, 0.08);
-}
-
+/* Versi 2: Emerald Mint (#10b981) - Versi Promo / A/B Test */
 #variantSegmented button[data-variant="v2"].active {
-  background: rgba(124, 58, 237, 0.22);
+  background: #13221c;
   color: #ffffff;
-  border: 1px solid rgba(168, 85, 247, 0.55);
-  box-shadow: 0 2px 12px rgba(124, 58, 237, 0.25), inset 0 -2px 0 #c084fc;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35), inset 0 -2px 0 #10b981;
 }
 
 #variantSegmented button[data-variant="v2"].active .v-badge {
-  background: #7c3aed;
-  color: #ffffff;
-  border-color: #c084fc;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+  background: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.45);
 }
 
-/* Pill konsep aktif */
+/* Pill konsep aktif - High contrast & quiet status */
 .variant-concept-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   font-size: 11px;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 999px;
-  line-height: 1.2;
+  border-radius: 6px;
+  line-height: 1.3;
   transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.variant-concept-pill .v-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
 }
 
 .variant-concept-pill.v1 {
-  background: rgba(2, 132, 199, 0.15);
-  color: #7dd3fc;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.variant-concept-pill.v1 .v-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
 }
 
 .variant-concept-pill.v2 {
-  background: rgba(124, 58, 237, 0.15);
-  color: #d8b4fe;
-  border: 1px solid rgba(168, 85, 247, 0.3);
+  background: rgba(16, 185, 129, 0.08);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.variant-concept-pill.v2 .v-status-dot {
+  background: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
 }
 
 /* Timeline Strip & Table */
@@ -2297,6 +2330,26 @@ audio {
   margin-top: 3px;
   width: 15px;
   height: 15px;
+}
+
+.render-scope-card .v-badge.v1 {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.render-scope-card .v-badge.v2 {
+  background: rgba(16, 185, 129, 0.16);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
 }
 
 /* ===== Toggle Switch (GPU Render) ===== */

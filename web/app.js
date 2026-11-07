@@ -556,15 +556,24 @@
 
     // Segmented button active state
     document.querySelectorAll('#variantSegmented button').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.variant === variantKey);
+      const isActive = btn.dataset.variant === variantKey;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
 
     // Update pill nama konsep aktif (V1 vs V2)
     const badgeEl = $('activeVariantBadge');
     if (badgeEl) {
       badgeEl.className = `variant-concept-pill ${variantKey}`;
-      const defaultTitle = variantKey === 'v1' ? 'Problem-Solution' : 'Value & Promo';
-      badgeEl.textContent = v.title ? `${variantKey.toUpperCase()} · ${v.title}` : `Versi ${variantKey === 'v1' ? '1' : '2'} · ${defaultTitle}`;
+      const defaultTitle = variantKey === 'v1' ? 'Problem-Solution (Utama)' : 'Value & Promo (A/B Test)';
+      const conceptTitle = v.title ? v.title : defaultTitle;
+      const vName = variantKey === 'v1' ? 'Versi 1' : 'Versi 2';
+      badgeEl.innerHTML = `<span class="v-status-dot"></span><span>${vName} · ${conceptTitle}</span>`;
+    }
+
+    const panelEl = $('panelEditor');
+    if (panelEl) {
+      panelEl.dataset.activeVariant = variantKey;
     }
 
     if (el.btnSyncClipsBetweenVariants) {
