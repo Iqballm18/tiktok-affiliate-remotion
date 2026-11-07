@@ -145,6 +145,7 @@ export const affiliateSchema = z.object({
     ctaLabel: z.string().optional(),
     // Tag di ujung kanan strip top_banner_promo (mis. "STOK TERBATAS"). Kosong = tidak ditampilkan.
     urgencyTag: z.string().optional(),
+    fps: z.number().optional(),
     clips: z.array(clipItemSchema),
 });
 
@@ -200,7 +201,7 @@ export const defaultAffiliateProps: AffiliateProps = {
 };
 
 export const calculateAffiliateMetadata: CalculateMetadataFunction<AffiliateProps> = ({ props }) => {
-    const fps = 60;
+    const fps = props.fps || 60;
     const totalClipsSec = props.clips.reduce(
         (acc, c) => acc + Math.max(0, c.endSec - c.startSec),
         0

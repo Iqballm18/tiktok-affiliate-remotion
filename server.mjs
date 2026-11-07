@@ -1903,7 +1903,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { productId, productData, target, fps, customOutputName, useGpu } = JSON.parse(body);
+        const { productId, productData, target, fps, customOutputName, useGpu, quality } = JSON.parse(body);
 
         let product;
         if (productData) {
@@ -1949,6 +1949,7 @@ const server = http.createServer(async (req, res) => {
                 fpsOverride: renderState.fps,
                 customOutputName: resolvedTitle,
                 useGpu,
+                quality,
                 onLog: appendLog,
                 onProgress: (prog) => {
                   renderState.currentProgress = prog;

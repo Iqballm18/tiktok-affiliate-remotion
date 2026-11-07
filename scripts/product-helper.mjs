@@ -336,7 +336,8 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
 
   // Calculate total duration
   const totalClipsSec = props.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
-  const fps = options.fps || config.defaultFps || 60;
+  const fps = options.fps ? parseInt(options.fps, 10) : (config.defaultFps || 60);
+  props.fps = fps;
   const durationInFrames = Math.round(Math.max(1, totalClipsSec) * fps);
 
   return {

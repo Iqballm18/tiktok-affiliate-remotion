@@ -82,6 +82,7 @@
     batchProductList: $('batchProductList'),
     selectBatchVariants: $('selectBatchVariants'),
     selectBatchFps: $('selectBatchFps'),
+    selectBatchQuality: $('selectBatchQuality'),
     chkBatchUploadGdrive: $('chkBatchUploadGdrive'),
     batchQueueStatus: $('batchQueueStatus'),
     btnStartBatchRender: $('btnStartBatchRender'),
@@ -271,6 +272,7 @@
     renderModalProductName: $('renderModalProductName'),
     renderModalOutputName: $('renderModalOutputName'),
     renderModalFps: $('renderModalFps'),
+    renderModalQuality: $('renderModalQuality'),
     renderModalV1Title: $('renderModalV1Title'),
     renderModalV2Title: $('renderModalV2Title'),
     chkGpuRender: $('chkGpuRender'),
@@ -4177,6 +4179,7 @@
       const target = document.querySelector('input[name="renderTargetOption"]:checked')?.value || 'all';
       const fps = el.renderModalFps?.value || el.selectFps?.value || '60';
       if (el.selectFps) el.selectFps.value = fps;
+      const quality = el.renderModalQuality?.value || 'balanced';
 
       const useGpu = el.chkGpuRender ? el.chkGpuRender.checked : false;
       const customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
@@ -4201,7 +4204,8 @@
           ? 'Semua Variasi (v1 & v2)'
           : (target === 'v2' ? 'Hanya Variasi 2 (Bold)' : 'Hanya Variasi 1 (Pastel)');
         const engineLabel = useGpu ? 'GPU AMD Radeon' : 'CPU';
-        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} (${fps}fps) dengan judul "${customOutputName}"...`, true);
+        const qLabel = quality === 'high' ? 'Tinggi (CRF 17)' : (quality === 'eco' ? 'Hemat (CRF 24)' : 'Standar (CRF 20)');
+        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
 
         const res = await fetch('/api/render', {
           method: 'POST',
@@ -4211,6 +4215,7 @@
             productData: state.currentProduct,
             target,
             fps,
+            quality,
             customOutputName,
             useGpu
           })
@@ -5498,6 +5503,7 @@
 
     const variantScope = el.selectBatchVariants?.value || 'both';
     const fps = parseInt(el.selectBatchFps?.value || '60', 10);
+    const quality = el.selectBatchQuality?.value || 'balanced';
     const autoUploadGdrive = Boolean(el.chkBatchUploadGdrive?.checked);
 
     el.btnStartBatchRender.disabled = true;
@@ -5510,10 +5516,11 @@
     try {
       for (let i = 0; i < selectedIds.length; i++) {
         const pid = selectedIds[i];
+        const qLabel = quality === 'high' ? 'Tinggi' : (quality === 'eco' ? 'Hemat' : 'Standar');
         if (el.batchQueueStatus) {
-          el.batchQueueStatus.textContent = `⏳ Memproses (${i + 1}/${selectedIds.length}): Merender produk "${pid}" (${variantScope.toUpperCase()})...`;
+          el.batchQueueStatus.textContent = `⏳ Memproses (${i + 1}/${selectedIds.length}): Merender "${pid}" (${variantScope.toUpperCase()}, ${fps}fps, ${qLabel})...`;
         }
-        appendLog(`[BATCH QUEUE] (${i + 1}/${selectedIds.length}) Memulai render produk '${pid}'...`, true);
+        appendLog(`[BATCH QUEUE] (${i + 1}/${selectedIds.length}) Memulai render '${pid}' (${fps}fps, ${qLabel})...`, true);
 
         const res = await fetch('/api/render', {
           method: 'POST',
@@ -5522,6 +5529,7 @@
             productId: pid,
             target: variantScope === 'both' ? 'all' : variantScope,
             fps,
+            quality,
           }),
         });
         const data = await res.json();

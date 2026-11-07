@@ -110,6 +110,7 @@ export async function renderProductVariant({
   fpsOverride,
   customOutputName,
   useGpu,
+  quality = 'balanced',
   onProgress,
   onLog = console.log,
   cancelToken,
@@ -118,10 +119,25 @@ export async function renderProductVariant({
   const config = loadConfig();
   const fps = fpsOverride ? parseInt(fpsOverride, 10) : (config.defaultFps || 60);
 
+  let crf = 20;
+  let jpegQuality = 90;
+  let qualityLabel = 'Standar Optimal (CRF 20 - Rekomendasi TikTok)';
+
+  if (quality === 'high' || quality === 'ultra') {
+    crf = 17;
+    jpegQuality = 95;
+    qualityLabel = 'Tinggi Ultra-Jernih (CRF 17 - Detail Tajam)';
+  } else if (quality === 'eco' || quality === 'fast' || quality === 'low') {
+    crf = 24;
+    jpegQuality = 82;
+    qualityLabel = 'Hemat Ringan (CRF 24 - Render Cepat)';
+  }
+
   onLog(`\n==================================================`);
   onLog(`🎬 Menyiapkan Render: ${customOutputName || product.name}`);
   onLog(`📌 Variasi: ${variantKey}`);
   onLog(`⚡ FPS: ${fps}`);
+  onLog(`🎯 Kualitas: ${qualityLabel}`);
   onLog(`==================================================`);
 
   // 1. Resolve props, auto-fit duration & captions
@@ -182,10 +198,10 @@ export async function renderProductVariant({
     composition,
     serveUrl: bundleLocation,
     codec: 'h264',
-    crf: 20,
+    crf,
     x264Preset: 'veryfast',
     imageFormat: 'jpeg',
-    jpegQuality: 92,
+    jpegQuality,
     outputLocation,
     inputProps: props,
     concurrency: optimalConcurrency,
@@ -314,6 +330,8 @@ Contoh:
   const isStill = args.includes('--still');
   const fpsArg = args.find(a => a.startsWith('--fps='));
   const fps = fpsArg ? fpsArg.split('=')[1] : (args.find(a => a === '30' || a === '60') || null);
+  const qualityArg = args.find(a => a.startsWith('--quality='));
+  const quality = qualityArg ? qualityArg.split('=')[1] : 'balanced';
   const frameArg = args.find(a => a.startsWith('--frame='));
   const frame = frameArg ? parseInt(frameArg.split('=')[1], 10) : 60;
 
@@ -328,6 +346,7 @@ Contoh:
             productOrId: p.id,
             variantKey: vk,
             fpsOverride: fps,
+            quality,
           });
         }
       }
@@ -358,6 +377,7 @@ Contoh:
         productOrId: product,
         variantKey: vk,
         fpsOverride: fps,
+        quality,
       });
     }
 
