@@ -5168,6 +5168,7 @@
     if (selectEl.style.width) wrap.style.width = selectEl.style.width;
     if (selectEl.style.flex) wrap.style.flex = selectEl.style.flex;
     if (selectEl.style.maxWidth) wrap.style.maxWidth = selectEl.style.maxWidth;
+    wrap.style.minWidth = '0';
 
     // Create trigger button
     const trigger = document.createElement('button');
@@ -5293,6 +5294,7 @@
         valueSpan.textContent = match ? match.textContent : (selectEl.value || '-- Pilih --');
       }
       valueSpan.title = match ? match.textContent : (selectEl.value || '');
+      trigger.title = valueSpan.title;
       trigger.disabled = selectEl.disabled;
 
       optionsList.querySelectorAll('.custom-select-option').forEach(item => {

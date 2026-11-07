@@ -1978,24 +1978,22 @@
         </div>
 
         <!-- Pilihan FPS & Kualitas Video -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;">
-          <div>
-            <label class="form-label" for="renderModalFps" style="font-size: 11px; margin-bottom: 4px;">Frame Rate
-              (FPS)</label>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; width: 100%; box-sizing: border-box;">
+          <div style="min-width: 0;">
+            <label class="form-label" for="renderModalFps" style="font-size: 11px; margin-bottom: 4px;">Frame Rate (FPS)</label>
             <select class="input" id="renderModalFps"
-              style="height: 32px; font-size: 12px; width: 100%; box-sizing: border-box;">
-              <option value="60">60 FPS (Cinema / Paling Mulus)</option>
-              <option value="30">30 FPS (Fast Mode / Render 2x Cepat)</option>
+              style="height: 32px; font-size: 12px; width: 100%; max-width: 100%; box-sizing: border-box;">
+              <option value="60">60 FPS (Cinema / Mulus)</option>
+              <option value="30">30 FPS (Fast / 2x Cepat)</option>
             </select>
           </div>
-          <div>
-            <label class="form-label" for="renderModalQuality" style="font-size: 11px; margin-bottom: 4px;">Kualitas
-              Video</label>
+          <div style="min-width: 0;">
+            <label class="form-label" for="renderModalQuality" style="font-size: 11px; margin-bottom: 4px;">Kualitas Video</label>
             <select class="input" id="renderModalQuality"
-              style="height: 32px; font-size: 12px; width: 100%; box-sizing: border-box;">
-              <option value="high">Tinggi (CRF 17 - Ultra Jernih & Detail)</option>
+              style="height: 32px; font-size: 12px; width: 100%; max-width: 100%; box-sizing: border-box;">
+              <option value="high">Tinggi (CRF 17 - Jernih & Detail)</option>
               <option value="balanced" selected>Standar (CRF 20 - Rekomendasi TikTok)</option>
-              <option value="eco">Hemat (CRF 24 - File Ringan & Cepat)</option>
+              <option value="eco">Hemat (CRF 24 - File Ringan)</option>
             </select>
           </div>
         </div>
@@ -2076,25 +2074,25 @@
           <!-- Diisi dinamis oleh app.js -->
         </div>
 
-        <div class="row" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-          <div class="form-group" style="margin-bottom: 0;">
+        <div class="row" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 10px; width: 100%; box-sizing: border-box;">
+          <div class="form-group" style="margin-bottom: 0; min-width: 0;">
             <label class="form-label" for="selectBatchVariants" style="font-size: 11px;">Varian</label>
-            <select class="input" id="selectBatchVariants" style="height: 32px; font-size: 12px;">
+            <select class="input" id="selectBatchVariants" style="height: 32px; font-size: 12px; width: 100%; max-width: 100%; box-sizing: border-box;">
               <option value="both">Semua (V1 + V2)</option>
               <option value="v1">Hanya V1</option>
               <option value="v2">Hanya V2</option>
             </select>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 0; min-width: 0;">
             <label class="form-label" for="selectBatchFps" style="font-size: 11px;">Frame Rate</label>
-            <select class="input" id="selectBatchFps" style="height: 32px; font-size: 12px;">
+            <select class="input" id="selectBatchFps" style="height: 32px; font-size: 12px; width: 100%; max-width: 100%; box-sizing: border-box;">
               <option value="60">60 FPS (Mulus)</option>
               <option value="30">30 FPS (Cepat)</option>
             </select>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
+          <div class="form-group" style="margin-bottom: 0; min-width: 0;">
             <label class="form-label" for="selectBatchQuality" style="font-size: 11px;">Kualitas</label>
-            <select class="input" id="selectBatchQuality" style="height: 32px; font-size: 12px;">
+            <select class="input" id="selectBatchQuality" style="height: 32px; font-size: 12px; width: 100%; max-width: 100%; box-sizing: border-box;">
               <option value="high">Tinggi (CRF 17)</option>
               <option value="balanced" selected>Standar (CRF 20)</option>
               <option value="eco">Hemat (CRF 24)</option>

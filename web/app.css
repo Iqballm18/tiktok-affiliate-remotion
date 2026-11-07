@@ -504,14 +504,19 @@ select {
 .custom-select-wrap {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   display: block;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .custom-select-trigger {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   height: var(--control-height);
-  padding: 0 12px;
+  padding: 0 10px;
   background: var(--bg-raised);
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
@@ -521,7 +526,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
   text-align: left;
   transition: all var(--t-hover) var(--ease-out);
@@ -546,6 +551,7 @@ select {
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
+  min-width: 0;
   color: #f1f5f9;
   font-size: 13px;
 }
