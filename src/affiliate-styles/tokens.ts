@@ -13,7 +13,11 @@ export type PaletteName =
   | 'fresh_mint'
   | 'sale_yellow'
   | 'tech_blue'
-  | 'ink_mono';
+  | 'ink_mono'
+  | 'editorial'
+  | 'pastel'
+  | 'flash_sale'
+  | 'minimal';
 
 export interface Palette {
   ink: string; // teks gelap / plat gelap
@@ -24,6 +28,34 @@ export interface Palette {
 }
 
 export const PALETTES: Record<PaletteName, Palette> = {
+  editorial: {
+    ink: '#0F172A',
+    paper: '#FFFFFF',
+    accent: '#E2FF32', // Neon Lime / Acid Lime (Hijau Stabilo!)
+    accentInk: '#090A0F',
+    alert: '#E5484D',
+  },
+  pastel: {
+    ink: '#2D2A32',
+    paper: '#FFF8F5',
+    accent: '#FF4D6D', // Rose Coral
+    accentInk: '#FFFFFF',
+    alert: '#D6455D',
+  },
+  flash_sale: {
+    ink: '#141414',
+    paper: '#FFFFFF',
+    accent: '#FF2E54', // Crimson Red
+    accentInk: '#FFFFFF',
+    alert: '#E5484D',
+  },
+  minimal: {
+    ink: '#111111',
+    paper: '#FFFFFF',
+    accent: '#111111',
+    accentInk: '#FFFFFF',
+    alert: '#DC2626',
+  },
   pastel_rose: {
     ink: '#2D2A32',
     paper: '#FFF8F5',

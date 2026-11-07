@@ -12,7 +12,7 @@ import {
     CalculateMetadataFunction,
 } from 'remotion';
 import { z } from 'zod';
-import { getTheme, ThemeDefinition } from './theme';
+import { getTheme, THEMES, ThemeDefinition } from './theme';
 import { TikTokSafeZone } from './components/TikTokSafeZone';
 import { FloatingWatermark } from './components/FloatingWatermark';
 import { HookSubtitle } from './components/HookSubtitle';
@@ -2028,11 +2028,12 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
 
     const finalPaletteName: PaletteName = (
         (paletteProp && paletteProp in PALETTES ? (paletteProp as PaletteName) : null) ||
+        (themeStyleProp && themeStyleProp in PALETTES ? (themeStyleProp as PaletteName) : null) ||
         flatStylePreset?.palette ||
         DEFAULT_PRESET.palette
     );
-    const finalPalette: Palette = PALETTES[finalPaletteName] ?? PALETTES.pastel_rose;
-    const themeStyle = themeStyleProp ?? preset?.themeStyle;
+    const finalPalette: Palette = PALETTES[finalPaletteName] ?? PALETTES.editorial;
+    const themeStyle = themeStyleProp ?? (paletteProp && paletteProp in THEMES ? paletteProp : undefined) ?? preset?.themeStyle;
     const cardStyle = cardStyleProp ?? preset?.cardStyle;
     const hookVariant: VariantVersion = resolveVariantVersion(hookVariantProp ?? preset?.hookVariant);
     const captionStyle = captionStyleProp ?? preset?.captionStyle;

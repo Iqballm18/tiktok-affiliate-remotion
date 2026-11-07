@@ -1,6 +1,15 @@
 import { Easing, SpringConfig } from 'remotion';
 
-export type ThemeStyle = 'editorial' | 'pastel' | 'flash_sale' | 'minimal';
+export type ThemeStyle =
+    | 'editorial'
+    | 'pastel'
+    | 'flash_sale'
+    | 'minimal'
+    | 'fresh_mint'
+    | 'sale_yellow'
+    | 'tech_blue'
+    | 'pastel_rose'
+    | 'ink_mono';
 
 export interface ThemeColors {
     bg: string;
@@ -213,6 +222,201 @@ export const THEMES: Record<ThemeStyle, ThemeDefinition> = {
         },
         easings: sharedEasings,
     },
+
+    // ==========================================
+    // 5. FRESH MINT (Natural / Skincare / Herbal)
+    // ==========================================
+    fresh_mint: {
+        id: 'fresh_mint',
+        name: 'Fresh Mint',
+        colors: {
+            bg: '#0F1A15',
+            surface: 'rgba(15, 26, 21, 0.85)',
+            surfaceBorder: 'rgba(143, 214, 181, 0.35)',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.50)',
+            textPrimary: '#F4FBF7',
+            textMuted: '#94A3B8',
+            accent: '#8FD6B5',
+            accentText: '#17302B',
+            ctaBg: 'rgba(15, 26, 21, 0.90)',
+            ctaText: '#F4FBF7',
+            ctaSubtext: '#8FD6B5',
+            badgeBg: 'rgba(15, 26, 21, 0.88)',
+            badgeBorder: 'rgba(143, 214, 181, 0.45)',
+            badgeText: '#8FD6B5',
+            indicatorColor: '#8FD6B5',
+            highlightBg: '#8FD6B5',
+            highlightText: '#17302B',
+            solutionHighlightBg: '#FFFFFF',
+            solutionHighlightText: '#17302B',
+            scrimTop: 'rgba(15, 26, 21, 0.16)',
+            scrimBottom: 'rgba(15, 26, 21, 0.20)',
+            vignetteColor: 'rgba(0, 0, 0, 0.12)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 18, stiffness: 200, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 24, stiffness: 130, mass: 0.9 } as SpringConfig,
+            pill: { damping: 15, stiffness: 170, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
+
+    // ==========================================
+    // 6. SALE YELLOW (Flash Sale / Promo / Kuning)
+    // ==========================================
+    sale_yellow: {
+        id: 'sale_yellow',
+        name: 'Sale Yellow',
+        colors: {
+            bg: '#0A0A0D',
+            surface: 'rgba(18, 18, 22, 0.85)',
+            surfaceBorder: 'rgba(255, 210, 63, 0.40)',
+            boxShadow: '0 24px 50px rgba(0, 0, 0, 0.55)',
+            textPrimary: '#FFFFFF',
+            textMuted: '#CBD5E1',
+            accent: '#FFD23F',
+            accentText: '#141414',
+            ctaBg: 'rgba(18, 18, 22, 0.92)',
+            ctaText: '#FFFFFF',
+            ctaSubtext: '#FFD23F',
+            badgeBg: 'rgba(18, 18, 22, 0.88)',
+            badgeBorder: 'rgba(255, 210, 63, 0.55)',
+            badgeText: '#FFD23F',
+            indicatorColor: '#FFD23F',
+            highlightBg: '#FFD23F',
+            highlightText: '#141414',
+            solutionHighlightBg: '#FFFFFF',
+            solutionHighlightText: '#141414',
+            scrimTop: 'rgba(10, 10, 14, 0.16)',
+            scrimBottom: 'rgba(10, 10, 14, 0.22)',
+            vignetteColor: 'rgba(0, 0, 0, 0.16)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 18, stiffness: 220, mass: 0.65 } as SpringConfig,
+            smooth: { damping: 22, stiffness: 150, mass: 0.85 } as SpringConfig,
+            pill: { damping: 16, stiffness: 190, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
+
+    // ==========================================
+    // 7. TECH BLUE (Gadget / Tech / Biru)
+    // ==========================================
+    tech_blue: {
+        id: 'tech_blue',
+        name: 'Tech Blue',
+        colors: {
+            bg: '#090D18',
+            surface: 'rgba(12, 18, 32, 0.82)',
+            surfaceBorder: 'rgba(61, 109, 242, 0.35)',
+            boxShadow: '0 24px 50px rgba(0, 0, 0, 0.55)',
+            textPrimary: '#F3F6FA',
+            textMuted: '#94A3B8',
+            accent: '#3D6DF2',
+            accentText: '#FFFFFF',
+            ctaBg: 'rgba(12, 18, 32, 0.90)',
+            ctaText: '#F3F6FA',
+            ctaSubtext: '#3D6DF2',
+            badgeBg: 'rgba(12, 18, 32, 0.88)',
+            badgeBorder: 'rgba(61, 109, 242, 0.45)',
+            badgeText: '#F3F6FA',
+            indicatorColor: '#3D6DF2',
+            highlightBg: '#3D6DF2',
+            highlightText: '#FFFFFF',
+            solutionHighlightBg: '#FFFFFF',
+            solutionHighlightText: '#0F1B2D',
+            scrimTop: 'rgba(9, 13, 24, 0.16)',
+            scrimBottom: 'rgba(9, 13, 24, 0.20)',
+            vignetteColor: 'rgba(0, 0, 0, 0.12)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 16, stiffness: 220, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 22, stiffness: 140, mass: 0.9 } as SpringConfig,
+            pill: { damping: 14, stiffness: 180, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
+
+    // ==========================================
+    // 8. PASTEL ROSE (Soft Rose Pink)
+    // ==========================================
+    pastel_rose: {
+        id: 'pastel_rose',
+        name: 'Pastel Rose',
+        colors: {
+            bg: '#F8FAFC',
+            surface: 'rgba(255, 255, 255, 0.88)',
+            surfaceBorder: 'rgba(242, 167, 189, 0.45)',
+            boxShadow: '0 20px 45px rgba(242, 167, 189, 0.15)',
+            textPrimary: '#2D2A32',
+            textMuted: '#64748B',
+            accent: '#F2A7BD',
+            accentText: '#2D2A32',
+            ctaBg: 'rgba(255, 255, 255, 0.94)',
+            ctaText: '#2D2A32',
+            ctaSubtext: '#F2A7BD',
+            badgeBg: 'rgba(255, 255, 255, 0.95)',
+            badgeBorder: 'rgba(242, 167, 189, 0.50)',
+            badgeText: '#2D2A32',
+            indicatorColor: '#F2A7BD',
+            highlightBg: '#F2A7BD',
+            highlightText: '#2D2A32',
+            solutionHighlightBg: '#2D2A32',
+            solutionHighlightText: '#FFFFFF',
+            scrimTop: 'rgba(15, 23, 42, 0.10)',
+            scrimBottom: 'rgba(15, 23, 42, 0.15)',
+            vignetteColor: 'rgba(255, 255, 255, 0.08)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 18, stiffness: 200, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 24, stiffness: 130, mass: 0.9 } as SpringConfig,
+            pill: { damping: 15, stiffness: 170, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
+
+    // ==========================================
+    // 9. INK MONO (Beige / Monochrome)
+    // ==========================================
+    ink_mono: {
+        id: 'ink_mono',
+        name: 'Ink Mono',
+        colors: {
+            bg: '#1A1A1A',
+            surface: 'rgba(26, 26, 26, 0.85)',
+            surfaceBorder: 'rgba(232, 227, 213, 0.30)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.50)',
+            textPrimary: '#F6F6F4',
+            textMuted: '#A1A1AA',
+            accent: '#E8E3D5',
+            accentText: '#1A1A1A',
+            ctaBg: 'rgba(26, 26, 26, 0.92)',
+            ctaText: '#F6F6F4',
+            ctaSubtext: '#E8E3D5',
+            badgeBg: 'rgba(26, 26, 26, 0.88)',
+            badgeBorder: 'rgba(232, 227, 213, 0.40)',
+            badgeText: '#F6F6F4',
+            indicatorColor: '#E8E3D5',
+            highlightBg: '#E8E3D5',
+            highlightText: '#1A1A1A',
+            solutionHighlightBg: '#FFFFFF',
+            solutionHighlightText: '#1A1A1A',
+            scrimTop: 'rgba(0, 0, 0, 0.12)',
+            scrimBottom: 'rgba(0, 0, 0, 0.16)',
+            vignetteColor: 'rgba(0, 0, 0, 0.10)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 16, stiffness: 200, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 22, stiffness: 140, mass: 0.9 } as SpringConfig,
+            pill: { damping: 14, stiffness: 180, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
 };
 
 export const getTheme = (style?: string): ThemeDefinition => {
@@ -227,6 +431,21 @@ export const getTheme = (style?: string): ThemeDefinition => {
         case 'beauty':
             return THEMES.pastel;
 
+        case 'pastel_rose':
+            return THEMES.pastel_rose;
+
+        case 'fresh_mint':
+        case 'mint':
+            return THEMES.fresh_mint;
+
+        case 'sale_yellow':
+        case 'yellow':
+            return THEMES.sale_yellow;
+
+        case 'tech_blue':
+        case 'blue':
+            return THEMES.tech_blue;
+
         case 'flash_sale':
         case 'flashsale':
         case 'promo':
@@ -240,9 +459,15 @@ export const getTheme = (style?: string): ThemeDefinition => {
         case 'monochrome':
             return THEMES.minimal;
 
+        case 'ink_mono':
+        case 'mono':
+            return THEMES.ink_mono;
+
         case 'editorial':
         case 'tech':
         case 'dark':
+        case 'neon_lime':
+        case 'lime':
         default:
             return THEMES.editorial;
     }

@@ -564,9 +564,9 @@
       el.btnSyncClipsBetweenVariants.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Salin Klip ${variantKey.toUpperCase()} ➔ ${otherKey.toUpperCase()}`;
     }
 
-    el.selectThemeStyle.value = v.themeStyle || 'pastel';
+    el.selectThemeStyle.value = v.themeStyle || v.palette || 'pastel';
     el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
-    if (el.selectPalette) el.selectPalette.value = v.palette || '';
+    if (el.selectPalette) el.selectPalette.value = v.palette || v.themeStyle || '';
     if (el.selectHookStyle) el.selectHookStyle.value = v.hookStyle || '';
     if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = v.subtitleStyle || '';
     if (el.selectHookVariant) el.selectHookVariant.value = v.hookVariant || 'v1';
@@ -1024,7 +1024,7 @@
     pastel: '#FF4D6D',
     editorial: '#E2FF32',
     flash_sale: '#FF2E54',
-    minimal: '#F2A93B',
+    minimal: '#FFFFFF',
     pastel_rose: '#F2A7BD',
     fresh_mint: '#8FD6B5',
     sale_yellow: '#FFD23F',
@@ -1222,7 +1222,7 @@
       toggleBtn.textContent = ccState.collapsed ? 'Buka Galeri Animasi' : 'Lipat Galeri';
     }
 
-    const activeTheme = el.selectThemeStyle?.value || 'pastel';
+    const activeTheme = el.selectPalette?.value || el.selectThemeStyle?.value || 'pastel';
     root.style.setProperty('--cc-accent', THEME_ACCENTS[activeTheme] || '#FF4D6D');
 
     const activePreset = el.selectPreset?.value || '';
@@ -1267,7 +1267,10 @@
     // Update Theme Swatches & Badge Seg in Toolbar
     const activeBadge = el.selectBadgeStyle?.value || 'sticker';
     document.querySelectorAll('#ccThemeSwatches .cc-swatch').forEach(sw => {
-      sw.classList.toggle('active', sw.dataset.theme === activeTheme);
+      const match = sw.dataset.theme === activeTheme ||
+        (activeTheme === 'pastel_rose' && sw.dataset.theme === 'pastel') ||
+        (activeTheme === 'ink_mono' && sw.dataset.theme === 'minimal');
+      sw.classList.toggle('active', match);
     });
     document.querySelectorAll('#ccBadgeSeg button[data-badge]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.badge === activeBadge);
@@ -1447,10 +1450,8 @@
       live.armed = true;
       const themeVal = sw.dataset.theme;
       syncSelectEl(el.selectThemeStyle, themeVal);
-      const isFlatPalette = ['pastel_rose', 'fresh_mint', 'sale_yellow', 'tech_blue', 'ink_mono'].includes(themeVal);
-      if (isFlatPalette) {
-        syncSelectEl(el.selectPalette, themeVal);
-      }
+      // Selalu sinkronkan palette dengan tema agar komponen flat & klasik seragam
+      syncSelectEl(el.selectPalette, themeVal);
       syncFormToVariant();
       updateThemeVisualPreview();
       triggerAutoSave();
@@ -2472,26 +2473,32 @@
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = '';
       } else if (p === 'beauty_skincare') {
         if (el.selectPalette) el.selectPalette.value = 'pastel_rose';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'pastel';
         if (el.selectHookStyle) el.selectHookStyle.value = 'marker_highlight';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'highlighter_bar';
       } else if (p === 'health_supplement') {
         if (el.selectPalette) el.selectPalette.value = 'fresh_mint';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'fresh_mint';
         if (el.selectHookStyle) el.selectHookStyle.value = 'tilt_card';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'karaoke_block';
       } else if (p === 'flash_sale_viral') {
         if (el.selectPalette) el.selectPalette.value = 'sale_yellow';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'sale_yellow';
         if (el.selectHookStyle) el.selectHookStyle.value = 'stack_slam';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'pop_scale';
       } else if (p === 'problem_solution') {
         if (el.selectPalette) el.selectPalette.value = 'ink_mono';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'minimal';
         if (el.selectHookStyle) el.selectHookStyle.value = 'struck_swap';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'fill_sweep';
       } else if (p === 'gadget_tech') {
         if (el.selectPalette) el.selectPalette.value = 'tech_blue';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'tech_blue';
         if (el.selectHookStyle) el.selectHookStyle.value = 'mask_wipe';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'sticker_label';
       } else if (p === 'fashion_lifestyle') {
         if (el.selectPalette) el.selectPalette.value = 'pastel_rose';
+        if (el.selectThemeStyle) el.selectThemeStyle.value = 'pastel';
         if (el.selectHookStyle) el.selectHookStyle.value = 'mask_wipe';
         if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = 'typewriter_band';
       }
