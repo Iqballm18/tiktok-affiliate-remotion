@@ -1082,6 +1082,10 @@
 
   try {
     ccState.collapsed = localStorage.getItem('studio.ccPickerCollapsed') === '1';
+    const urlTab = new URLSearchParams(window.location.search).get('tab');
+    if (urlTab && ['presets', 'hooks', 'captions', 'transitions'].includes(urlTab)) {
+      ccState.tab = urlTab;
+    }
   } catch (_) { }
 
   const THEME_ACCENTS = {
@@ -1195,59 +1199,150 @@
   function buildHookStageHtml(style, ver) {
     const copy = getActiveHookCopy();
     if (style === 'marker_highlight') {
-      return `<div class="cc-anim-marker-highlight"><div style="font-size:7.5px;color:#9A3412;font-weight:700;">✦ ${escapeHtml(copy.badge)}</div><div style="font-size:8px;color:#333;">${escapeHtml(copy.line1)}</div><div class="cc-marker-hl-line">${escapeHtml(copy.highlight)}</div></div>`;
+      return `<div class="cc-anim-marker-highlight">
+        <div style="font-size:7px;color:#9A3412;font-weight:700;">✦ ${escapeHtml(copy.badge)}</div>
+        <div style="font-size:7.5px;color:#333;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+        <div class="cc-marker-hl-line">${escapeHtml(copy.highlight)}</div>
+      </div>`;
     }
     if (style === 'stack_slam') {
-      return `<div class="cc-anim-stack-slam"><div class="cc-slam-plate1">${escapeHtml(copy.line1.toUpperCase())}</div><div class="cc-slam-plate2">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
+      return `<div class="cc-anim-stack-slam">
+        <div class="cc-slam-plate1">${escapeHtml(copy.line1.toUpperCase())}</div>
+        <div class="cc-slam-plate2">${escapeHtml(copy.highlight.toUpperCase())}</div>
+      </div>`;
     }
     if (style === 'struck_swap') {
-      return `<div class="cc-anim-struck-swap"><div class="cc-struck-old">${escapeHtml(copy.line1)}</div><div class="cc-struck-new">${escapeHtml(copy.highlight)} ➔</div></div>`;
+      return `<div class="cc-anim-struck-swap">
+        <div class="cc-struck-old">${escapeHtml(copy.line1)}</div>
+        <div class="cc-struck-new">${escapeHtml(copy.highlight)} ➔</div>
+      </div>`;
     }
     if (style === 'tilt_card') {
-      return `<div class="cc-anim-tilt-card"><span class="cc-tilt-badge">${escapeHtml(copy.badge.toUpperCase())}</span><div style="font-size:8px;color:#555;">${escapeHtml(copy.line1)}</div><div style="font-size:9px;font-weight:800;color:#111;">${escapeHtml(copy.highlight)}</div></div>`;
+      return `<div class="cc-anim-tilt-card">
+        <span class="cc-tilt-badge">${escapeHtml(copy.badge.toUpperCase())}</span>
+        <div style="font-size:7.5px;color:#555;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+        <div style="font-size:8px;font-weight:800;color:#111;">${escapeHtml(copy.highlight)}</div>
+      </div>`;
     }
     if (style === 'mask_wipe') {
-      return `<div class="cc-anim-mask-wipe"><div style="font-size:7.5px;color:#94A3B8;">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-mask-text">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
+      return `<div class="cc-anim-mask-wipe">
+        <div style="font-size:7px;color:#94A3B8;letter-spacing:0.5px;">${escapeHtml(copy.badge.toUpperCase())}</div>
+        <div style="font-size:7.5px;color:#CBD5E1;margin:1px 0;">${escapeHtml(copy.line1)}</div>
+        <div class="cc-mask-text">${escapeHtml(copy.highlight.toUpperCase())}</div>
+      </div>`;
     }
     const key = `${style}-${ver}`;
     switch (key) {
       case 'sticky_note-v1':
-        return `<div class="cc-anim-sticky-v1"><div style="color:#DC2626;font-size:8px;">${escapeHtml(copy.badge)}</div><div>${escapeHtml(copy.highlight || copy.line1)}</div></div>`;
+        return `<div class="cc-anim-sticky-v1">
+          <div style="color:#DC2626;font-size:7px;font-weight:700;">📌 ${escapeHtml(copy.badge)}</div>
+          <div style="font-size:7.5px;color:#18181B;margin-top:2px;">${escapeHtml(copy.line1)}</div>
+          <div style="font-size:8px;font-weight:800;color:#DC2626;margin-top:2px;border-bottom:1.5px solid #DC2626;display:inline-block;">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'sticky_note-v2':
-        return `<div class="cc-anim-sticky-v2"><span class="cc-pin-dot"></span><div>${escapeHtml(copy.line1)}</div><span class="cc-marker-sweep-bar">${escapeHtml(copy.highlight)}</span></div>`;
+        return `<div class="cc-anim-sticky-v2">
+          <span class="cc-pin-dot"></span>
+          <div style="font-size:7px;color:#DC2626;font-weight:700;">📌 ${escapeHtml(copy.badge)}</div>
+          <div style="font-size:7.5px;color:#334155;margin-top:2px;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-marker-sweep-bar" style="font-size:8px;font-weight:800;margin-top:2px;">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'sticky_note-v3':
-        return `<div class="cc-anim-sticky-v3"><div class="cc-sticky-back">01 · ${escapeHtml(copy.line1)}</div><div class="cc-sticky-front">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-sticky-v3">
+          <div class="cc-sticky-back">01 · ${escapeHtml(copy.line1)}</div>
+          <div class="cc-sticky-front">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'receipt-v1':
-        return `<div class="cc-anim-receipt-v1"><div>*** ${escapeHtml(copy.badge.toUpperCase())} ***</div><div>${escapeHtml(copy.line1)}</div><div class="cc-receipt-inv">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
+        return `<div class="cc-anim-receipt-v1">
+          <div style="font-size:7px;opacity:0.85;">*** ${escapeHtml(copy.badge.toUpperCase())} ***</div>
+          <div style="font-size:7.5px;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-receipt-inv">${escapeHtml(copy.highlight.toUpperCase())}</div>
+        </div>`;
       case 'receipt-v2':
-        return `<div class="cc-anim-receipt-v2"><div>${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-coupon-gold">${escapeHtml(copy.highlight.toUpperCase())}</div></div>`;
+        return `<div class="cc-anim-receipt-v2">
+          <div style="font-size:7px;opacity:0.9;letter-spacing:0.5px;">${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div style="font-size:7.5px;color:#fff;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-coupon-gold">${escapeHtml(copy.highlight.toUpperCase())}</div>
+        </div>`;
       case 'receipt-v3':
-        return `<div class="cc-anim-receipt-v3"><div class="cc-catalog-head">01 // ${escapeHtml(copy.badge.toUpperCase())}</div><div>${escapeHtml(copy.line1)}</div><div class="cc-catalog-pill">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-receipt-v3">
+          <div class="cc-catalog-head">01 // ${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div style="font-size:7.5px;color:#111;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-catalog-pill">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'chat_thread-v1':
-        return `<div class="cc-anim-chat-v1"><div class="cc-chat-q">${escapeHtml(copy.line1)}</div><div class="cc-chat-a">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-chat-v1">
+          <div class="cc-chat-q">${escapeHtml(copy.line1)}</div>
+          <div class="cc-chat-a">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'chat_thread-v2':
-        return `<div class="cc-anim-chat-v2"><div class="cc-tt-reply-sub"><span class="cc-tt-reply-dot"></span>Membalas @user</div><div style="font-weight:700;margin-top:2px;">${escapeHtml(copy.line1)}</div><div style="background:var(--cc-accent);color:#000;font-weight:800;padding:2px 4px;border-radius:3px;margin-top:3px;">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-chat-v2">
+          <div class="cc-tt-reply-sub"><span class="cc-tt-reply-dot"></span>Membalas @user · ${escapeHtml(copy.badge)}</div>
+          <div style="font-weight:700;font-size:7.5px;margin-top:2px;">${escapeHtml(copy.line1)}</div>
+          <div style="background:var(--cc-accent);color:#000;font-weight:800;font-size:7.5px;padding:2px 4px;border-radius:3px;margin-top:3px;display:inline-block;">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'chat_thread-v3':
-        return `<div class="cc-anim-chat-v3"><div class="cc-wave-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div style="font-weight:700;">"${escapeHtml(copy.highlight || copy.line1)}"</div></div>`;
+        return `<div class="cc-anim-chat-v3">
+          <div class="cc-wave-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div style="font-size:7.5px;color:#94A3B8;">${escapeHtml(copy.line1)}</div>
+          <div style="font-weight:700;font-size:8px;margin-top:2px;">"${escapeHtml(copy.highlight)}"</div>
+        </div>`;
       case 'type_stack-v1':
-        return `<div class="cc-anim-type-v1"><div>${escapeHtml(copy.line1)}</div><div style="color:var(--cc-accent);">${escapeHtml(copy.highlight)}</div><div class="cc-brush-line"></div></div>`;
+        return `<div class="cc-anim-type-v1">
+          <div style="font-size:7px;opacity:0.85;">${escapeHtml(copy.badge)}</div>
+          <div style="font-size:7.5px;">${escapeHtml(copy.line1)}</div>
+          <div style="color:var(--cc-accent);font-size:8px;font-weight:800;">${escapeHtml(copy.highlight)}</div>
+          <div class="cc-brush-line"></div>
+        </div>`;
       case 'type_stack-v2':
-        return `<div class="cc-anim-type-v2"><div>${escapeHtml(copy.line1)}</div><div class="cc-kinetic-pill-wrap"><span class="cc-kinetic-pill-bg"></span>${escapeHtml(copy.highlight)}<span class="cc-sparkle-star">✦</span></div></div>`;
+        return `<div class="cc-anim-type-v2">
+          <div style="font-size:7.5px;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-kinetic-pill-wrap">
+            <span class="cc-kinetic-pill-bg"></span>${escapeHtml(copy.highlight)}<span class="cc-sparkle-star">✦</span>
+          </div>
+        </div>`;
       case 'type_stack-v3':
-        return `<div class="cc-anim-type-v3"><div class="cc-strike-row">${escapeHtml(copy.line1)}<span class="cc-strike-bar"></span></div><div class="cc-frame-box">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-type-v3">
+          <div class="cc-strike-row">${escapeHtml(copy.line1)}<span class="cc-strike-bar"></span></div>
+          <div class="cc-frame-box">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'label_tape-v1':
-        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-dymo-row2">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
+        return `<div class="cc-anim-tape-v1">
+          <div class="cc-dymo-row1">${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div class="cc-dymo-row2">${escapeHtml(copy.line1.toUpperCase())}</div>
+          <div class="cc-dymo-row2" style="background:#fff;color:#111;margin-top:2px;">${escapeHtml(copy.highlight.toUpperCase())}</div>
+        </div>`;
       case 'label_tape-v2':
-        return `<div class="cc-anim-tape-v2"><div class="cc-cyber-bar">01 // ${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-cyber-bar2">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
+        return `<div class="cc-anim-tape-v2">
+          <div class="cc-cyber-bar">01 // ${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div class="cc-cyber-bar2">${escapeHtml(copy.line1.toUpperCase())}</div>
+          <div class="cc-cyber-bar2" style="background:#fff;color:#0B0D13;">${escapeHtml(copy.highlight.toUpperCase())}</div>
+        </div>`;
       case 'label_tape-v3':
-        return `<div class="cc-anim-tape-v1"><div class="cc-dymo-row1" style="border-radius:99px;background:rgba(255,255,255,0.14);">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-dymo-row2" style="border-radius:5px;">${escapeHtml((copy.highlight || copy.line1).toUpperCase())}</div></div>`;
+        return `<div class="cc-anim-tape-v1">
+          <div class="cc-dymo-row1" style="border-radius:99px;background:rgba(255,255,255,0.14);">${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div class="cc-dymo-row2" style="border-radius:4px;">${escapeHtml(copy.line1.toUpperCase())}</div>
+          <div class="cc-dymo-row2" style="border-radius:4px;background:#fff;color:#111;">${escapeHtml(copy.highlight.toUpperCase())}</div>
+        </div>`;
       case 'quiet_serif-v1':
-        return `<div class="cc-anim-serif-v1"><div class="cc-serif-line1">${escapeHtml(copy.line1)}</div><div class="cc-serif-rule"></div><div class="cc-serif-italic">${escapeHtml(copy.highlight)}</div></div>`;
+        return `<div class="cc-anim-serif-v1">
+          <div class="cc-serif-line1">${escapeHtml(copy.line1)}</div>
+          <div class="cc-serif-rule"></div>
+          <div class="cc-serif-italic">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'quiet_serif-v2':
-        return `<div class="cc-anim-serif-v2"><div class="cc-serif-line1">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-serif-italic">${escapeHtml(copy.highlight || copy.line1)}</div></div>`;
+        return `<div class="cc-anim-serif-v2">
+          <div class="cc-serif-line1" style="font-size:7px;letter-spacing:0.5px;">${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div style="font-size:7.5px;color:#fff;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-serif-italic">${escapeHtml(copy.highlight)}</div>
+        </div>`;
       case 'quiet_serif-v3':
       default:
-        return `<div class="cc-anim-serif-v3"><div style="font-size:8px;color:#52525B;">${escapeHtml(copy.badge.toUpperCase())}</div><div class="cc-serif-italic" style="color:#111;font-weight:700;">${escapeHtml(copy.highlight || copy.line1)}</div><div class="cc-serif-rule" style="width:100%;"></div></div>`;
+        return `<div class="cc-anim-serif-v3">
+          <div style="font-size:7px;color:#52525B;">${escapeHtml(copy.badge.toUpperCase())}</div>
+          <div style="font-size:7.5px;color:#333;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+          <div class="cc-serif-italic" style="color:#111;font-weight:700;">${escapeHtml(copy.highlight)}</div>
+          <div class="cc-serif-rule" style="width:100%;margin-top:3px;"></div>
+        </div>`;
     }
   }
 

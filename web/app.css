@@ -3368,13 +3368,13 @@ body {
 .cc-stage {
   position: relative;
   width: 100%;
-  height: 104px;
+  height: 114px;
   background: radial-gradient(circle at 50% 35%, #23252f 0%, #0d0e13 100%);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--border-rule);
 }
 
@@ -3485,11 +3485,13 @@ body {
 }
 
 /* ==========================================================================
-   SAFETY TRUNCATION UNTUK PREVIEW HOOK DINAMIS
-   Mencegah teks produk panjang merusak proporsi kartu panggung mini
+   MINIATUR PROPORSIONAL UNTUK PREVIEW HOOK DINAMIS (OPSI 1)
+   Menggunakan multi-line wrap alami, skala proporsional, dan multi-line clamp
+   sehingga seluruh kalimat terlihat lengkap tanpa terpotong kaku (...)
    ========================================================================== */
 .cc-stage [class*="cc-anim-"] {
-  max-width: 126px;
+  width: 94%;
+  max-width: 156px;
   box-sizing: border-box;
 }
 
@@ -3510,21 +3512,24 @@ body {
 .cc-stage .cc-catalog-pill,
 .cc-stage .cc-frame-box {
   max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.22;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   box-sizing: border-box;
 }
 
 /* 1. STICKY NOTE (v1: Post-It, v2: Grid Memo + Push-Pin, v3: Dual Layered) */
 .cc-anim-sticky-v1 {
-  width: 112px;
   background: #FEF08A;
   color: #18181B;
-  padding: 7px 9px;
-  border-radius: 3px;
+  padding: 6px 8px;
+  border-radius: 4px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 700;
   position: relative;
   animation: ccStickySwing 2.2s ease-in-out infinite;
@@ -3541,16 +3546,15 @@ body {
 }
 
 .cc-anim-sticky-v2 {
-  width: 116px;
   background-color: #FFFDF7;
   background-image: linear-gradient(#E2E8F0 1px, transparent 1px), linear-gradient(90deg, #E2E8F0 1px, transparent 1px);
   background-size: 8px 8px;
   color: #0F172A;
-  padding: 9px 9px 7px;
+  padding: 8px 8px 6px;
   border-radius: 4px;
   position: relative;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   animation: ccPopSpring 2.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
@@ -3578,8 +3582,7 @@ body {
 
 .cc-anim-sticky-v3 {
   position: relative;
-  width: 116px;
-  height: 60px;
+  height: 68px;
 }
 
 .cc-sticky-back {
@@ -3589,8 +3592,8 @@ body {
   right: 4px;
   background: #1E1E24;
   color: #fff;
-  font-size: 8.5px;
-  padding: 5px 7px;
+  font-size: 7.5px;
+  padding: 4px 6px;
   border-radius: 4px;
   transform: rotate(-2.5deg);
   animation: ccSlideDown 2.2s ease-out infinite;
@@ -3603,9 +3606,9 @@ body {
   right: 2px;
   background: var(--cc-accent);
   color: #fff;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
-  padding: 5px 7px;
+  padding: 4px 6px;
   border-radius: 4px;
   transform: rotate(1.8deg);
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.45);
@@ -3614,14 +3617,13 @@ body {
 
 /* 2. RECEIPT (v1: Thermal, v2: Red Coupon Tear, v3: White Catalog Index) */
 .cc-anim-receipt-v1 {
-  width: 112px;
   background: #FAF8F3;
   color: #111;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-top: 2px dashed #111;
   border-bottom: 2px dashed #111;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 7.5px;
   animation: ccReceiptPrint 2.2s ease-out infinite;
 }
 
@@ -3634,32 +3636,30 @@ body {
 }
 
 .cc-anim-receipt-v2 {
-  width: 118px;
   background: linear-gradient(135deg, #E11D48, #BE123C);
   color: #fff;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 5px;
   border: 1px dashed rgba(255, 255, 255, 0.5);
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 800;
   animation: ccPopSpring 2.2s ease-out infinite;
 }
 
 .cc-coupon-gold {
   color: #FFE600;
-  font-size: 9.5px;
+  font-size: 8.5px;
   margin-top: 2px;
   border-top: 1px dashed rgba(255, 255, 255, 0.4);
   padding-top: 2px;
 }
 
 .cc-anim-receipt-v3 {
-  width: 120px;
   background: #FFFFFF;
   color: #0B0C10;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 5px;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 700;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
   animation: ccPopSpring 2.2s ease-out infinite;
@@ -3667,7 +3667,7 @@ body {
 
 .cc-catalog-head {
   font-family: var(--font-mono);
-  font-size: 7.5px;
+  font-size: 7px;
   color: #64748B;
   border-bottom: 1px solid #E2E8F0;
   padding-bottom: 2px;
@@ -3686,19 +3686,18 @@ body {
 
 /* 3. CHAT THREAD (v1: WA/iMessage, v2: TikTok Reply Sticker, v3: Voice Note DM) */
 .cc-anim-chat-v1 {
-  width: 122px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .cc-chat-q {
   align-self: flex-start;
   background: #fff;
   color: #111;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 600;
-  padding: 4px 7px;
+  padding: 3px 6px;
   border-radius: 8px 8px 8px 2px;
   animation: ccSlideDown 2.2s ease-out infinite;
 }
@@ -3707,20 +3706,19 @@ body {
   align-self: flex-end;
   background: #10B981;
   color: #fff;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 700;
-  padding: 4px 7px;
+  padding: 3px 6px;
   border-radius: 8px 8px 2px 8px;
   animation: ccSlideUpLate 2.2s ease-out infinite;
 }
 
 .cc-anim-chat-v2 {
-  width: 122px;
   background: #fff;
   color: #111;
   padding: 5px 7px;
   border-radius: 6px 6px 6px 1px;
-  font-size: 8.5px;
+  font-size: 7.5px;
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.4);
   animation: ccPopSpring 2.2s ease-out infinite;
 }
@@ -3742,13 +3740,12 @@ body {
 }
 
 .cc-anim-chat-v3 {
-  width: 122px;
   background: rgba(15, 17, 24, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 8px;
   color: #fff;
-  font-size: 8.5px;
+  font-size: 7.5px;
 }
 
 .cc-wave-bars {
@@ -3776,15 +3773,14 @@ body {
 
 /* 4. TYPE STACK (v1: Poster Brush, v2: Kinetic Pill + Sparkle, v3: Strike + Frame Box) */
 .cc-anim-type-v1 {
-  width: 122px;
   color: #fff;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .cc-brush-line {
-  height: 4px;
+  height: 3px;
   background: var(--cc-accent);
   border-radius: 99px;
   margin-top: 3px;
@@ -3793,9 +3789,8 @@ body {
 }
 
 .cc-anim-type-v2 {
-  width: 124px;
   color: #fff;
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 800;
 }
 
@@ -3803,7 +3798,7 @@ body {
   position: relative;
   display: inline-block;
   margin-top: 3px;
-  padding: 2px 7px;
+  padding: 2px 6px;
   color: #0B0C10;
   font-weight: 900;
   z-index: 1;
@@ -3823,15 +3818,14 @@ body {
   position: absolute;
   top: -7px;
   right: -7px;
-  font-size: 12px;
+  font-size: 11px;
   color: #fff;
   animation: ccSparkleSpin 2.2s ease-in-out infinite;
 }
 
 .cc-anim-type-v3 {
-  width: 124px;
   color: #fff;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
 }
 
@@ -3853,11 +3847,11 @@ body {
 }
 
 .cc-frame-box {
-  margin-top: 4px;
+  margin-top: 3px;
   border: 1.5px solid var(--cc-accent);
   background: rgba(10, 12, 18, 0.85);
   color: var(--cc-accent);
-  padding: 2px 6px;
+  padding: 2px 5px;
   font-weight: 800;
   animation: ccSlideUpLate 2.2s ease-out infinite;
 }
@@ -3874,8 +3868,8 @@ body {
   background: #141519;
   color: #F4F3EE;
   font-family: var(--font-mono);
-  font-size: 8px;
-  padding: 3px 6px;
+  font-size: 7px;
+  padding: 2px 5px;
   letter-spacing: 0.5px;
   transform: rotate(-1deg);
   transform-origin: left center;
@@ -3885,15 +3879,14 @@ body {
 .cc-dymo-row2 {
   background: var(--cc-accent);
   color: #0B0C10;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 800;
-  padding: 3px 6px;
+  padding: 2px 5px;
   transform: rotate(0.8deg);
   animation: ccSlideUpLate 2.2s ease-out infinite;
 }
 
 .cc-anim-tape-v2 {
-  width: 122px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -3904,8 +3897,8 @@ body {
   border-left: 3px solid var(--cc-accent);
   color: #fff;
   font-family: var(--font-mono);
-  font-size: 8px;
-  padding: 3px 6px;
+  font-size: 7px;
+  padding: 2px 5px;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
   animation: ccSlideDown 2.2s ease-out infinite;
 }
@@ -3913,30 +3906,29 @@ body {
 .cc-cyber-bar2 {
   background: var(--cc-accent);
   color: #0B0D13;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 900;
-  padding: 3px 6px;
+  padding: 2px 5px;
   clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
   animation: ccSlideUpLate 2.2s ease-out infinite;
 }
 
 /* 6. QUIET SERIF (v1: Editorial Italic, v2: Magazine Masthead, v3: Warm Paper Pocket) */
 .cc-anim-serif-v1 {
-  width: 122px;
   color: #fff;
   text-align: left;
 }
 
 .cc-serif-line1 {
-  font-size: 8.5px;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 7.5px;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .cc-serif-rule {
   height: 1.5px;
-  width: 36px;
+  width: 32px;
   background: var(--cc-accent);
-  margin: 3px 0;
+  margin: 2px 0;
   transform-origin: left center;
   animation: ccScaleXLoop 2.2s ease-out infinite;
 }
@@ -3944,26 +3936,24 @@ body {
 .cc-serif-italic {
   font-family: Georgia, "Times New Roman", serif;
   font-style: italic;
-  font-size: 11px;
+  font-size: 8.5px;
   color: #fff;
   animation: ccSlideUpLate 2.2s ease-out infinite;
 }
 
 .cc-anim-serif-v2 {
-  width: 122px;
   background: rgba(12, 13, 18, 0.85);
   border-left: 3px solid var(--cc-accent);
-  padding: 5px 8px;
+  padding: 4px 7px;
   border-radius: 0 5px 5px 0;
   color: #fff;
   animation: ccPopSpring 2.2s ease-out infinite;
 }
 
 .cc-anim-serif-v3 {
-  width: 122px;
   background: #F7F4EB;
   color: #111111;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 5px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
   animation: ccPopSpring 2.2s ease-out infinite;
@@ -4109,10 +4099,9 @@ body {
    GAYA FLAT MOTION-GRAPHICS (PREVIEW STAGES)
    ========================================================================== */
 .cc-anim-marker-highlight {
-  width: 122px;
   background: #FFFDF7;
   color: #111;
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-radius: 6px;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.45);
   animation: ccPopSpring 2.2s ease-out infinite;
@@ -4122,7 +4111,7 @@ body {
   position: relative;
   display: inline-block;
   font-weight: 800;
-  font-size: 9.5px;
+  font-size: 8px;
   color: #0F172A;
 }
 .cc-marker-hl-line::after {
@@ -4131,7 +4120,7 @@ body {
   left: -2px;
   right: -2px;
   bottom: 0px;
-  height: 6px;
+  height: 5px;
   background: var(--cc-accent, #F2A7BD);
   opacity: 0.65;
   z-index: -1;
@@ -4141,7 +4130,6 @@ body {
 }
 
 .cc-anim-stack-slam {
-  width: 120px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -4150,28 +4138,27 @@ body {
 .cc-slam-plate1 {
   background: #111827;
   color: #fff;
-  padding: 3px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
-  font-size: 8.5px;
+  font-size: 7.5px;
   font-weight: 800;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .cc-slam-plate2 {
   background: var(--cc-accent, #FFD23F);
   color: #111;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 4px;
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 900;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
 
 .cc-anim-struck-swap {
-  width: 122px;
   background: #18181B;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: 5px 7px;
   color: #fff;
   animation: ccPopSpring 2.2s ease-out infinite;
   text-align: left;
@@ -4179,25 +4166,24 @@ body {
 .cc-struck-old {
   position: relative;
   display: inline-block;
-  font-size: 8px;
+  font-size: 7.5px;
   color: #9CA3AF;
   text-decoration: line-through;
   text-decoration-color: #EF4444;
   text-decoration-thickness: 1.5px;
 }
 .cc-struck-new {
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 800;
   color: var(--cc-accent, #8FD6B5);
   margin-top: 2px;
 }
 
 .cc-anim-tilt-card {
-  width: 118px;
   background: #FFFFFF;
   color: #18181B;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 5px 7px;
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
   transform: perspective(300px) rotateY(-6deg) rotateX(4deg);
   animation: ccPopSpring 2.2s ease-out infinite;
@@ -4205,24 +4191,23 @@ body {
 }
 .cc-tilt-badge {
   display: inline-block;
-  font-size: 7.5px;
+  font-size: 7px;
   font-weight: 800;
   background: var(--cc-accent, #8FD6B5);
   color: #0F172A;
   padding: 1px 4px;
   border-radius: 3px;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .cc-anim-mask-wipe {
-  width: 120px;
   overflow: hidden;
   border-bottom: 2px solid var(--cc-accent, #3D6DF2);
-  padding-bottom: 4px;
+  padding-bottom: 3px;
   animation: ccPopSpring 2.2s ease-out infinite;
 }
 .cc-mask-text {
-  font-size: 9.5px;
+  font-size: 8px;
   font-weight: 900;
   color: #FFFFFF;
   animation: ccSlideUpLate 2.2s ease-out infinite;
