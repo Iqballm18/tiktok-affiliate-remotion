@@ -69,7 +69,20 @@
     inputWatermark: $('inputWatermark'),
     selectWatermarkPosition: $('selectWatermarkPosition'),
 
-    // Tiktok Caption & Batch Render Queue
+    // Tiktok Caption, Cover & Batch Render Queue
+    selectCoverTemplate: $('selectCoverTemplate'),
+    selectCoverClipIndex: $('selectCoverClipIndex'),
+    inputCoverFrameSec: $('inputCoverFrameSec'),
+    selectCoverImage: $('selectCoverImage'),
+    chkCoverEmbed: $('chkCoverEmbed'),
+    inputCoverBadge: $('inputCoverBadge'),
+    inputCoverSubtitle: $('inputCoverSubtitle'),
+    inputCoverTitle: $('inputCoverTitle'),
+    btnPreviewCoverLive: $('btnPreviewCoverLive'),
+    btnRenderCoverJpg: $('btnRenderCoverJpg'),
+    btnViewCoverPlayer: $('btnViewCoverPlayer'),
+    btnRenderCoverPlayer: $('btnRenderCoverPlayer'),
+    btnDownloadCover: $('btnDownloadCover'),
     inputTiktokCaption: $('inputTiktokCaption'),
     btnAutoGenCaption: $('btnAutoGenCaption'),
     btnCopyTiktokCaption: $('btnCopyTiktokCaption'),
@@ -230,6 +243,17 @@
     stillMetaInfo: $('stillMetaInfo'),
     btnDownloadStill: $('btnDownloadStill'),
     toastContainer: $('toastContainer'),
+
+    modalCoverPreview: $('modalCoverPreview'),
+    btnCloseCoverModal: $('btnCloseCoverModal'),
+    btnCloseCoverModal2: $('btnCloseCoverModal2'),
+    btnCoverModalRerender: $('btnCoverModalRerender'),
+    coverImagePreview: $('coverImagePreview'),
+    coverImageTitle: $('coverImageTitle'),
+    coverImageMeta: $('coverImageMeta'),
+    btnCoverModalOpenTab: $('btnCoverModalOpenTab'),
+    btnCoverModalDownload: $('btnCoverModalDownload'),
+    chkAutoRenderCover: $('chkAutoRenderCover'),
 
     // Google Drive Link Modal & Live Upload Progress Elements
     modalGDriveConfig: $('modalGDriveConfig'),
@@ -453,6 +477,19 @@
         });
       }
 
+      // Update Cover Image selector
+      if (el.selectCoverImage) {
+        el.selectCoverImage.innerHTML = '<option value="">(Gunakan Frame dari Video Mentah)</option>';
+        if (Array.isArray(data.images)) {
+          data.images.forEach(img => {
+            const opt = document.createElement('option');
+            opt.value = img.name;
+            opt.textContent = img.displayName || img.name;
+            el.selectCoverImage.appendChild(opt);
+          });
+        }
+      }
+
       // Retain selections if product is loaded
       if (state.currentProduct) {
         if (state.currentProduct.videoSource) {
@@ -461,6 +498,9 @@
         const v = state.currentProduct.variants?.[state.activeVariantKey];
         if (v && v.voiceOver) {
           el.selectVoiceOver.value = v.voiceOver;
+        }
+        if (v && v.coverImage && el.selectCoverImage) {
+          el.selectCoverImage.value = v.coverImage;
         }
       }
     } catch (err) {
@@ -524,6 +564,7 @@
 
   async function selectProduct(id) {
     if (!id) return;
+    clearTimeout(autoSaveTimeout);
     try {
       const res = await fetch(`/api/products/${id}`);
       if (!res.ok) throw new Error(`Produk '${id}' tidak ditemukan`);
@@ -533,11 +574,11 @@
       try { localStorage.setItem('studio_active_product', id); } catch (_) { }
 
       el.selectProduct.value = id;
+
+      // Refresh asset options terlebih dahulu agar dropdown video/VO berisi aset produk aktif sebelum renderProductToForm
+      await loadAssets();
       renderProductToForm(prod);
       appendLog(`[PRODUK] Berhasil memuat data: ${prod.name}`);
-
-      // Refresh asset options to prioritize current product assets
-      await loadAssets();
     } catch (err) {
       showToast({ type: 'error', title: 'Error', message: err.message });
     }
@@ -551,18 +592,16 @@
       el.uploadSubText.innerHTML = `Tarik &amp; lepas file ke workspace: <code>public/products/${escapeHtml(prod.id)}/</code>`;
     }
     el.inputProductName.value = prod.name || '';
-    el.inputProductName.value = prod.name || '';
 
-    // Set custom output name default to product name
-    if (!el.inputCustomOutputName.value || el.inputCustomOutputName.value === prod.name) {
-      el.inputCustomOutputName.value = prod.name || '';
-    }
+    // Selalu sinkronkan nama output sesuai produk aktif (atau customOutputName jika disimpan khusus untuk produk ini)
+    el.inputCustomOutputName.value = prod.customOutputName || prod.name || '';
 
     if (prod.videoSource && el.selectProductVideo.querySelector(`option[value="${prod.videoSource}"]`)) {
       el.selectProductVideo.value = prod.videoSource;
     }
 
     renderVariant(state.activeVariantKey);
+    document.dispatchEvent(new CustomEvent('productLoaded'));
   }
 
   function renderVariant(variantKey) {
@@ -625,15 +664,22 @@
       el.labelVoiceOver.textContent = `Voice Over untuk ${variantKey.toUpperCase()} (${variantKey === 'v1' ? 'Versi 1' : 'Versi 2'})`;
     }
 
-    // Smart auto-detection of Voice Over jika belum diset
-    let targetVO = v.voiceOver;
+    // Smart auto-detection of Voice Over jika belum diset (hanya dari aset produk aktif / global)
+    const activePid = state.activeProductId || state.currentProduct?.id || '';
+    const isForeignAsset = (assetName) => {
+      if (!assetName || !activePid) return false;
+      const m = String(assetName).match(/^products\/([^/]+)\//);
+      return Boolean(m && m[1] !== activePid);
+    };
+    let targetVO = isForeignAsset(v.voiceOver) ? '' : v.voiceOver;
+    const validVoiceOvers = (state.assets?.voiceOvers || []).filter(vo => !isForeignAsset(vo.name));
     if (!targetVO || !el.selectVoiceOver.querySelector(`option[value="${targetVO}"]`)) {
-      const match = state.assets.voiceOvers.find(vo => vo.name.toLowerCase().includes(variantKey));
+      const match = validVoiceOvers.find(vo => vo.name.toLowerCase().includes(variantKey));
       if (match) {
         targetVO = match.name;
         v.voiceOver = targetVO;
-      } else if (state.assets.voiceOvers.length > 0) {
-        targetVO = state.assets.voiceOvers[0].name;
+      } else if (validVoiceOvers.length > 0) {
+        targetVO = validVoiceOvers[0].name;
         v.voiceOver = targetVO;
       }
     }
@@ -662,6 +708,18 @@
     if (el.inputUrgencyTag) el.inputUrgencyTag.value = v.urgencyTag || '';
     if (el.inputTiktokCaption) el.inputTiktokCaption.value = v.tiktokCaption || '';
     if (el.inputReferenceScript) el.inputReferenceScript.value = v.voiceOverScript || '';
+
+    // Cover / Thumbnail settings
+    if (el.selectCoverTemplate) el.selectCoverTemplate.value = v.coverTemplate || 'hook_card';
+    if (el.selectCoverClipIndex) el.selectCoverClipIndex.value = String(v.coverClipIndex ?? 0);
+    if (el.inputCoverFrameSec) {
+      el.inputCoverFrameSec.value = (v.coverFrameSec !== undefined && v.coverFrameSec !== null) ? v.coverFrameSec : '';
+    }
+    if (el.selectCoverImage) el.selectCoverImage.value = v.coverImage || '';
+    if (el.chkCoverEmbed) el.chkCoverEmbed.checked = Boolean(v.coverEmbed);
+    if (el.inputCoverBadge) el.inputCoverBadge.value = v.coverBadge || '';
+    if (el.inputCoverSubtitle) el.inputCoverSubtitle.value = v.coverSubtitle || '';
+    if (el.inputCoverTitle) el.inputCoverTitle.value = v.coverTitle || '';
 
     updateCharCounters();
 
@@ -932,6 +990,15 @@
 
   // Menentukan frame yang dirender untuk momen terpilih. Mengembalikan { frame, sec } atau { blocked }.
   async function planLiveFrame(v) {
+    if (live.moment === 'cover') {
+      return {
+        frame: 0,
+        sec: 0,
+        renderMode: 'cover',
+        note: 'Cover IG Reels & TikTok (Grid Safe 4:5 & 3:4)'
+      };
+    }
+
     const clips = v.clips || [];
     const dur = i => Math.max(0, (clips[i]?.endSec || 0) - (clips[i]?.startSec || 0));
     const d = [0, 1, 2, 3].map(dur);
@@ -1011,7 +1078,11 @@
 
     if (r.meta && plan && plan.frame !== undefined) {
       const variant = (state.activeVariantKey || 'v1').toUpperCase();
-      r.meta.textContent = `${variant} · detik ${plan.sec.toFixed(1)} · frame ${plan.frame}` + (plan.note ? ` · ${plan.note}` : '');
+      if (plan.renderMode === 'cover') {
+        r.meta.textContent = `${variant} · ${plan.note || 'Cover 1080×1920'}`;
+      } else {
+        r.meta.textContent = `${variant} · detik ${plan.sec.toFixed(1)} · frame ${plan.frame}` + (plan.note ? ` · ${plan.note}` : '');
+      }
     }
   }
 
@@ -1039,7 +1110,12 @@
     renderLiveSide(plan);
     if (plan.blocked) { setLiveState('blocked', plan.blocked); return; }
 
-    const payload = { productData: state.currentProduct, variantKey, frame: plan.frame };
+    const payload = {
+      productData: state.currentProduct,
+      variantKey,
+      frame: plan.frame,
+      renderMode: plan.renderMode || 'video'
+    };
     const key = JSON.stringify(payload);
 
     if (live.cache.has(key)) {
@@ -1171,7 +1247,7 @@
     { id: 'split_wipe', title: 'Split Wipe (Bang-Motion)', sub: 'Layar membelah dua dengan garis cahaya' },
     { id: 'iris_pop', title: 'Iris Pop (Bang-Motion)', sub: 'Fokus lingkaran membesar dari tengah' },
     { id: 'light_leak', title: 'Light Leak', sub: 'Sapuan cahaya hangat organik' },
-    { id: 'glitch_stamp', title: 'Glitch Stamp', sub: 'geseran RGB split & hentakan digital' },
+    { id: 'glitch', title: 'Glitch Stamp', sub: 'Geseran RGB split & hentakan digital' },
     { id: 'push_up', title: 'Push Up', sub: 'Dorongan vertikal ala swipe feed FYP' },
     { id: 'shutter', title: 'Shutter Cut', sub: 'Bilah rana kamera mekanis menutup-buka' },
     { id: 'blur_zoom', title: 'Blur Zoom', sub: ' Transisi fokus lembut sinematik' }
@@ -2185,7 +2261,21 @@
 
   function syncFormToVariant() {
     if (!state.currentProduct) return;
-    state.currentProduct.name = el.inputProductName.value.trim() || state.currentProduct.name;
+    const prevName = state.currentProduct.name;
+    const newName = el.inputProductName.value.trim() || state.currentProduct.name;
+    state.currentProduct.name = newName;
+
+    // Jika custom output name masih kosong atau sama dengan nama produk lama, otomatis ikuti perubahan nama produk
+    const currentCustomVal = el.inputCustomOutputName?.value.trim() || '';
+    if (!currentCustomVal || currentCustomVal === prevName) {
+      if (el.inputCustomOutputName) el.inputCustomOutputName.value = newName;
+      delete state.currentProduct.customOutputName;
+    } else if (currentCustomVal !== newName) {
+      state.currentProduct.customOutputName = currentCustomVal;
+    } else {
+      delete state.currentProduct.customOutputName;
+    }
+
     state.currentProduct.videoSource = el.selectProductVideo.value;
 
     const v = state.currentProduct.variants?.[state.activeVariantKey];
@@ -2213,6 +2303,25 @@
     setOptional('ctaLabel', el.inputCtaLabel?.value);
     setOptional('urgencyTag', el.inputUrgencyTag?.value);
     setOptional('tiktokCaption', el.inputTiktokCaption?.value);
+    setOptional('coverTemplate', el.selectCoverTemplate?.value);
+    setOptional('coverImage', el.selectCoverImage?.value);
+    setOptional('coverBadge', el.inputCoverBadge?.value);
+    setOptional('coverSubtitle', el.inputCoverSubtitle?.value);
+    setOptional('coverTitle', el.inputCoverTitle?.value);
+    if (el.selectCoverClipIndex) {
+      const ci = parseInt(el.selectCoverClipIndex.value, 10);
+      if (!isNaN(ci) && ci > 0) v.coverClipIndex = ci;
+      else delete v.coverClipIndex;
+    }
+    if (el.inputCoverFrameSec) {
+      const fsVal = parseFloat(el.inputCoverFrameSec.value);
+      if (el.inputCoverFrameSec.value !== '' && !isNaN(fsVal) && fsVal >= 0) v.coverFrameSec = fsVal;
+      else delete v.coverFrameSec;
+    }
+    if (el.chkCoverEmbed) {
+      if (el.chkCoverEmbed.checked) v.coverEmbed = true;
+      else delete v.coverEmbed;
+    }
     v.voiceOver = el.selectVoiceOver.value;
     if (el.selectBgmTrack) v.bgmTrack = el.selectBgmTrack.value || undefined;
     v.voiceOverDelaySec = parseFloat(el.inputVoiceOverDelay.value) || 0;
@@ -2582,6 +2691,10 @@
     el.inputCtaText,
     el.inputCtaLabel,
     el.inputUrgencyTag,
+    el.inputCoverFrameSec,
+    el.inputCoverBadge,
+    el.inputCoverSubtitle,
+    el.inputCoverTitle,
   ];
 
   autoSyncInputs.forEach(inp => {
@@ -2593,6 +2706,100 @@
       });
     }
   });
+
+  [el.selectCoverTemplate, el.selectCoverClipIndex, el.selectCoverImage, el.chkCoverEmbed].forEach(ctrl => {
+    if (ctrl) {
+      ctrl.addEventListener('change', () => {
+        live.armed = true;
+        syncFormToVariant();
+        updateThemeVisualPreview();
+        triggerAutoSave();
+      });
+    }
+  });
+
+  if (el.btnPreviewCoverLive) {
+    el.btnPreviewCoverLive.addEventListener('click', () => {
+      syncFormToVariant();
+      const modeSeg = $('playerModeSeg');
+      if (modeSeg) {
+        const liveBtn = modeSeg.querySelector('button[data-mode="live"]');
+        if (liveBtn && !liveBtn.classList.contains('active')) liveBtn.click();
+      }
+      live.moment = 'cover';
+      live.armed = true;
+      clearTimeout(live.timer);
+      runLivePreview();
+      showToast({
+        type: 'info',
+        title: 'Pratinjau Cover Video',
+        message: 'Merender desain cover (1080×1920) di layar HP sebelah kanan...',
+        duration: 2800
+      });
+    });
+  }
+
+  if (el.btnRenderCoverJpg) {
+    el.btnRenderCoverJpg.addEventListener('click', async () => {
+      syncFormToVariant();
+      if (!state.currentProduct) return;
+      const variantKey = state.activeVariantKey || 'v1';
+      const customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
+      const origHtml = el.btnRenderCoverJpg.innerHTML;
+      el.btnRenderCoverJpg.disabled = true;
+      el.btnRenderCoverJpg.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Merender Cover...`;
+
+      try {
+        const res = await fetch('/api/render-cover', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: state.activeProductId,
+            productData: state.currentProduct,
+            variantKey,
+            customOutputName
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Gagal merender cover JPG');
+
+        await loadVideos();
+
+        // Tampilkan juga di Live Frame
+        const r = liveRefs();
+        if (r.img) {
+          live.moment = 'cover';
+          renderLiveSide({ frame: 0, sec: 0, renderMode: 'cover', note: `Tersimpan: out/${data.coverFileName}` });
+          r.img.src = `${data.coverUrl}?t=${Date.now()}`;
+          setLiveState('ready', '');
+        }
+
+        // Buka modal pratinjau cover agar user bisa melihat langsung tanpa harus unduh
+        openCoverPreviewModal({ coverFile: data.coverFileName, videoName: customOutputName });
+
+        showToast({
+          type: 'success',
+          title: 'Cover JPG Berhasil Dibuat!',
+          message: `File out/${data.coverFileName} (1080×1920) siap digunakan.`,
+          duration: 5000,
+          actionLabel: 'Unduh JPG',
+          onAction: () => {
+            const a = document.createElement('a');
+            a.href = `${data.coverUrl}?t=${Date.now()}`;
+            a.download = data.coverFileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+        });
+      } catch (err) {
+        showToast({ type: 'error', title: 'Gagal Render Cover', message: err.message });
+      } finally {
+        el.btnRenderCoverJpg.disabled = false;
+        el.btnRenderCoverJpg.innerHTML = origHtml;
+      }
+    });
+  }
 
   // Mengubah tema / tata letak manual berarti keluar dari preset (menjadi "Kustom").
   const syncSelectEl = (sel, val) => {
@@ -2886,14 +3093,25 @@
       cancelText: 'Batal'
     });
     if (!name) return;
+    clearTimeout(autoSaveTimeout);
     const safeId = name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
-    const vo1 = state.assets.voiceOvers.find(vo => vo.name.includes('v1'))?.name || state.assets.voiceOvers[0]?.name || '';
-    const vo2 = state.assets.voiceOvers.find(vo => vo.name.includes('v2'))?.name || state.assets.voiceOvers[1]?.name || vo1;
+    state.activeProductId = safeId;
+    await loadAssets();
+    const isOwnOrRoot = (assetName) => {
+      if (!assetName) return false;
+      const m = String(assetName).match(/^products\/([^/]+)\//);
+      return !m || m[1] === safeId;
+    };
+    const ownVideos = (state.assets.videos || []).filter(v => isOwnOrRoot(v.name));
+    const ownVOs = (state.assets.voiceOvers || []).filter(vo => isOwnOrRoot(vo.name));
+    const defaultVid = ownVideos[0]?.name || '';
+    const vo1 = ownVOs.find(vo => vo.name.includes('v1'))?.name || ownVOs[0]?.name || '';
+    const vo2 = ownVOs.find(vo => vo.name.includes('v2'))?.name || ownVOs[1]?.name || vo1;
 
     const newProd = {
       id: safeId,
       name,
-      videoSource: state.assets.videos[0]?.name || '',
+      videoSource: defaultVid,
       variants: {
         v1: {
           title: 'Problem-Solution (Pastel)',
@@ -2912,10 +3130,10 @@
           specHighlight: 'Terdaftar Resmi & Aman Digunakan',
           ctaText: 'Cek Promo di Keranjang Kuning',
           clips: [
-            { src: state.assets.videos[0]?.name || '', startSec: 0, endSec: 5 },
-            { src: state.assets.videos[0]?.name || '', startSec: 5, endSec: 12 },
-            { src: state.assets.videos[0]?.name || '', startSec: 12, endSec: 19 },
-            { src: state.assets.videos[0]?.name || '', startSec: 19, endSec: 24 }
+            { src: defaultVid, startSec: 0, endSec: 5 },
+            { src: defaultVid, startSec: 5, endSec: 12 },
+            { src: defaultVid, startSec: 12, endSec: 19 },
+            { src: defaultVid, startSec: 19, endSec: 24 }
           ]
         },
         v2: {
@@ -2935,15 +3153,14 @@
           specHighlight: 'Hemat Pemakaian Jangka Panjang',
           ctaText: 'Checkout di Keranjang Kuning',
           clips: [
-            { src: state.assets.videos[0]?.name || '', startSec: 0, endSec: 5 },
-            { src: state.assets.videos[0]?.name || '', startSec: 5, endSec: 12 },
-            { src: state.assets.videos[0]?.name || '', startSec: 12, endSec: 19 },
-            { src: state.assets.videos[0]?.name || '', startSec: 19, endSec: 24 }
+            { src: defaultVid, startSec: 0, endSec: 5 },
+            { src: defaultVid, startSec: 5, endSec: 12 },
+            { src: defaultVid, startSec: 12, endSec: 19 },
+            { src: defaultVid, startSec: 19, endSec: 24 }
           ]
         }
       }
     };
-    state.activeProductId = safeId;
     state.currentProduct = newProd;
     renderProductToForm(newProd);
     appendLog(`[PRODUK] Membuat template produk baru: ${name}`);
@@ -3072,53 +3289,74 @@
     }
   });
 
-  el.btnApplyImportedJson.addEventListener('click', () => {
+  el.btnApplyImportedJson.addEventListener('click', async () => {
     if (!state.importedProductCandidate) return;
+    clearTimeout(autoSaveTimeout);
     const candidate = state.importedProductCandidate;
+    const safePid = (candidate.id || candidate.name || 'imported').toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
+    const isSameProduct = safePid === state.activeProductId;
 
-    // Retain currently selected video and voiceover from UI if candidate omitted them
-    const currentVideo = el.selectProductVideo.value || state.currentProduct?.videoSource;
-    const currentVO = el.selectVoiceOver.value;
+    const isForeignForTarget = (assetName) => {
+      if (!assetName) return false;
+      const m = String(assetName).match(/^products\/([^/]+)\//);
+      return Boolean(m && m[1] !== safePid);
+    };
 
-    candidate.videoSource = candidate.videoSource || currentVideo;
+    // Jika mengimpor produk baru/berbeda, muat daftar aset milik produk tersebut terlebih dahulu
+    state.activeProductId = safePid;
+    candidate.id = safePid;
+    await loadAssets();
+
+    const validVideos = (state.assets.videos || []).filter(vd => !isForeignForTarget(vd.name));
+    const validVOs = (state.assets.voiceOvers || []).filter(vo => !isForeignForTarget(vo.name));
+
+    const currentVideo = isSameProduct ? (el.selectProductVideo.value || state.currentProduct?.videoSource) : '';
+    const currentVO = isSameProduct ? el.selectVoiceOver.value : '';
+
+    if (isForeignForTarget(candidate.videoSource)) {
+      candidate.videoSource = '';
+    }
+    candidate.videoSource = candidate.videoSource || (!isForeignForTarget(currentVideo) ? currentVideo : '') || (validVideos[0]?.name || '');
 
     // Check and auto-clamp clips against actual video duration
-    const vidObj = state.assets.videos.find(v => v.name === candidate.videoSource);
+    const vidObj = validVideos.find(v => v.name === candidate.videoSource);
     const maxDur = vidObj?.durationSec;
     let clampedCount = 0;
 
     ['v1', 'v2'].forEach(vk => {
       const v = candidate.variants?.[vk];
       if (v) {
+        if (isForeignForTarget(v.voiceOver)) v.voiceOver = '';
         // Smart matching: varian v1 mencari audio v1, varian v2 mencari audio v2
         if (!v.voiceOver) {
-          const match = state.assets.voiceOvers.find(vo => vo.name.toLowerCase().includes(vk));
-          v.voiceOver = match ? match.name : currentVO;
+          const match = validVOs.find(vo => vo.name.toLowerCase().includes(vk));
+          v.voiceOver = match ? match.name : (!isForeignForTarget(currentVO) ? currentVO : (validVOs[0]?.name || ''));
         }
         if (Array.isArray(v.clips)) {
-          v.clips.forEach((c, idx) => {
+          v.clips.forEach((c) => {
+            if (isForeignForTarget(c.src)) c.src = '';
             // Smart Multi-Video Resolver: Mendukung c.videoIndex (1 atau 2) atau c.src dari Gemini
-            if (state.assets.videos.length > 0) {
-              if (c.videoIndex === 2 && state.assets.videos.length > 1) {
-                c.src = state.assets.videos[1].name;
+            if (validVideos.length > 0) {
+              if (c.videoIndex === 2 && validVideos.length > 1) {
+                c.src = validVideos[1].name;
               } else if (c.videoIndex === 1) {
-                c.src = state.assets.videos[0].name;
+                c.src = validVideos[0].name;
               } else if (c.src) {
                 const sLower = c.src.toLowerCase();
-                const matched = state.assets.videos.find(vd => {
+                const matched = validVideos.find(vd => {
                   const base = vd.name.split('/').pop().toLowerCase();
                   return vd.name.toLowerCase().includes(sLower) || base.includes(sLower) || sLower.includes(base);
                 });
-                c.src = matched ? matched.name : (candidate.videoSource || state.assets.videos[0].name);
+                c.src = matched ? matched.name : (candidate.videoSource || validVideos[0].name);
               } else {
-                c.src = candidate.videoSource || state.assets.videos[0].name;
+                c.src = candidate.videoSource || validVideos[0].name;
               }
             } else {
-              c.src = c.src || candidate.videoSource;
+              c.src = c.src || candidate.videoSource || '';
             }
 
             // Validasi & clamp batas detik terhadap durasi video yang bersangkutan
-            const clipVidObj = state.assets.videos.find(vd => vd.name === c.src) || vidObj;
+            const clipVidObj = validVideos.find(vd => vd.name === c.src) || vidObj;
             const clipMaxDur = clipVidObj?.durationSec || maxDur;
             if (clipMaxDur && c.endSec > clipMaxDur) {
               const desiredLen = Math.max(2, c.endSec - c.startSec);
@@ -3132,9 +3370,6 @@
     });
 
     state.currentProduct = candidate;
-    const safePid = (candidate.id || candidate.name || 'imported').toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
-    candidate.id = safePid;
-    state.activeProductId = safePid;
 
     renderProductToForm(candidate);
     el.modalImportGemini.style.display = 'none';
@@ -3473,6 +3708,107 @@
     });
   });
 
+  let currentActiveCover = null;
+
+  function openCoverPreviewModal({ coverFile, videoName }) {
+    if (!coverFile) return;
+    currentActiveCover = { coverFile, videoName };
+    const coverUrl = `/out/${encodeURIComponent(coverFile)}`;
+    if (el.coverImagePreview) el.coverImagePreview.src = coverUrl;
+    if (el.coverImageTitle) el.coverImageTitle.textContent = coverFile;
+    if (el.coverImageMeta) {
+      el.coverImageMeta.textContent = `Resolusi: 1080 × 1920 (9:16 Vertical) · Berpasangan dengan: ${videoName || 'Video'}`;
+    }
+    if (el.btnCoverModalOpenTab) el.btnCoverModalOpenTab.href = coverUrl;
+    if (el.btnCoverModalDownload) {
+      el.btnCoverModalDownload.href = coverUrl;
+      el.btnCoverModalDownload.download = coverFile;
+    }
+    if (el.modalCoverPreview) el.modalCoverPreview.style.display = 'flex';
+  }
+
+  async function triggerRenderCoverForVideo(videoName, triggerEl) {
+    if (!videoName) return;
+    const origHtml = triggerEl ? triggerEl.innerHTML : '';
+    if (triggerEl) {
+      triggerEl.disabled = true;
+      triggerEl.innerHTML = `<span>⏳</span> <span>Merender...</span>`;
+    }
+
+    try {
+      showToast({
+        type: 'info',
+        title: 'Merender Cover...',
+        message: `Sedang membuat cover thumbnail 1080×1920 untuk "${videoName}"...`,
+        duration: 4000
+      });
+
+      const res = await fetch('/api/render-cover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoName })
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        throw new Error(data.error || 'Gagal merender cover thumbnail');
+      }
+
+      await loadVideos();
+      await loadPublicBrowser();
+
+      openCoverPreviewModal({ coverFile: data.coverFileName, videoName });
+
+      showToast({
+        type: 'success',
+        title: 'Cover Berhasil Dibuat!',
+        message: `Thumbnail "${data.coverFileName}" siap digunakan & otomatis terunggah saat upload ke GDrive.`,
+        duration: 6000
+      });
+
+      if (el.selectOutputVideo && el.selectOutputVideo.value === videoName) {
+        playVideo(videoName);
+      }
+    } catch (err) {
+      showToast({
+        type: 'error',
+        title: 'Gagal Render Cover',
+        message: err.message
+      });
+    } finally {
+      if (triggerEl) {
+        triggerEl.disabled = false;
+        triggerEl.innerHTML = origHtml;
+      }
+    }
+  }
+
+  function closeCoverPreviewModal() {
+    if (el.modalCoverPreview) el.modalCoverPreview.style.display = 'none';
+  }
+
+  [el.btnCloseCoverModal, el.btnCloseCoverModal2].forEach(b => {
+    if (b) b.addEventListener('click', closeCoverPreviewModal);
+  });
+
+  if (el.btnCoverModalRerender) {
+    el.btnCoverModalRerender.addEventListener('click', async () => {
+      if (!currentActiveCover || !currentActiveCover.videoName) {
+        // Fallback to active variant/product
+        if (state.currentProduct) {
+          await triggerRenderCoverForVideo(`${state.currentProduct.name} ${state.activeVariantKey || 'v1'}.mp4`, el.btnCoverModalRerender);
+        }
+        return;
+      }
+      await triggerRenderCoverForVideo(currentActiveCover.videoName, el.btnCoverModalRerender);
+    });
+  }
+
+  if (el.modalCoverPreview) {
+    el.modalCoverPreview.addEventListener('click', e => {
+      if (e.target === el.modalCoverPreview) closeCoverPreviewModal();
+    });
+  }
+
   el.btnRefreshStill.addEventListener('click', requestStillFrame);
 
   async function requestStillFrame() {
@@ -3789,10 +4125,14 @@
         removeToast(activeUploadToast);
         activeUploadToast = null;
       }
+      const successTitle = data.coverUploaded ? 'Upload Video & Cover Berhasil' : 'Upload berhasil';
+      const successMsg = data.coverUploaded
+        ? `Video & Cover Thumbnail '${filename}' berhasil tersimpan di Google Drive!`
+        : `Video '${filename}' berhasil tersimpan di Google Drive!`;
       showToast({
         type: 'success',
-        title: 'Upload berhasil',
-        message: `Video '${filename}' berhasil tersimpan di Google Drive!`,
+        title: successTitle,
+        message: successMsg,
         duration: 9000,
         actionLabel: 'Buka video',
         onAction: () => {
@@ -4267,7 +4607,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: state.activeTranscriptFile,
-            index: idx
+            index: idx,
+            words: state.activeTranscriptWords
           })
         });
         const data = await res.json();
@@ -4316,7 +4657,8 @@
             filename: state.activeTranscriptFile,
             index: idx,
             part1: p1,
-            part2: p2
+            part2: p2,
+            words: state.activeTranscriptWords
           })
         });
         const data = await res.json();
@@ -4353,7 +4695,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: state.activeTranscriptFile,
-            index: idx
+            index: idx,
+            words: state.activeTranscriptWords
           })
         });
         const data = await res.json();
@@ -4454,6 +4797,21 @@
   // -------------------------------------------------------------
   // Render Execution & Realtime SSE Stream (With Confirmation Modal)
   // -------------------------------------------------------------
+  function syncRenderModalTargetDisplay(target) {
+    if (!el.renderModalOutputName || !state.currentProduct) return;
+    const rawName = (el.inputCustomOutputName?.value.trim() || state.currentProduct.name || 'video').replace(/[/\\?%*:|"<>]/g, '-').trim();
+    if (target === 'v1') {
+      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4`;
+      el.renderModalOutputName.title = `out/${rawName} v1.mp4`;
+    } else if (target === 'v2') {
+      el.renderModalOutputName.textContent = `out/${rawName} v2.mp4`;
+      el.renderModalOutputName.title = `out/${rawName} v2.mp4`;
+    } else {
+      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4 & v2.mp4`;
+      el.renderModalOutputName.title = `out/${rawName} v1.mp4 & ${rawName} v2.mp4`;
+    }
+  }
+
   function updateRenderScopeCards(selectedVal) {
     document.querySelectorAll('.render-scope-card').forEach(card => {
       const radio = card.querySelector('input[type="radio"]');
@@ -4461,6 +4819,7 @@
       card.classList.toggle('active', isMatch);
       if (isMatch && radio) radio.checked = true;
     });
+    syncRenderModalTargetDisplay(selectedVal);
   }
 
   // Handle clicking radio cards inside Render Modal
@@ -4490,14 +4849,20 @@
       return;
     }
 
+    // Safety guard: Jika nilai inputCustomOutputName terdeteksi milik produk lain di state.products, reset ke produk aktif
+    const currentName = state.currentProduct.name || '';
+    const currentOut = el.inputCustomOutputName?.value.trim() || '';
+    if (currentOut && currentOut !== currentName && Array.isArray(state.products)) {
+      const matchOther = state.products.find(p => p.id !== state.activeProductId && (p.name.trim().toLowerCase() === currentOut.toLowerCase() || p.id === currentOut));
+      if (matchOther && state.currentProduct.customOutputName !== currentOut) {
+        console.warn(`[SAFETY] Menolak stale customOutputName "${currentOut}" (milik ${matchOther.name}). Mengembalikan ke "${currentName}".`);
+        el.inputCustomOutputName.value = currentName;
+      }
+    }
+
     // Populate Modal Info
     if (el.renderModalProductName) {
       el.renderModalProductName.textContent = state.currentProduct.name || 'Produk';
-    }
-    if (el.renderModalOutputName) {
-      const customName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name || 'video';
-      el.renderModalOutputName.textContent = customName + '.mp4';
-      el.renderModalOutputName.title = customName + '.mp4';
     }
     if (el.renderModalFps && el.selectFps) {
       el.renderModalFps.value = el.selectFps.value || '60';
@@ -4578,7 +4943,16 @@
       const quality = el.renderModalQuality?.value || 'balanced';
 
       const useGpu = el.chkGpuRender ? el.chkGpuRender.checked : false;
-      const customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
+      let customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
+
+      // Final check: Pastikan customOutputName tidak tertukar dengan produk lain
+      if (customOutputName && customOutputName !== state.currentProduct.name && Array.isArray(state.products)) {
+        const matchOther = state.products.find(p => p.id !== state.activeProductId && (p.name.trim().toLowerCase() === customOutputName.toLowerCase() || p.id === customOutputName));
+        if (matchOther && state.currentProduct.customOutputName !== customOutputName) {
+          console.warn(`[SAFETY] customOutputName "${customOutputName}" dibatalkan karena nama produk lain (${matchOther.name}). Menggunakan "${state.currentProduct.name}".`);
+          customOutputName = state.currentProduct.name;
+        }
+      }
 
       // Scroll smoothly down to Monitor Render Real-Time
       if (el.consoleBox) {
@@ -4613,7 +4987,8 @@
             fps,
             quality,
             customOutputName,
-            useGpu
+            useGpu,
+            autoRenderCover: el.chkAutoRenderCover ? el.chkAutoRenderCover.checked : true
           })
         });
         const data = await res.json();
@@ -4807,6 +5182,19 @@
       }
     });
 
+    es.addEventListener('transcribe-error', e => {
+      const data = JSON.parse(e.data);
+      if (el.btnSmartProcessVO) {
+        el.btnSmartProcessVO.disabled = false;
+        el.btnSmartProcessVO.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> ⚡ Proses Pintar VO`;
+      }
+      showToast({
+        type: 'error',
+        title: 'Pemrosesan VO Gagal',
+        message: data.error || 'Gagal memproses audio dengan Whisper AI.'
+      });
+    });
+
     es.addEventListener('still_progress', e => {
       const data = JSON.parse(e.data);
       handleStillProgressSSE(data);
@@ -4852,6 +5240,9 @@
       el.videoMetaText.textContent = '-';
       el.btnOpenExternal.style.display = 'none';
       el.btnDownloadVideo.style.display = 'none';
+      if (el.btnViewCoverPlayer) el.btnViewCoverPlayer.style.display = 'none';
+      if (el.btnRenderCoverPlayer) el.btnRenderCoverPlayer.style.display = 'none';
+      if (el.btnDownloadCover) el.btnDownloadCover.style.display = 'none';
       if (el.btnUploadToGDrive) el.btnUploadToGDrive.style.display = 'none';
       return;
     }
@@ -4869,7 +5260,30 @@
     if (el.btnUploadToGDrive) el.btnUploadToGDrive.style.display = 'inline-flex';
 
     const vidObj = (state.videos || []).find(v => v.name === videoName);
-    el.videoMetaText.textContent = vidObj ? `${videoName} · ${formatBytes(vidObj.size)}` : videoName;
+    if (vidObj?.coverFile) {
+      if (el.btnViewCoverPlayer) {
+        el.btnViewCoverPlayer.style.display = 'inline-flex';
+        el.btnViewCoverPlayer.onclick = () => {
+          openCoverPreviewModal({ coverFile: vidObj.coverFile, videoName: vidObj.name });
+        };
+      }
+      if (el.btnDownloadCover) {
+        el.btnDownloadCover.style.display = 'inline-flex';
+        el.btnDownloadCover.href = `/out/${encodeURIComponent(vidObj.coverFile)}`;
+        el.btnDownloadCover.download = vidObj.coverFile;
+      }
+      if (el.btnRenderCoverPlayer) el.btnRenderCoverPlayer.style.display = 'none';
+    } else {
+      if (el.btnViewCoverPlayer) el.btnViewCoverPlayer.style.display = 'none';
+      if (el.btnDownloadCover) el.btnDownloadCover.style.display = 'none';
+      if (el.btnRenderCoverPlayer) {
+        el.btnRenderCoverPlayer.style.display = 'inline-flex';
+        el.btnRenderCoverPlayer.onclick = () => {
+          triggerRenderCoverForVideo(vidObj ? vidObj.name : videoName, el.btnRenderCoverPlayer);
+        };
+      }
+    }
+    el.videoMetaText.textContent = vidObj ? `${videoName} · ${formatBytes(vidObj.size)}${vidObj.coverFile ? ' · +Cover JPG' : ''}` : videoName;
   }
 
   el.selectOutputVideo.addEventListener('change', () => playVideo(el.selectOutputVideo.value));
@@ -4963,13 +5377,33 @@
               <td style="font-weight: 500;">${escapeHtml(v.name)}</td>
               <td>${variantPill}</td>
               <td class="num" style="text-align: right;">${formatBytes(v.size)}</td>
-              <td class="num">${dateStr}</td>
-              <td>
-                <div style="display: flex; gap: 6px;">
-                  <button class="btn small btn-play-public-video" data-video="${escapeHtml(v.name)}">Putar</button>
-                  <button class="btn small btn-upload-gdrive-row" data-video="${escapeHtml(v.name)}" title="Unggah video ini langsung ke Google Drive">${svgIcon('upload')} Upload</button>
-                  <a class="btn small" href="/out/${encodeURIComponent(v.name)}" download>Unduh</a>
-                  <button class="btn small danger btn-del-public-video" data-video="${escapeHtml(v.name)}">Hapus</button>
+              <td class="num" style="text-align: right;">${dateStr}</td>
+              <td class="col-actions">
+                <div class="row-actions">
+                  <button class="btn small btn-play-public-video" data-video="${escapeHtml(v.name)}" title="Putar di pemutar video">
+                    <svg class="ic" aria-hidden="true"><use href="#i-frame-play"></use></svg>
+                    <span>Putar</span>
+                  </button>
+                  <button class="btn small btn-upload-gdrive-row" data-video="${escapeHtml(v.name)}" title="Unggah video ini langsung ke Google Drive">
+                    <svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg>
+                    <span>Upload</span>
+                  </button>
+                  <a class="btn small" href="/out/${encodeURIComponent(v.name)}" download title="Unduh video MP4">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>
+                    <span>MP4</span>
+                  </a>
+                  ${v.coverFile ? `
+                  <button type="button" class="btn small btn-action-cover btn-view-cover-modal" data-cover="${escapeHtml(v.coverFile)}" data-video="${escapeHtml(v.name)}" title="Lihat Cover JPG langsung tanpa perlu unduh">
+                    <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg>
+                    <span>Cover</span>
+                  </button>` : `
+                  <button type="button" class="btn small btn-render-cover-row" data-video="${escapeHtml(v.name)}" title="Render Cover Thumbnail JPG untuk video ini">
+                    <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg>
+                    <span>+Cover</span>
+                  </button>`}
+                  <button class="btn small danger icon-only btn-del-public-video" data-video="${escapeHtml(v.name)}" title="Hapus file video ini">
+                    <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                  </button>
                 </div>
               </td>
             `;
@@ -4986,33 +5420,60 @@
         } else {
           mediaFiles.forEach(f => {
             let catPill = '<span class="pill neutral">Berkas</span>';
-            let actionHtml = `<div style="display: flex; gap: 6px;"><a class="btn small" href="${escapeHtml(f.url)}" target="_blank" download="${escapeHtml(f.name)}">Unduh</a><button class="btn small danger btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus berkas ini">Hapus</button></div>`;
+            let actionHtml = `
+              <div class="row-actions">
+                <a class="btn small" href="${escapeHtml(f.url)}" target="_blank" download="${escapeHtml(f.name)}" title="Unduh berkas">
+                  <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh
+                </a>
+                <button class="btn small danger icon-only btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus berkas ini">
+                  <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                </button>
+              </div>
+            `;
 
             if (f.category.includes('Video')) {
               catPill = '<span class="pill rose">Video Mentah</span>';
               actionHtml = `
-                <div style="display: flex; gap: 6px;">
-                  <a class="btn small" href="${escapeHtml(f.url)}" target="_blank">Lihat</a>
-                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}">Unduh</a>
-                  <button class="btn small danger btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus video ini">Hapus</button>
+                <div class="row-actions">
+                  <a class="btn small" href="${escapeHtml(f.url)}" target="_blank" title="Lihat video di tab baru">
+                    <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Lihat
+                  </a>
+                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}" title="Unduh video mentah">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh
+                  </a>
+                  <button class="btn small danger icon-only btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus video ini">
+                    <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                  </button>
                 </div>
               `;
             } else if (f.category.includes('Audio')) {
               catPill = '<span class="pill emerald">Voiceover Audio</span>';
               actionHtml = `
-                <div style="display: flex; gap: 6px;">
-                  <button class="btn small btn-play-audio-preview" data-src="${escapeHtml(f.url)}">▶️ Putar</button>
-                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}">Unduh</a>
-                  <button class="btn small danger btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus audio ini">Hapus</button>
+                <div class="row-actions">
+                  <button class="btn small btn-play-audio-preview" data-src="${escapeHtml(f.url)}" title="Putar audio">
+                    <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg> Putar
+                  </button>
+                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}" title="Unduh audio">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh
+                  </a>
+                  <button class="btn small danger icon-only btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus audio ini">
+                    <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                  </button>
                 </div>
               `;
             } else if (f.category.includes('Transkrip')) {
               catPill = '<span class="pill amber">Transkrip JSON</span>';
               actionHtml = `
-                <div style="display: flex; gap: 6px;">
-                  <a class="btn small" href="${escapeHtml(f.url)}" target="_blank">Buka JSON</a>
-                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}">Unduh</a>
-                  <button class="btn small danger btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus transkrip ini">Hapus</button>
+                <div class="row-actions">
+                  <a class="btn small" href="${escapeHtml(f.url)}" target="_blank" title="Buka berkas JSON">
+                    <svg class="ic" aria-hidden="true"><use href="#i-note"></use></svg> Buka
+                  </a>
+                  <a class="btn small primary" href="${escapeHtml(f.url)}" download="${escapeHtml(f.name)}" title="Unduh berkas JSON">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh
+                  </a>
+                  <button class="btn small danger icon-only btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus transkrip ini">
+                    <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                  </button>
                 </div>
               `;
             }
@@ -5023,8 +5484,8 @@
               <td style="font-weight: 500; word-break: break-all;">${escapeHtml(f.name)}</td>
               <td>${catPill}</td>
               <td class="num" style="text-align: right;">${formatBytes(f.size)}</td>
-              <td class="num">${dateStr}</td>
-              <td>${actionHtml}</td>
+              <td class="num" style="text-align: right;">${dateStr}</td>
+              <td class="col-actions">${actionHtml}</td>
             `;
             el.publicMediaTableBody.appendChild(tr);
           });
@@ -5048,14 +5509,18 @@
               <td><span class="pill neutral">Sound FX (WAV)</span></td>
               <td class="num" style="text-align: right;">${formatBytes(f.size)}</td>
               <td style="text-align: center;">
-                <button class="btn small btn-play-audio-preview" data-src="${escapeHtml(f.url)}" style="margin: 0 auto;">
-                  ▶️ Tes Suara
+                <button class="btn small btn-play-audio-preview" data-src="${escapeHtml(f.url)}" style="margin: 0 auto;" title="Putar efek suara">
+                  <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg> Tes Suara
                 </button>
               </td>
-              <td>
-                <div style="display: flex; gap: 6px;">
-                  <a class="btn small" href="${escapeHtml(f.url)}" download="${escapeHtml(cleanName)}">Unduh</a>
-                  <button class="btn small danger btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus efek suara">Hapus</button>
+              <td class="col-actions">
+                <div class="row-actions">
+                  <a class="btn small" href="${escapeHtml(f.url)}" download="${escapeHtml(cleanName)}" title="Unduh efek suara">
+                    <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh
+                  </a>
+                  <button class="btn small danger icon-only btn-del-public-file" data-file="${escapeHtml(f.name)}" title="Hapus efek suara">
+                    <svg class="ic" aria-hidden="true"><use href="#i-trash"></use></svg>
+                  </button>
                 </div>
               </td>
             `;
@@ -5289,6 +5754,21 @@
         switchTab('studio');
         playVideo(playBtn.dataset.video);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      const coverBtn = e.target.closest('.btn-view-cover-modal');
+      if (coverBtn && coverBtn.dataset.cover) {
+        openCoverPreviewModal({
+          coverFile: coverBtn.dataset.cover,
+          videoName: coverBtn.dataset.video
+        });
+        return;
+      }
+
+      const renderCoverBtn = e.target.closest('.btn-render-cover-row');
+      if (renderCoverBtn && renderCoverBtn.dataset.video) {
+        await triggerRenderCoverForVideo(renderCoverBtn.dataset.video, renderCoverBtn);
         return;
       }
 
@@ -5783,10 +6263,14 @@
   // Fitur 6: Paket Siap Posting — Caption TikTok Singkat & Padat
   // -------------------------------------------------------------
   function buildAutoTiktokCaption(prod, v) {
-    const hook = v?.hookHighlight || v?.hookLine1 || prod?.name || 'Rekomendasi terbaik';
-    const cta = v?.ctaText ? `👉 ${v.ctaText} 👇` : 'Cek promonya di keranjang kuning 👇🛒';
+    const hook = v?.hookHighlight || v?.hookLine1 || prod?.name || 'Solusi praktis terbaik';
+    const isV2 = state.activeVariantKey === 'v2';
+    // Alternatif CTA interaktif & engagement tanpa repetisi "cek keranjang kuning"
+    const callout = isV2
+      ? 'Save dulu videonya biar gak kelupaan pas butuh nanti ya! 📌'
+      : 'Kalian ada yang punya masalah sama juga? Coba sharing di komen yuk! 👇';
     const slugTag = (prod?.id || 'racuntiktok').replace(/[^a-z0-9]/gi, '').toLowerCase();
-    return `${hook}! ✨\n${cta}\n#${slugTag} #racuntiktok #fyp`;
+    return `${hook}! ✨\n${callout}\n#${slugTag} #racuntiktok #fyp`;
   }
 
   el.btnAutoGenCaption?.addEventListener('click', () => {

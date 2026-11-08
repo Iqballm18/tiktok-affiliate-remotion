@@ -217,16 +217,29 @@ Tuliskan 2 naskah narasi suara yang mengalir, natural, dan persuasif untuk disal
 BAGIAN 2: DUA REKOMENDASI CAPTION TIKTOK SINGKAT & PADAT (UNTUK v1 & v2)
 Karena kita memproduksi 2 video berbeda untuk A/B testing materi TikTok, buatkan 2 teks caption postingan terpisah yang siap di-copypaste saat upload.
 
-ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT):
-1. DILARANG membuat caption panjang atau bertele-tele! Caption panjang akan tertutup tombol "...more" dan menutupi keranjang kuning di layar HP.
+ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT & ENGAGING):
+1. DILARANG membuat caption panjang atau bertele-tele! Caption panjang akan tertutup tombol "...more" dan menutupi tampilan video di layar HP.
 2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-130 karakter).
-3. Struktur standar: [1 Kalimat Hook/Solusi Menarik] + [CTA Singkat ke Keranjang Kuning] + [Tepat 5 Hashtag Relevan & FYP (gabungan niche produk, kata kunci masalah, racuntiktok, belanja di tiktok, & fyp)].
+3. JANGAN mengulang kata "cek keranjang kuning" / "klik keranjang kuning"! Karena animasi kartu CTA, stiker gerak, dan ajakan keranjang kuning SUDAH ADA di dalam video! Mengulang kalimat yang sama di caption membuat teks terasa membosankan dan menyia-nyiakan ruang caption.
+4. GANTI DENGAN ALTERNATIF ENGAGEMENT / FOMO / SAVE yang memancing interaksi dan komentar penonton:
+   - Alternatif 1 (Pancing Komentar & Diskusi UGC):
+     "Kalian ada yang punya masalah sama gak? Coba sharing di komen yuk! 👇"
+     "Kira-kira menurut kalian worth it gak nih? Spill di komen ya! 👇"
+     "Ada yang udah pernah coba juga? Beneran seawet itu gak sih? Sharing dong! 👇"
+   - Alternatif 2 (Curiosity / FOMO / Social Proof):
+     "Jujur nyesel baru tau trik ini sekarang 😭 Mumpung masih ready langsung amankan!"
+     "Kaget pas tau dapet bundle sebanyak ini, mumpung vouchernya masih aktif ✨"
+     "Sering banget sold out, untung kebagian pas restock! Jangan sampai kehabisan ya ✨"
+   - Alternatif 3 (Ajakan Save Video / Bookmark):
+     "Save dulu videonya biar gak bingung pas butuh nanti! 📌"
+     "Jangan lupa di-save ya, info lengkapnya udah disematkan ✨"
+5. Struktur standar: [1 Kalimat Hook Masalah/Solusi Menarik] + [1 Kalimat Alternatif Interaksi (Pancing Komen / Save / FOMO)] + [Tepat 5 Hashtag Relevan & FYP (gabungan niche produk, kata kunci solusi, #racuntiktok, #beliditiktok, & #fyp)].
 
 CAPTION POSTINGAN VIDEO 1 (Versi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
-- Contoh format: "Nyesel baru tau trik ini sekarang! 😭 Cek promonya di keranjang kuning mumpung ready 👇🛒 #racuntiktok #[katakunci] #beliditiktok #tiktokaffiliate #fyp"
+- Contoh format: "Jujur nyesel baru tau trik ini sekarang! 😭 Kalian ada yang punya masalah sama juga? Sharing di komen yuk! 👇 #racuntiktok #[katakunci] #solusipraktis #beliditiktok #fyp"
 
 CAPTION POSTINGAN VIDEO 2 (Versi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
-- Contoh format: "Mumpung lagi promo diskon bundle! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #[katakunci] #beliditiktok #fyp"
+- Contoh format: "Mumpung dapet bundle hemat + gratis ongkir! ⚡ Save dulu videonya biar gak kelupaan pas checkout nanti 📌 #promotiktok #flashsale #[katakunci] #hematbanget #fyp"
 
 BAGIAN 3: JSON DATA PRODUK LENGKAP (SIAP IMPORT KE WEB STUDIO)
 Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur persis seperti ini (perhatikan: TIDAK ADA field videoSource atau voiceOver, dan TIDAK ADA field src di clips). Nilai cardStyle, hookVariant, captionStyle, captionVariant, dan themeStyle di bawah hanyalah CONTOH; isi sesuai hasil PEMILIHAN DESAIN OTOMATIS untuk video ini:
@@ -260,7 +273,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 1 di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
-      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Cek promonya di keranjang kuning kiri bawah 👇🛒 #racuntiktok #penyeraplembap #antijamur #beliditiktok #fyp",
+      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Kalian ada yang punya masalah sama gak? Sharing di komen yuk! 👇 #racuntiktok #penyeraplembap #antijamur #beliditiktok #fyp",
       "badgeText": "Ibu-ibu wajib tau",
       "demoBadge": "Demo langsung",
       "specBadge": "Kapasitas jumbo",
@@ -302,7 +315,7 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "unmuteHook": false,
       "voiceOverDelaySec": 0,
       "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 2 (sudut pandang event promo / diskon tanggal kembar) di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
-      "tiktokCaption": "Mumpung promo diskon bundle lagi jalan! ⚡ Klaim vouchernya di keranjang kuning sekarang 👇🛒 #promotiktok #flashsale #diskon1111 #beliditiktok #fyp",
+      "tiktokCaption": "Dapet promo bundle isi 3 ekstra hemat! ⚡ Save dulu videonya biar gak kelupaan ya 📌 #promotiktok #flashsale #diskon1111 #racunbelanja #fyp",
       "badgeText": "Promo 11.11 hari ini",
       "demoBadge": "Bukti nyata",
       "specBadge": "Paket bundle",

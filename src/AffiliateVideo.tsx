@@ -26,6 +26,7 @@ import { AffiliateHook, HookStyleName, HookStyles } from './affiliate-styles/hoo
 import { AffiliateSubtitles, SubtitleStyleName, SubtitleStyles, toSubWords } from './affiliate-styles/subtitles';
 import { PALETTES, PaletteName, Palette } from './affiliate-styles/tokens';
 import { DEFAULT_PRESET, PRESETS as STYLE_PRESETS } from './affiliate-styles/registry';
+import { CoverBackground, VideoCover, resolveCoverTemplate } from './components/VideoCover';
 
 // Muat Inter + JetBrains Mono sekali saat bundle dibuka (render tetap menunggu via delayRender).
 loadThemeFonts();
@@ -147,6 +148,24 @@ export const affiliateSchema = z.object({
     urgencyTag: z.string().optional(),
     fps: z.number().optional(),
     clips: z.array(clipItemSchema),
+
+    // ---- COVER / THUMBNAIL (TikTok & Instagram Reels) ----
+    // 'video' = render video biasa. 'cover' = komposisi menggambar cover diam (dipakai renderStill frame 0).
+    renderMode: z.enum(['video', 'cover']).optional(),
+    // Template cover: hook_card (kartu hook sama seperti video) | big_headline | promo_split.
+    coverTemplate: z.string().optional(),
+    // Teks cover. Kosong = otomatis dari hookHighlight / hookLine1 / badgeText / ctaText.
+    coverTitle: z.string().optional(),
+    coverSubtitle: z.string().optional(),
+    coverBadge: z.string().optional(),
+    // Gambar latar kustom di public/ (mis. foto produk). Kosong = frame dari footage mentah.
+    coverImage: z.string().optional(),
+    // Klip sumber footage latar (index di clips, default 0 = hook) dan detik di video mentahnya.
+    coverClipIndex: z.number().optional(),
+    coverFrameSec: z.number().optional(),
+    // Sisipkan cover beberapa frame di akhir video agar bisa dipilih di cover picker TikTok HP.
+    coverEmbed: z.boolean().optional(),
+    coverEmbedSec: z.number().optional(),
 });
 
 export type ClipItem = z.infer<typeof clipItemSchema>;
@@ -210,9 +229,15 @@ export const calculateAffiliateMetadata: CalculateMetadataFunction<AffiliateProp
 
     return {
         fps,
-        durationInFrames: Math.round(durationInSeconds * fps),
+        durationInFrames: Math.round(durationInSeconds * fps) + coverEmbedFrames(props, fps),
     };
 };
+
+/** Jumlah frame cover yang disisipkan di akhir video (0 jika tidak aktif atau mode cover). */
+export const coverEmbedFrames = (props: Pick<AffiliateProps, 'coverEmbed' | 'coverEmbedSec' | 'renderMode'>, fps: number) =>
+    props.coverEmbed && props.renderMode !== 'cover'
+        ? Math.max(1, Math.round(Math.min(1, Math.max(0.05, props.coverEmbedSec ?? 0.2)) * fps))
+        : 0;
 
 // ==========================================
 // LAYER 0: RETENTION PROGRESS BAR (TikTok Story Style)
@@ -390,9 +415,10 @@ const computeOutFx = (
     theme: ThemeDefinition,
     ver: VariantVersion = 'v1'
 ): Partial<TransitionFx> => {
-    const outroDuration = Math.min(14, Math.round(0.22 * fps));
-    const outroStart = Math.max(0, durationInFrames - outroDuration);
-    const range: [number, number] = [outroStart, durationInFrames];
+    const safeTotalFrames = Math.max(2, durationInFrames);
+    const outroDuration = Math.max(1, Math.min(14, Math.round(0.22 * fps), safeTotalFrames - 1));
+    const outroStart = Math.max(0, safeTotalFrames - outroDuration);
+    const range: [number, number] = [outroStart, Math.max(outroStart + 1, safeTotalFrames)];
     const eased = { easing: theme.easings.inCubic, ...CLAMP };
     const dir = ver === 'v2' ? -1 : 1;
 
@@ -715,12 +741,14 @@ const FootageClip: React.FC<{
         // Audio Easing & Fade-out untuk klip bersuara (podcast/YouTube hook):
         // Fade-in di 6 frame pertama dan fade-out di 15 frame terakhir (0.25 detik)
         // agar dialog narasumber tidak terputus secara mendadak/kasar saat transisi ke klip produk
-        const fadeOutFrames = Math.min(Math.round(0.25 * fps), Math.round(durationInFrames * 0.2));
-        const fadeInFrames = Math.min(Math.round(0.1 * fps), 6);
+        const safeDur = Math.max(4, durationInFrames);
+        const fadeInFrames = Math.max(1, Math.min(Math.round(0.1 * fps), 6, Math.floor(safeDur * 0.25)));
+        const fadeOutStart = Math.max(fadeInFrames + 1, safeDur - Math.max(1, Math.min(Math.round(0.25 * fps), Math.floor(safeDur * 0.25))));
+        const fadeEnd = Math.max(fadeOutStart + 1, safeDur);
 
         const audioFade = interpolate(
             frame,
-            [0, fadeInFrames, Math.max(fadeInFrames, durationInFrames - fadeOutFrames), durationInFrames],
+            [0, fadeInFrames, fadeOutStart, fadeEnd],
             [0, 1, 1, 0],
             {
                 extrapolateLeft: 'clamp',
@@ -1158,8 +1186,8 @@ const LINE1_SIZE = 40;
 const HIGHLIGHT_SIZE_HOOK = 62;
 const HIGHLIGHT_SIZE_SOLUTION = 56;
 
-// Caption naik sekian px pada babak CTA (kartu CTA berakhir ~449px dari bawah, caption di 460px).
-const CAPTION_LIFT_IN_CTA = 150;
+// Caption naik sekian px pada babak CTA agar berada di atas kartu CTA & tombol Keranjang Kuning.
+const CAPTION_LIFT_IN_CTA = 280;
 
 type CardStyleMode =
     | 'unified_glass'
@@ -1996,6 +2024,16 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     ctaLabel,
     urgencyTag,
     clips,
+    renderMode,
+    coverTemplate,
+    coverTitle,
+    coverSubtitle,
+    coverBadge,
+    coverImage,
+    coverClipIndex,
+    coverFrameSec,
+    coverEmbed,
+    coverEmbedSec,
 }) => {
     const { fps } = useVideoConfig();
     // Preset mengisi yang kosong; field eksplisit selalu menang.
@@ -2111,16 +2149,84 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     {
         let cursor = 0;
         for (let i = 1; i < clips.length; i++) {
-            cursor += Math.round((clips[i - 1].endSec - clips[i - 1].startSec) * fps);
+            cursor += Math.max(1, Math.round((clips[i - 1].endSec - clips[i - 1].startSec) * fps));
             boundaries.push({ index: i, frame: cursor, type: boundaryType(i) });
         }
     }
+
+    // ---- ELEMEN COVER / THUMBNAIL (Diselaraskan dengan tema, palet, dan kartu hook video) ----
+    const targetClipIdx = Math.max(0, Math.min(clips.length - 1, coverClipIndex ?? 0));
+    const targetClip = clips[targetClipIdx] || clips[0];
+    const defaultCoverSec = targetClip
+        ? targetClip.startSec + Math.min(1.5, Math.max(0, (targetClip.endSec - targetClip.startSec) * 0.35))
+        : 0;
+    const resolvedCoverBg: CoverBackground = coverImage
+        ? { kind: 'image', src: coverImage }
+        : targetClip && targetClip.src && !targetClip.isPlaceholder
+            ? {
+                kind: 'video',
+                src: targetClip.src,
+                frameSec: coverFrameSec !== undefined ? coverFrameSec : defaultCoverSec,
+                objectPosition: targetClip.objectPosition,
+            }
+            : { kind: 'none' };
+
+    const coverHookCard = useNewHook ? (
+        <AffiliateHook
+            variant={finalHookStyle}
+            line1={coverSubtitle || hookLine1}
+            highlight={coverTitle || hookHighlight}
+            badge={coverBadge || badgeText}
+            palette={finalPalette}
+            durationInFrames={hookDuration}
+        />
+    ) : (
+        <EditorialHeadline
+            badge={coverBadge || badgeText}
+            line1={coverSubtitle || hookLine1}
+            highlightLine={coverTitle || hookHighlight}
+            durationInFrames={hookDuration}
+            variant="hook"
+            theme={theme}
+            cardStyle={cardStyle}
+            hookVariant={hookVariant}
+            badgeStyle={badgeStyle}
+            urgencyTag={urgencyTag}
+        />
+    );
+
+    const coverElement = (
+        <VideoCover
+            template={resolveCoverTemplate(coverTemplate)}
+            theme={theme}
+            palette={finalPalette}
+            title={(coverTitle || hookHighlight || hookLine1 || '').trim()}
+            subtitle={(coverSubtitle || hookLine1 || '').trim()}
+            badge={(coverBadge || badgeText || '').trim()}
+            cta={(ctaText || 'Cek Keranjang Kuning').trim()}
+            background={resolvedCoverBg}
+            hookCard={coverHookCard}
+            hookFreezeFrame={Math.min(Math.max(30, Math.round(1.2 * fps)), Math.max(30, hookDuration - 15))}
+            watermark={showWatermark !== false ? (watermarkText || '@inanikma_ | @spillbyna_') : undefined}
+        />
+    );
+
+    if (renderMode === 'cover') {
+        return (
+            <AbsoluteFill style={{ backgroundColor: theme.colors.bg }}>
+                {coverElement}
+                {showSafeZoneGuide && <TikTokSafeZone />}
+            </AbsoluteFill>
+        );
+    }
+
+    const embedFrames = coverEmbedFrames({ coverEmbed, coverEmbedSec, renderMode }, fps);
 
     return (
         <AbsoluteFill style={{ backgroundColor: theme.colors.bg }}>
             {/* L1 & L2: FOOTAGE DENGAN KEN BURNS PUSH-IN */}
             {clips.map((clip, idx) => {
-                const durationInFrames = Math.round((clip.endSec - clip.startSec) * fps);
+                const durationInFrames = Math.max(1, Math.round((clip.endSec - clip.startSec) * fps));
                 const fromFrame = accumulatedFrames;
                 accumulatedFrames += durationInFrames;
 
@@ -2486,6 +2592,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             variant={finalSubtitleStyle}
                             words={toSubWords(voiceOverCaptions)}
                             palette={finalPalette}
+                            liftFromFrame={ctaStartFrame - voStartFrame}
+                            liftPx={CAPTION_LIFT_IN_CTA + 20}
                         />
                     ) : (
                         <HookSubtitle
@@ -2513,6 +2621,13 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     opacity={watermarkOpacity ?? 0.70}
                     position={watermarkPosition}
                 />
+            )}
+
+            {/* FRAME COVER DI AKHIR VIDEO (OPSIONAL, UNTUK COVER PICKER TIKTOK HP) */}
+            {embedFrames > 0 && (
+                <Sequence from={totalDurationInFrames} durationInFrames={embedFrames} name="EmbeddedCover">
+                    {coverElement}
+                </Sequence>
             )}
 
             {/* TIKTOK UI SAFE ZONE (PANDUAN VISUAL DI STUDIO) */}

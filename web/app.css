@@ -978,21 +978,70 @@ table {
 }
 
 th {
-  height: 32px;
-  padding: 0 10px;
+  height: 34px;
+  padding: 0 12px;
   text-align: left;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
   background: var(--bg-ground);
   border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
 }
 
 td {
-  padding: 8px 10px;
+  padding: 8px 12px;
+  height: 48px;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border-rule);
   font-size: 13px;
   vertical-align: middle;
+}
+
+/* Table Action Cells & Rows (Anti-wrap, uniform sleek rows) */
+.col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+  flex-wrap: nowrap;
+  vertical-align: middle;
+}
+
+.row-actions .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 27px;
+  padding: 0 9px;
+  font-size: 11.5px;
+  gap: 5px;
+}
+
+.row-actions .btn.icon-only {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-action-cover {
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+}
+
+.btn-action-cover:hover {
+  background: rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  color: #6ee7b7 !important;
 }
 
 tbody tr:last-child td {

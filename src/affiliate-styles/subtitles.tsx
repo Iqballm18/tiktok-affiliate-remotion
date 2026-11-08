@@ -19,6 +19,10 @@ export interface SubtitleProps {
   bottom?: number; // jarak dari bawah layar, default SAFE.bottom
   maxWords?: number; // kata per potongan, default 3
   uppercase?: boolean;
+  /** Frame (relatif ke Sequence caption) saat subtitle mulai naik agar tidak menutupi kartu CTA. */
+  liftFromFrame?: number;
+  /** Seberapa jauh (px) subtitle naik mulai liftFromFrame. */
+  liftPx?: number;
 }
 
 export type SubtitleStyleName =
@@ -273,24 +277,45 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
             const p = active ? Math.min(1, wordSpring(s, w, 16, 240)) : i < s.wordIndex ? 1 : 0;
+            const wordBaseStyle: React.CSSProperties = {
+              fontSize,
+              fontWeight: 800,
+              lineHeight: 1.2,
+              textTransform: uppercase ? 'uppercase' : 'none',
+              padding: '2px 8px',
+              borderRadius: 6,
+              whiteSpace: 'nowrap',
+            };
             return (
               <span
                 key={i}
                 style={{
-                  fontSize,
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  textTransform: uppercase ? 'uppercase' : 'none',
-                  padding: '2px 8px',
-                  borderRadius: 6,
-                  color: active ? palette.accentInk : palette.paper,
+                  position: 'relative',
+                  display: 'inline-block',
                   opacity: i > s.wordIndex ? 0.6 : 1,
-                  backgroundImage: `linear-gradient(${palette.accent}, ${palette.accent})`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundSize: `${active ? p * 100 : 0}% 100%`,
                 }}
               >
-                {w.text}
+                <span style={{...wordBaseStyle, color: palette.paper, display: 'inline-block'}}>
+                  {w.text}
+                </span>
+                {active && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: `${p * 100}%`,
+                      overflow: 'hidden',
+                      borderRadius: 6,
+                      background: palette.accent,
+                    }}
+                  >
+                    <span style={{...wordBaseStyle, color: palette.accentInk, display: 'inline-block'}}>
+                      {w.text}
+                    </span>
+                  </span>
+                )}
               </span>
             );
           })}
@@ -498,8 +523,23 @@ export const SubtitleStyles: Record<SubtitleStyleName, React.FC<SubtitleProps>> 
 
 export const AffiliateSubtitles: React.FC<SubtitleProps & {variant: SubtitleStyleName}> = ({
   variant,
+  bottom,
+  liftFromFrame,
+  liftPx = 0,
   ...props
 }) => {
+  const frame = useCurrentFrame();
+  const {fps} = useVideoConfig();
   const Component = SubtitleStyles[variant] ?? KaraokeBlockSubtitle;
-  return <Component {...props} />;
+  const baseBottom = bottom ?? (variant === 'pop_scale' ? SAFE.bottom + 40 : SAFE.bottom);
+  const extraBottom =
+    liftFromFrame !== undefined && liftPx > 0
+      ? interpolate(
+          frame,
+          [liftFromFrame - Math.round(0.12 * fps), liftFromFrame + Math.round(0.22 * fps)],
+          [0, liftPx],
+          {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+        )
+      : 0;
+  return <Component {...props} bottom={baseBottom + extraBottom} />;
 };

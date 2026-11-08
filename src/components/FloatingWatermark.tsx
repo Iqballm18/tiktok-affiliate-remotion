@@ -21,7 +21,7 @@ interface WatermarkItem {
     handle: string;
 }
 
-const TikTokIcon: React.FC<{ size?: number; color?: string }> = ({
+export const TikTokIcon: React.FC<{ size?: number; color?: string }> = ({
     size = 20,
     color = '#FFFFFF',
 }) => (
@@ -36,7 +36,7 @@ const TikTokIcon: React.FC<{ size?: number; color?: string }> = ({
     </svg>
 );
 
-const InstagramIcon: React.FC<{ size?: number; color?: string }> = ({
+export const InstagramIcon: React.FC<{ size?: number; color?: string }> = ({
     size = 20,
     color = '#FFFFFF',
 }) => (
@@ -57,7 +57,7 @@ const InstagramIcon: React.FC<{ size?: number; color?: string }> = ({
     </svg>
 );
 
-function parseWatermarkItems(rawText: string): WatermarkItem[] {
+export function parseWatermarkItems(rawText: string): WatermarkItem[] {
     const raw = (rawText || '').trim();
     if (!raw) {
         return [

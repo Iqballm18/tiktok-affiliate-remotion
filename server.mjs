@@ -17,7 +17,7 @@ import {
   validateProduct,
   getVideoDurationSec,
 } from './scripts/product-helper.mjs';
-import { renderProductVariant, renderProductStill, syncPublicToBundle, getOrBuildBundle } from './render.mjs';
+import { renderProductVariant, renderProductStill, renderProductCover, syncPublicToBundle, getOrBuildBundle, makeCancelSignal } from './render.mjs';
 import { alignWhisperWithScript } from './scripts/align-captions.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -102,10 +102,24 @@ for (const dir of [PUBLIC_DIR, OUT_DIR, WEB_DIR, PRODUCTS_DIR]) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
+function cleanupOrphanedRenderFiles() {
+  try {
+    if (!fs.existsSync(OUT_DIR)) return;
+    const files = fs.readdirSync(OUT_DIR);
+    for (const f of files) {
+      if (f.includes('.remotion-in-progress')) {
+        try { fs.unlinkSync(path.join(OUT_DIR, f)); } catch (_) { }
+      }
+    }
+  } catch (_) { }
+}
+cleanupOrphanedRenderFiles();
+
 // Global Render State
 const renderState = {
   isRendering: false,
   cancelToken: null,
+  cancelFn: null,
   activeProduct: null,
   activeVariant: 'v1',
   fps: config.defaultFps || 60,
@@ -363,6 +377,7 @@ const server = http.createServer(async (req, res) => {
       const voiceOvers = [];
       const videos = [];
       const transcripts = [];
+      const images = [];
 
       // Helper untuk scan folder dan mengisi daftar aset
       const scanDir = (dirPath, relPrefix = '', scopeLabel = '') => {
@@ -407,6 +422,12 @@ const server = http.createServer(async (req, res) => {
               displayName: scopeLabel ? `[${scopeLabel}] ${f}` : f,
               scope: scopeLabel || 'global',
             });
+          } else if (ext === '.jpg' || ext === '.jpeg' || ext === '.png' || ext === '.webp') {
+            images.push({
+              name: relName,
+              displayName: scopeLabel ? `[${scopeLabel}] ${f}` : f,
+              scope: scopeLabel || 'global',
+            });
           }
         }
       };
@@ -439,7 +460,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ voiceOvers, videos, transcripts, bgms }));
+      res.end(JSON.stringify({ voiceOvers, videos, transcripts, bgms, images }));
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: err.message }));
@@ -540,6 +561,7 @@ const server = http.createServer(async (req, res) => {
             } catch { }
           }
           appendLog(`[WHISPER] Transkripsi selesai (code ${code}). Kata tersinkron: ${wordsCount}`);
+          syncBundlePublic();
           broadcast('transcribe-done', { filename: relFilename, jsonFile, wordsCount });
         });
 
@@ -770,11 +792,13 @@ const server = http.createServer(async (req, res) => {
 
               wordsCount = words.length;
               syncBundlePublic();
+              const relJsonFile = path.relative(PUBLIC_DIR, jsonPath).replace(/\\/g, '/');
 
               // Broadcast SSE ke browser agar reload otomatis
               broadcast('transcribe-done', {
                 file: relFilename,
-                jsonFile: path.basename(jsonPath),
+                filename: relFilename,
+                jsonFile: relJsonFile,
                 wordsCount
               });
             }
@@ -782,6 +806,7 @@ const server = http.createServer(async (req, res) => {
             appendLog(`[SMART-VO] Selesai sempurna! ${wordsCount} kata siap dipakai untuk subtitle karaoke.`, true);
           } catch (err) {
             appendLog(`[SMART-VO ERROR] ${err.message}`);
+            broadcast('transcribe-error', { file: relFilename, error: err.message });
           }
         })();
 
@@ -839,14 +864,19 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/videos' && req.method === 'GET') {
     try {
       if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
-      const files = fs.readdirSync(OUT_DIR).filter(f => f.endsWith('.mp4'));
+      const allOutFiles = fs.readdirSync(OUT_DIR);
+      const files = allOutFiles.filter(f => f.endsWith('.mp4'));
       const videoList = files.map(name => {
         const fullPath = path.join(OUT_DIR, name);
         const stat = fs.statSync(fullPath);
+        const baseName = name.replace(/\.mp4$/i, '');
+        const candidateCover = `${baseName}-cover.jpg`;
+        const hasCover = allOutFiles.includes(candidateCover);
         return {
           name,
           size: stat.size,
           mtime: stat.mtimeMs,
+          coverFile: hasCover ? candidateCover : null,
         };
       }).sort((a, b) => b.mtime - a.mtime);
 
@@ -877,6 +907,11 @@ const server = http.createServer(async (req, res) => {
 
     try {
       fs.unlinkSync(targetPath);
+      const baseNoExt = safeFilename.replace(/\.mp4$/i, '');
+      const coverPath = path.join(OUT_DIR, `${baseNoExt}-cover.jpg`);
+      if (fs.existsSync(coverPath)) {
+        try { fs.unlinkSync(coverPath); } catch (_) { }
+      }
       appendLog(`[HAPUS] Video out/${safeFilename} berhasil dihapus.`);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: safeFilename }));
@@ -1023,6 +1058,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       fs.unlinkSync(targetPath);
+      syncBundlePublic();
       appendLog(`[HAPUS] Berkas public/${normalizedFile} berhasil dihapus.`);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: normalizedFile }));
@@ -1216,7 +1252,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   // Helper: Resumable streaming upload direct to Google Drive API (0% compression, 100% original file)
-  function streamFileToGoogleDrive(sessionUrl, fullPath, onProgress) {
+  function streamFileToGoogleDrive(sessionUrl, fullPath, mimeType = 'video/mp4', onProgress) {
+    if (typeof mimeType === 'function') {
+      onProgress = mimeType;
+      mimeType = 'video/mp4';
+    }
     return new Promise((resolve, reject) => {
       try {
         const parsedUrl = new URL(sessionUrl);
@@ -1228,7 +1268,7 @@ const server = http.createServer(async (req, res) => {
           method: 'PUT',
           headers: {
             'Content-Length': totalBytes,
-            'Content-Type': 'video/mp4'
+            'Content-Type': mimeType || 'video/mp4'
           }
         }, (res) => {
           let body = '';
@@ -1264,6 +1304,70 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
+  // Helper: Upload companion cover image to Google Drive
+  async function uploadCompanionCoverToDrive({ coverFilename, coverFullPath, webhookUrl, cfg, appendLog }) {
+    const stat = fs.statSync(coverFullPath);
+    const coverKB = (stat.size / 1024).toFixed(0);
+    appendLog(`[GDRIVE COVER] Memulai upload cover thumbnail ${coverFilename} (${coverKB} KB)...`);
+
+    // 1. Coba Resumable Session lebih dulu
+    let coverSessionUrl = null;
+    try {
+      const initRes = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'createSession',
+          filename: coverFilename,
+          fileSize: stat.size,
+          mimeType: 'image/jpeg',
+          folderId: '1PfohGzGpodBfZNutWbgZXSlryqu3Xw2D'
+        })
+      });
+      const initText = await initRes.text();
+      try {
+        const initData = JSON.parse(initText);
+        if (initData.success && initData.sessionUrl) {
+          coverSessionUrl = initData.sessionUrl;
+        }
+      } catch (_) { }
+    } catch (_) { }
+
+    if (coverSessionUrl) {
+      appendLog(`[GDRIVE COVER] Mengunggah cover via Resumable API direct...`);
+      const driveFile = await streamFileToGoogleDrive(coverSessionUrl, coverFullPath, 'image/jpeg');
+      const finalFileId = driveFile.id;
+      const finalUrl = finalFileId ? `https://drive.google.com/file/d/${finalFileId}/view` : cfg.gdriveFolderUrl;
+      appendLog(`[GDRIVE COVER SUKSES] Cover thumbnail ${coverFilename} tersimpan! Link: ${finalUrl}`);
+      return { success: true, url: finalUrl };
+    }
+
+    // 2. Fallback Base64 (JPG berukuran kecil ~200KB sangat cepat & aman)
+    appendLog(`[GDRIVE COVER] Mengunggah cover via streaming payload...`);
+    const fileBuf = fs.readFileSync(coverFullPath);
+    const params = new URLSearchParams();
+    params.append('data', fileBuf.toString('base64'));
+    params.append('filename', coverFilename);
+    params.append('mimetype', 'image/jpeg');
+
+    const res = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
+    });
+    const resText = await res.text();
+    let data = {};
+    try { data = JSON.parse(resText); } catch (_) { }
+
+    if (data.success || data.status === 'success' || data.url) {
+      const finalUrl = data.url || data.fileUrl || cfg.gdriveFolderUrl;
+      appendLog(`[GDRIVE COVER SUKSES] Cover thumbnail ${coverFilename} tersimpan! Link: ${finalUrl}`);
+      return { success: true, url: finalUrl };
+    } else {
+      throw new Error(data.error || data.message || 'Gagal mengunggah cover thumbnail');
+    }
+  }
+
   // 9j. API: Direct Upload Video to Google Drive via Apps Script Webhook
   if (pathname === '/api/gdrive-upload' && req.method === 'POST') {
     let body = '';
@@ -1284,6 +1388,11 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({ error: `File ${targetFilename} tidak ditemukan di out/` }));
           return;
         }
+
+        const baseName = targetFilename.replace(/\.mp4$/i, '');
+        const candidateCover = `${baseName}-cover.jpg`;
+        const coverFullPath = path.join(OUT_DIR, candidateCover);
+        const hasCover = fs.existsSync(coverFullPath);
 
         const configPath = path.join(__dirname, 'config.json');
         let cfg = {};
@@ -1374,12 +1483,41 @@ const server = http.createServer(async (req, res) => {
             : cfg.gdriveFolderUrl;
 
           appendLog(`[GDRIVE SUKSES] File asli 100% (${originalMB} MB) berhasil diunggah tanpa kompresi! Link: ${finalUrl}`);
+
+          let coverResult = null;
+          if (hasCover) {
+            broadcast('gdrive_upload_progress', {
+              filename: targetFilename,
+              step: 'uploading_cover',
+              percent: 94,
+              message: `Video terunggah. Mengunggah companion cover thumbnail (${candidateCover})...`
+            });
+            try {
+              coverResult = await uploadCompanionCoverToDrive({
+                coverFilename: candidateCover,
+                coverFullPath,
+                webhookUrl,
+                cfg,
+                appendLog
+              });
+            } catch (coverErr) {
+              appendLog(`[GDRIVE WARN] Gagal mengunggah cover ${candidateCover}: ${coverErr.message}`);
+            }
+          }
+
+          const doneMsg = (coverResult && coverResult.success)
+            ? `Selesai! Video & Cover Thumbnail berhasil disimpan di Google Drive.`
+            : `Selesai! File asli 100% (${originalMB} MB) tersimpan di Google Drive tanpa kompresi.`;
+
           broadcast('gdrive_upload_progress', {
             filename: targetFilename,
             step: 'done',
             percent: 100,
-            message: `Selesai! File asli 100% (${originalMB} MB) tersimpan di Google Drive tanpa kompresi.`,
+            message: doneMsg,
             url: finalUrl,
+            coverUrl: coverResult?.url || null,
+            coverFilename: hasCover ? candidateCover : null,
+            coverUploaded: Boolean(coverResult?.success),
             folderUrl: cfg.gdriveFolderUrl
           });
 
@@ -1390,6 +1528,8 @@ const server = http.createServer(async (req, res) => {
             uncompressed: true,
             sizeMB: originalMB,
             url: finalUrl,
+            coverUrl: coverResult?.url || null,
+            coverUploaded: Boolean(coverResult?.success),
             folderUrl: cfg.gdriveFolderUrl
           }));
           return;
@@ -1486,12 +1626,40 @@ const server = http.createServer(async (req, res) => {
           const finalUrl = uploadData.url || uploadData.fileUrl || cfg.gdriveFolderUrl;
           appendLog(`[GDRIVE SUKSES] Video ${targetFilename} berhasil diunggah! Link: ${finalUrl}`);
 
+          let coverResult = null;
+          if (hasCover) {
+            broadcast('gdrive_upload_progress', {
+              filename: targetFilename,
+              step: 'uploading_cover',
+              percent: 94,
+              message: `Video terunggah. Mengunggah companion cover thumbnail (${candidateCover})...`
+            });
+            try {
+              coverResult = await uploadCompanionCoverToDrive({
+                coverFilename: candidateCover,
+                coverFullPath,
+                webhookUrl,
+                cfg,
+                appendLog
+              });
+            } catch (coverErr) {
+              appendLog(`[GDRIVE WARN] Gagal mengunggah cover ${candidateCover}: ${coverErr.message}`);
+            }
+          }
+
+          const doneMsg = (coverResult && coverResult.success)
+            ? `Selesai! Video & Cover Thumbnail berhasil disimpan di Google Drive.`
+            : `Selesai! Video berhasil disimpan di Google Drive.`;
+
           broadcast('gdrive_upload_progress', {
             filename: targetFilename,
             step: 'done',
             percent: 100,
-            message: `Selesai! Video berhasil disimpan di Google Drive.`,
+            message: doneMsg,
             url: finalUrl,
+            coverUrl: coverResult?.url || null,
+            coverFilename: hasCover ? candidateCover : null,
+            coverUploaded: Boolean(coverResult?.success),
             folderUrl: cfg.gdriveFolderUrl
           });
 
@@ -1500,6 +1668,8 @@ const server = http.createServer(async (req, res) => {
             success: true,
             filename: targetFilename,
             url: finalUrl,
+            coverUrl: coverResult?.url || null,
+            coverUploaded: Boolean(coverResult?.success),
             folderUrl: cfg.gdriveFolderUrl
           }));
         } else {
@@ -1581,7 +1751,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       try {
-        const { filename, index } = JSON.parse(body);
+        const { filename, index, words: clientWords } = JSON.parse(body);
         const filePath = resolvePublicFilePath(filename);
         if (!fs.existsSync(filePath)) {
           res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -1589,7 +1759,9 @@ const server = http.createServer(async (req, res) => {
           return;
         }
 
-        const words = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const words = Array.isArray(clientWords) && clientWords.length > 0
+          ? clientWords
+          : JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const idx = parseInt(index, 10);
         if (idx < 0 || idx >= words.length - 1) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1626,9 +1798,11 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       try {
-        const { filename, index, part1, part2 } = JSON.parse(body);
+        const { filename, index, part1, part2, words: clientWords } = JSON.parse(body);
         const filePath = resolvePublicFilePath(filename);
-        const words = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const words = Array.isArray(clientWords) && clientWords.length > 0
+          ? clientWords
+          : JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const idx = parseInt(index, 10);
         if (idx < 0 || idx >= words.length) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1673,9 +1847,11 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', () => {
       try {
-        const { filename, index } = JSON.parse(body);
+        const { filename, index, words: clientWords } = JSON.parse(body);
         const filePath = resolvePublicFilePath(filename);
-        const words = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const words = Array.isArray(clientWords) && clientWords.length > 0
+          ? clientWords
+          : JSON.parse(fs.readFileSync(filePath, 'utf8'));
         const idx = parseInt(index, 10);
         if (idx < 0 || idx >= words.length) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1741,13 +1917,13 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { productId, productData, variantKey, frame } = JSON.parse(body);
+        const { productId, productData, variantKey, frame, renderMode } = JSON.parse(body);
         const targetProduct = productData || productId || 'blackmores';
-        const targetFrame = frame ? parseInt(frame, 10) : 60;
+        const targetFrame = renderMode === 'cover' ? 0 : (frame ? parseInt(frame, 10) : 60);
         const targetVariant = variantKey || 'v1';
         const prodName = productData?.name || productId;
 
-        appendLog(`[PREVIEW] Merender pratinjau frame ${targetFrame} untuk ${prodName} (${targetVariant})...`);
+        appendLog(`[PREVIEW] Merender pratinjau ${renderMode === 'cover' ? 'cover' : `frame ${targetFrame}`} untuk ${prodName} (${targetVariant})...`);
 
         broadcast('still_progress', {
           isRendering: true,
@@ -1762,6 +1938,7 @@ const server = http.createServer(async (req, res) => {
           productOrId: targetProduct,
           variantKey: targetVariant,
           frame: targetFrame,
+          renderMode,
           onLog: appendLog,
           onProgress: (prog) => {
             broadcast('still_progress', {
@@ -1828,9 +2005,10 @@ const server = http.createServer(async (req, res) => {
         if (renderState.isRendering) {
           return sendJson(409, { error: 'Render video sedang berjalan. Pratinjau dilanjutkan setelah render selesai.' });
         }
-        const { productData, variantKey, frame } = JSON.parse(body);
+        const { productData, variantKey, frame, renderMode } = JSON.parse(body);
         if (!productData) return sendJson(400, { error: 'productData wajib diisi.' });
-        const targetFrame = Math.max(0, parseInt(frame, 10) || 0);
+        const targetMode = renderMode === 'cover' ? 'cover' : 'video';
+        const targetFrame = targetMode === 'cover' ? 0 : Math.max(0, parseInt(frame, 10) || 0);
         const targetVariant = variantKey || 'v1';
 
         // Kunci cache menyertakan waktu ubah file JSON transkrip di public/, sehingga hasil lama
@@ -1844,17 +2022,18 @@ const server = http.createServer(async (req, res) => {
               const st = fs.statSync(fp);
               if (st.isDirectory()) {
                 checkStamp(fp);
-              } else if (f.toLowerCase().endsWith('.json')) {
+              } else if (f.toLowerCase().endsWith('.json') || f.toLowerCase().endsWith('.tsx') || f.toLowerCase().endsWith('.ts')) {
                 transcriptStamp = Math.max(transcriptStamp, st.mtimeMs);
               }
             }
           };
           checkStamp(PUBLIC_DIR);
+          checkStamp(path.join(__dirname, 'src'));
         } catch (_) { }
 
         const key = crypto
           .createHash('sha1')
-          .update(JSON.stringify({ productData, targetVariant, targetFrame, transcriptStamp }))
+          .update(JSON.stringify({ productData, targetVariant, targetFrame, targetMode, transcriptStamp }))
           .digest('hex');
 
         if (liveCache.has(key)) {
@@ -1867,6 +2046,7 @@ const server = http.createServer(async (req, res) => {
             productOrId: productData,
             variantKey: targetVariant,
             frame: targetFrame,
+            renderMode: targetMode,
             onLog: () => { },
             onProgress: () => { },
           });
@@ -1891,6 +2071,89 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 12c. API: Render Cover / Thumbnail JPG (1080x1920) ke out/
+  if (pathname === '/api/render-cover' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      const sendJson = (code, obj) => {
+        res.writeHead(code, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(obj));
+      };
+      try {
+        const { productId, productData, variantKey, customOutputName, videoName } = JSON.parse(body || '{}');
+
+        let targetProduct = productData || (productId ? loadProduct(productId) : null);
+        let targetVariant = variantKey;
+        let targetOutputName = customOutputName;
+
+        if (!targetProduct && videoName) {
+          const cleanName = path.basename(videoName).replace(/\.mp4$/i, '');
+          const match = cleanName.match(/^(.*?)\s+(v\d+)$/i);
+          const parsedTitle = match ? match[1].trim() : cleanName;
+          const parsedVariant = match ? match[2].toLowerCase() : 'v1';
+          if (!targetVariant) targetVariant = parsedVariant;
+          if (!targetOutputName) targetOutputName = parsedTitle;
+
+          // Cari di daftar produk
+          const productList = listProducts();
+          const found = productList.find(p => p.name.trim().toLowerCase() === parsedTitle.toLowerCase())
+            || productList.find(p => parsedTitle.toLowerCase().includes(p.name.trim().toLowerCase()) || p.name.trim().toLowerCase().includes(parsedTitle.toLowerCase()));
+          if (found) {
+            targetProduct = loadProduct(found.id);
+          } else {
+            targetProduct = { id: 'custom', name: parsedTitle, variants: {} };
+          }
+        }
+
+        if (!targetProduct) {
+          const allProds = listProducts();
+          targetProduct = allProds.length > 0 ? loadProduct(allProds[0].id) : { id: 'default', name: 'Produk', variants: {} };
+        }
+        if (!targetVariant) targetVariant = 'v1';
+        if (productId && productData) saveProduct(productId, productData);
+
+        // Safety guard: jika targetOutputName milik produk lain, kembalikan ke targetProduct.name
+        if (targetOutputName && targetProduct && targetOutputName.toLowerCase() !== (targetProduct.name || '').trim().toLowerCase()) {
+          try {
+            const allProducts = listProducts();
+            const activeId = productId || targetProduct.id;
+            const matchedOther = allProducts.find(p =>
+              p.id !== activeId &&
+              (p.name.trim().toLowerCase() === targetOutputName.toLowerCase() || p.id === targetOutputName)
+            );
+            if (matchedOther) {
+              appendLog(`[SAFETY] Cover targetOutputName "${targetOutputName}" terdeteksi milik produk lain (${matchedOther.name}). Mengalihkan ke "${targetProduct.name}".`);
+              targetOutputName = targetProduct.name;
+            }
+          } catch (e) { }
+        }
+
+        const job = liveChain.then(async () => {
+          return await renderProductCover({
+            productOrId: targetProduct,
+            variantKey: targetVariant,
+            customOutputName: targetOutputName || targetProduct.name,
+            onLog: appendLog,
+            onProgress: () => { },
+          });
+        });
+        liveChain = job.catch(() => { });
+
+        const result = await job;
+        sendJson(200, {
+          success: true,
+          coverFileName: result.coverFileName,
+          coverUrl: `/out/${encodeURIComponent(result.coverFileName)}`,
+        });
+      } catch (err) {
+        appendLog(`[ERROR COVER] ${err.message}`);
+        sendJson(500, { error: err.message });
+      }
+    });
+    return;
+  }
+
   // 13. API: Start Render (Pure Node via renderProductVariant)
   if (pathname === '/api/render' && req.method === 'POST') {
     if (renderState.isRendering) {
@@ -1903,7 +2166,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { productId, productData, target, fps, customOutputName, useGpu, quality } = JSON.parse(body);
+        const { productId, productData, target, fps, customOutputName, useGpu, quality, autoRenderCover } = JSON.parse(body);
 
         let product;
         if (productData) {
@@ -1913,7 +2176,26 @@ const server = http.createServer(async (req, res) => {
           product = loadProduct(productId || 'blackmores');
         }
 
-        const resolvedTitle = (customOutputName || product.name).trim();
+        let resolvedTitle = (customOutputName || product.name || 'video').trim();
+
+        // Safety guard: jika customOutputName adalah nama produk LAIN yang tersimpan di server,
+        // cegah video tersimpan ke nama produk sebelumnya dan kembalikan ke product.name
+        if (resolvedTitle && resolvedTitle.toLowerCase() !== (product.name || '').trim().toLowerCase()) {
+          try {
+            const allProducts = listProducts();
+            const activeId = productId || product.id;
+            const matchedOther = allProducts.find(p =>
+              p.id !== activeId &&
+              (p.name.trim().toLowerCase() === resolvedTitle.toLowerCase() || p.id === resolvedTitle)
+            );
+            if (matchedOther) {
+              appendLog(`[SAFETY] customOutputName "${resolvedTitle}" terdeteksi milik produk lain (${matchedOther.name} [${matchedOther.id}]). Mengalihkan nama berkas kembali ke produk aktif: "${product.name}".`, true);
+              resolvedTitle = (product.name || 'video').trim();
+            }
+          } catch (e) {
+            // Ignore safety guard check error
+          }
+        }
 
         renderState.isRendering = true;
         renderState.activeProduct = resolvedTitle;
@@ -1943,6 +2225,9 @@ const server = http.createServer(async (req, res) => {
               if (!renderState.isRendering) break; // cancelled
               appendLog(`[RENDER] Memulai rendering varian ${vk} untuk ${resolvedTitle}...`);
 
+              const { cancelSignal, cancel } = makeCancelSignal();
+              renderState.cancelFn = cancel;
+
               const vResult = await renderProductVariant({
                 productOrId: product,
                 variantKey: vk,
@@ -1950,6 +2235,8 @@ const server = http.createServer(async (req, res) => {
                 customOutputName: resolvedTitle,
                 useGpu,
                 quality,
+                autoRenderCover: autoRenderCover !== false,
+                cancelSignal,
                 onLog: appendLog,
                 onProgress: (prog) => {
                   renderState.currentProgress = prog;
@@ -1959,11 +2246,19 @@ const server = http.createServer(async (req, res) => {
               if (vResult?.outFileName) renderedOutputs.push(vResult.outFileName);
             }
 
+            renderState.cancelFn = null;
+            if (!renderState.isRendering) {
+              cleanupOrphanedRenderFiles();
+              return;
+            }
             renderState.lastOutputs = renderedOutputs;
             renderState.isRendering = false;
             appendLog(`[RENDER SELESAI] Semua variasi berhasil diproduksi!`);
             broadcast('done', { code: 0, outputs: renderedOutputs });
           } catch (err) {
+            renderState.cancelFn = null;
+            cleanupOrphanedRenderFiles();
+            if (!renderState.isRendering) return; // already handled by cancel
             renderState.lastError = err.message;
             renderState.isRendering = false;
             appendLog(`[RENDER ERROR] ${err.message}`);
@@ -1987,6 +2282,11 @@ const server = http.createServer(async (req, res) => {
     if (renderState.isRendering) {
       appendLog('[WEB STUDIO] Membatalkan proses render...');
       renderState.isRendering = false;
+      if (typeof renderState.cancelFn === 'function') {
+        try { renderState.cancelFn(); } catch (_) { }
+        renderState.cancelFn = null;
+      }
+      setTimeout(cleanupOrphanedRenderFiles, 800);
       broadcast('done', { code: -1, cancelled: true });
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, message: 'Render dibatalkan' }));
@@ -2005,11 +2305,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 16. Static: Out Videos
+  // 16. Static: Out Videos & Covers
   if (pathname.startsWith('/out/')) {
-    const filename = path.basename(pathname);
+    const filename = path.basename(decodeURIComponent(pathname));
     const filePath = path.join(OUT_DIR, filename);
-    serveStaticFile(req, res, filePath, 'video/mp4');
+    const ext = path.extname(filePath).toLowerCase();
+    const outMime = {
+      '.mp4': 'video/mp4',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.webp': 'image/webp',
+    }[ext] || 'video/mp4';
+    serveStaticFile(req, res, filePath, outMime);
     return;
   }
 

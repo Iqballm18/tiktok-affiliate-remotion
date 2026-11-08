@@ -199,12 +199,17 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
     props.watermarkPosition = variant.watermarkPosition || 'floating';
   }
 
-  // Helper cari file aset di public/ (mendukung path relatif langsung atau fallback di root public/)
+  // Helper cari file aset di public/ (mendukung path relatif langsung, subfolder produk, atau fallback di root public/)
   const resolvePublicPath = (filename) => {
     if (!filename) return null;
     const directPath = path.join(PUBLIC_DIR, filename);
-    if (fs.existsSync(directPath)) return { relative: filename, full: directPath };
+    if (fs.existsSync(directPath)) return { relative: filename.replace(/\\/g, '/'), full: directPath };
     const baseName = path.basename(filename);
+    if (product?.id) {
+      const prodRel = `products/${product.id}/${baseName}`;
+      const prodPath = path.join(PUBLIC_DIR, prodRel);
+      if (fs.existsSync(prodPath)) return { relative: prodRel, full: prodPath };
+    }
     const rootPath = path.join(PUBLIC_DIR, baseName);
     if (fs.existsSync(rootPath)) return { relative: baseName, full: rootPath };
     return null;
@@ -254,6 +259,25 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
 
   // Resolve Voice Over & Captions (Selalu baca data terbaru dari folder public/)
   delete props.voiceOverCaptions;
+  if (props.voiceOver && product?.id) {
+    const voMatch = String(props.voiceOver).match(/^products\/([^/]+)\//);
+    if (voMatch && voMatch[1] !== product.id) {
+      console.warn(`[SAFETY] VoiceOver '${props.voiceOver}' milik produk lain (${voMatch[1]}). Mencari VO milik '${product.id}'...`);
+      props.voiceOver = '';
+    }
+  }
+  if (!props.voiceOver && product?.id) {
+    const prodDir = path.join(PUBLIC_DIR, 'products', product.id);
+    if (fs.existsSync(prodDir)) {
+      try {
+        const audioFiles = fs.readdirSync(prodDir).filter(f => /\.(mp3|wav|m4a|aac)$/i.test(f));
+        const matchedVo = audioFiles.find(f => f.toLowerCase().includes(variantKey.toLowerCase())) || audioFiles[0];
+        if (matchedVo) {
+          props.voiceOver = `products/${product.id}/${matchedVo}`;
+        }
+      } catch (_) { }
+    }
+  }
   if (props.voiceOver) {
     const voResolved = resolvePublicPath(props.voiceOver);
     if (!voResolved) {
@@ -318,20 +342,45 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
     }
   }
 
-  // Auto-fit duration logic
+  // Auto-fit duration logic (dengan penjagaan batas durasi video asli agar tidak freeze di akhir)
   if (config.autoFitVoiceOver !== false && props.voiceOverCaptions && props.voiceOverCaptions.length > 0) {
     const lastWord = props.voiceOverCaptions[props.voiceOverCaptions.length - 1];
     if (lastWord && lastWord.endMs) {
       const voEndSec = (lastWord.endMs / 1000) + (props.voiceOverDelaySec || 0);
       const currentTotalSec = props.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
-      if (currentTotalSec < voEndSec) {
-        const diff = Math.ceil(voEndSec - currentTotalSec + 1); // +1s buffer
-        console.log(`[AUTO-FIT] Durasi voiceover (${voEndSec.toFixed(1)}s) melebihi klip (${currentTotalSec.toFixed(1)}s). Menambah ${diff}s ke klip terakhir agar audio tidak terpotong.`);
-        if (props.clips.length > 0) {
-          props.clips[props.clips.length - 1].endSec += diff;
+      if (currentTotalSec < voEndSec && props.clips.length > 0) {
+        const diff = Math.ceil((voEndSec - currentTotalSec + 0.8) * 10) / 10;
+        const lastClip = props.clips[props.clips.length - 1];
+        const lastVidDur = lastClip.src ? getVideoDurationSec(lastClip.src) : null;
+        if (lastVidDur && lastVidDur > 0) {
+          const maxEnd = Math.floor(lastVidDur * 10) / 10;
+          const targetSpan = (lastClip.endSec - lastClip.startSec) + diff;
+          if (lastClip.endSec + diff <= maxEnd) {
+            lastClip.endSec = Math.round((lastClip.endSec + diff) * 10) / 10;
+          } else {
+            lastClip.endSec = maxEnd;
+            lastClip.startSec = Math.max(0, Math.round((maxEnd - targetSpan) * 10) / 10);
+          }
+        } else {
+          lastClip.endSec = Math.round((lastClip.endSec + diff) * 10) / 10;
         }
+        console.log(`[AUTO-FIT] Durasi voiceover (${voEndSec.toFixed(1)}s) melebihi klip (${currentTotalSec.toFixed(1)}s). Klip terakhir disesuaikan ke ${lastClip.startSec}-${lastClip.endSec}s.`);
       }
     }
+  }
+
+  // Resolve Cover Image if specified
+  if (props.coverImage) {
+    const coverImgResolved = resolvePublicPath(props.coverImage);
+    if (!coverImgResolved) {
+      console.warn(`[WARNING] File gambar cover public/${props.coverImage} tidak ditemukan! Beralih ke frame video.`);
+      delete props.coverImage;
+    } else {
+      props.coverImage = coverImgResolved.relative;
+    }
+  }
+  if (options.renderMode) {
+    props.renderMode = options.renderMode;
   }
 
   // Calculate total duration
@@ -406,7 +455,15 @@ export function validateProduct(productData) {
         }
         const videoTarget = clip.src || productData.videoSource;
         if (videoTarget) {
-          const filePath = path.join(PUBLIC_DIR, path.basename(videoTarget));
+          let filePath = path.join(PUBLIC_DIR, videoTarget);
+          if (!fs.existsSync(filePath) && productData.id) {
+            const subPath = path.join(PUBLIC_DIR, 'products', productData.id, path.basename(videoTarget));
+            if (fs.existsSync(subPath)) filePath = subPath;
+          }
+          if (!fs.existsSync(filePath)) {
+            const rootFallback = path.join(PUBLIC_DIR, path.basename(videoTarget));
+            if (fs.existsSync(rootFallback)) filePath = rootFallback;
+          }
           if (!fs.existsSync(filePath)) {
             warnings.push(`${prefix} File video '${videoTarget}' belum ada di folder public/. Harap unggah sebelum render.`);
           } else {
@@ -421,7 +478,15 @@ export function validateProduct(productData) {
 
     // Check voiceover
     if (variant.voiceOver) {
-      const voPath = path.join(PUBLIC_DIR, variant.voiceOver);
+      let voPath = path.join(PUBLIC_DIR, variant.voiceOver);
+      if (!fs.existsSync(voPath) && productData.id) {
+        const subVo = path.join(PUBLIC_DIR, 'products', productData.id, path.basename(variant.voiceOver));
+        if (fs.existsSync(subVo)) voPath = subVo;
+      }
+      if (!fs.existsSync(voPath)) {
+        const rootVo = path.join(PUBLIC_DIR, path.basename(variant.voiceOver));
+        if (fs.existsSync(rootVo)) voPath = rootVo;
+      }
       if (!fs.existsSync(voPath)) {
         warnings.push(`${prefix} File voiceover '${variant.voiceOver}' belum ada di folder public/.`);
       }
@@ -429,7 +494,11 @@ export function validateProduct(productData) {
 
     // Check bgm
     if (variant.bgmTrack) {
-      const bgmPath = path.join(PUBLIC_DIR, variant.bgmTrack);
+      let bgmPath = path.join(PUBLIC_DIR, variant.bgmTrack);
+      if (!fs.existsSync(bgmPath)) {
+        const rootBgm = path.join(PUBLIC_DIR, path.basename(variant.bgmTrack));
+        if (fs.existsSync(rootBgm)) bgmPath = rootBgm;
+      }
       if (!fs.existsSync(bgmPath)) {
         warnings.push(`${prefix} File BGM '${variant.bgmTrack}' belum ada di folder public/.`);
       }

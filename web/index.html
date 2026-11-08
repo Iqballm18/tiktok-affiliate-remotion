@@ -993,6 +993,90 @@
                     style="resize: vertical; font-size: 12.5px; line-height: 1.5;"></textarea>
                 </div>
 
+                <!-- Desain Cover & Thumbnail Video (IG Reels & TikTok) -->
+                <div class="form-group"
+                  style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-control); padding: 14px; margin-top: 14px;">
+                  <div
+                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span class="pill emerald" style="font-size: 11px; padding: 2px 7px;">
+                        <svg class="ic" aria-hidden="true" style="margin-right: 3px;"><use href="#i-frame"></use></svg> 1080×1920
+                      </span>
+                      <strong style="color: #fff; font-size: 13.5px;">Thumbnail &amp; Cover Video (Instagram Reels / TikTok)</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px;">
+                      <button class="btn small" id="btnPreviewCoverLive" type="button" title="Lihat pratinjau langsung di kanvas samping">
+                        <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Pratinjau Live
+                      </button>
+                      <button class="btn small primary" id="btnRenderCoverJpg" type="button"
+                        style="background: #10b981; border-color: #10b981; color: #fff; font-weight: 600;"
+                        title="Render cover thumbnail beresolusi tinggi 1080x1920 ke folder out/">
+                        <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Render Cover JPG
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+                    Buat cover video resolusi tinggi yang selaras dengan hook produk, aman dari cropping grid IG (4:5 &amp; 1:1) dan anti-clutter TikTok.
+                  </div>
+
+                  <div class="form-row three-col" style="gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="selectCoverTemplate" style="font-size: 11.5px;">Gaya Desain Cover</label>
+                      <select class="input" id="selectCoverTemplate" style="font-size: 12px; height: 32px;">
+                        <option value="hook_card">Sesuai Gaya Hook Video (Kartu / Stiker)</option>
+                        <option value="bold_title">Bold Headline (Teks Kontras Tengah)</option>
+                        <option value="clean_minimal">Clean Minimalist (Estetik Elegan)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="selectCoverImage" style="font-size: 11.5px;">Foto Produk Utama</label>
+                      <select class="input" id="selectCoverImage" style="font-size: 12px; height: 32px;">
+                        <option value="">(Gunakan Frame dari Video Mentah)</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="selectCoverClipIndex" style="font-size: 11.5px;">Sumber Klip Background</label>
+                      <select class="input" id="selectCoverClipIndex" style="font-size: 12px; height: 32px;">
+                        <option value="0">Klip Pertama (Hook Awal)</option>
+                        <option value="1">Klip 2 (Demo Bukti)</option>
+                        <option value="2">Klip 3 (Detail Produk)</option>
+                        <option value="3">Klip 4 (CTA Akhir)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row three-col" style="gap: 10px; margin-bottom: 10px;">
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="inputCoverBadge" style="font-size: 11.5px;">Badge / Stiker Atas</label>
+                      <input class="input" type="text" id="inputCoverBadge" placeholder="Misal: BUMIL WAJIB TAHU" style="font-size: 12px; height: 32px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="inputCoverTitle" style="font-size: 11.5px;">Judul Utama Cover</label>
+                      <input class="input" type="text" id="inputCoverTitle" placeholder="Misal: TERNYATA RASA STRAWBERRY!" style="font-size: 12px; height: 32px;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                      <label class="form-label" for="inputCoverSubtitle" style="font-size: 11.5px;">Subteks / Solusi</label>
+                      <input class="input" type="text" id="inputCoverSubtitle" placeholder="Misal: Solusi mual bumil praktis" style="font-size: 12px; height: 32px;">
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <label class="form-label" for="inputCoverFrameSec" style="margin: 0; font-size: 11.5px; color: var(--text-muted);">
+                        Detik Frame Video (Opsional):
+                      </label>
+                      <input class="input" type="number" id="inputCoverFrameSec" min="0" step="0.5" placeholder="Detik ke..." style="width: 90px; height: 28px; font-size: 11.5px;">
+                    </div>
+                    <label style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" id="chkCoverEmbed" style="accent-color: #10b981;">
+                      <span>Sisipkan Cover di Frame Pertama Video (Otomatis Cover TikTok)</span>
+                    </label>
+                  </div>
+                </div>
+
                 <!-- Custom Output Video Title, Watermark & Position -->
                 <div class="form-row three-col" style="margin-top: 12px;">
                   <div class="form-group">
@@ -1136,6 +1220,18 @@
                     </button>
                     <a class="btn small" id="btnOpenExternal" href="#" target="_blank" style="display: none;">
                       Buka Tab
+                    </a>
+                    <button class="btn small btn-action-cover" id="btnViewCoverPlayer" type="button" style="display: none;"
+                      title="Lihat cover JPG langsung tanpa perlu download">
+                      <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Lihat Cover
+                    </button>
+                    <button class="btn small" id="btnRenderCoverPlayer" type="button" style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);"
+                      title="Render Cover JPG untuk video ini">
+                      <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Render Cover
+                    </button>
+                    <a class="btn small" id="btnDownloadCover" href="#" download style="display: none;"
+                      title="Unduh gambar cover JPG (1080x1920) untuk Instagram Reels / TikTok">
+                      <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh Cover
                     </a>
                     <a class="btn small primary" id="btnDownloadVideo" href="#" download style="display: none;">
                       Unduh MP4
@@ -1805,6 +1901,47 @@
     </div>
   </div>
 
+  <!-- Modal 2b: Preview Cover Thumbnail (Tanpa Perlu Unduh) -->
+  <div class="modal-backdrop" id="modalCoverPreview" style="display: none;">
+    <div class="modal-dialog" style="max-width: 440px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 style="margin: 0; font-size: 15px; display: flex; align-items: center; gap: 6px;">
+            <svg class="ic" aria-hidden="true" style="color: #34d399;"><use href="#i-eye"></use></svg> Pratinjau Cover Thumbnail
+          </h3>
+          <span class="pill emerald" style="font-size: 11px;">1080×1920</span>
+        </div>
+        <button class="btn small icon-only modal-close-btn" id="btnCloseCoverModal" type="button" title="Tutup"
+          aria-label="Tutup"><svg class="ic" aria-hidden="true">
+            <use href="#i-x"></use>
+          </svg></button>
+      </div>
+      <div class="modal-body" style="align-items: center; text-align: center; padding: 14px 16px;">
+        <div
+          style="max-height: 520px; width: 100%; overflow: hidden; border-radius: 8px; border: 1px solid var(--border-control); display: flex; align-items: center; justify-content: center; background: #000; min-height: 280px; position: relative;">
+          <img id="coverImagePreview" src="" alt="Pratinjau Cover"
+            style="max-height: 510px; width: auto; object-fit: contain; border-radius: 6px;">
+        </div>
+        <div style="margin-top: 10px; width: 100%; text-align: left; background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+          <div style="font-size: 12px; font-weight: 600; color: #fff; word-break: break-all;" id="coverImageTitle">-</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="coverImageMeta">Resolusi: 1080 × 1920 (9:16 Vertical)</div>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button class="btn small" id="btnCloseCoverModal2" type="button">Tutup</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn small" id="btnCoverModalRerender" type="button" title="Render ulang cover thumbnail ini">
+            <svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Render Ulang
+          </button>
+          <a class="btn small" id="btnCoverModalOpenTab" href="#" target="_blank" title="Buka gambar di tab baru">Buka Tab</a>
+          <a class="btn small primary" id="btnCoverModalDownload" href="#" download title="Unduh berkas gambar Cover JPG">
+            <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh JPG
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal 3: Dialog Konfirmasi Kustom (Pengganti confirm() browser) -->
   <div class="modal-backdrop" id="modalConfirmDialog" style="display: none;">
     <div class="modal-dialog small confirm-dialog-box">
@@ -2040,6 +2177,29 @@
           style="font-size: 11px; color: var(--text-muted); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); padding: 6px 12px; border-radius: var(--radius-control); display: flex; justify-content: space-between; align-items: center;">
           <span>Target Berkas:</span>
           <strong id="renderModalOutputName" style="color: #fff; font-family: monospace;">out/*.mp4</strong>
+        </div>
+
+        <!-- Toggle Render Cover Sekaligus -->
+        <div
+          style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-control); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 2px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2" style="flex-shrink:0;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <strong style="font-size: 12px; color: #fff;">Render Cover Thumbnail Sekaligus</strong>
+              <span class="pill emerald" style="font-size: 10px; padding: 1px 7px;">1080×1920 JPG</span>
+            </div>
+            <div style="font-size: 11px; color: var(--text-faint); line-height: 1.4;">
+              Buat otomatis berkas cover thumbnail pendamping yang siap diunggah ke Google Drive &amp; TikTok.
+            </div>
+          </div>
+          <label class="toggle-switch" title="Buat cover JPG otomatis">
+            <input type="checkbox" id="chkAutoRenderCover" checked>
+            <span class="toggle-track"></span>
+          </label>
         </div>
 
         <!-- Toggle GPU Render (AMD Radeon Acceleration) -->

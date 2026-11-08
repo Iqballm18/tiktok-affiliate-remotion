@@ -1,4 +1,4 @@
-import { Composition } from "remotion";
+import { Composition, Still } from "remotion";
 import {
   AffiliateVideo,
   affiliateSchema,
@@ -41,6 +41,18 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={defaultAffiliateProps}
+      />
+      <Still
+        id="VideoCover"
+        component={AffiliateVideo}
+        schema={affiliateSchema}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          ...defaultAffiliateProps,
+          renderMode: "cover",
+          coverTemplate: "hook_card",
+        }}
       />
     </>
   );

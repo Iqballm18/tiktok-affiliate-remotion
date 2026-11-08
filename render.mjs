@@ -14,8 +14,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, renderStill, selectComposition } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition, makeCancelSignal } from '@remotion/renderer';
 import { loadProduct, resolveVariantProps, listProducts, loadConfig } from './scripts/product-helper.mjs';
+
+export { makeCancelSignal };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -111,8 +113,10 @@ export async function renderProductVariant({
   customOutputName,
   useGpu,
   quality = 'balanced',
+  autoRenderCover = true,
   onProgress,
   onLog = console.log,
+  cancelSignal,
   cancelToken,
 }) {
   const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
@@ -207,7 +211,7 @@ export async function renderProductVariant({
     concurrency: optimalConcurrency,
     offthreadVideoThreads: Math.max(2, Math.min(6, Math.floor(cpuCount / 2))),
     disallowParallelEncoding: false,
-    cancelToken,
+    cancelSignal: cancelSignal || cancelToken,
     chromiumOptions,
     onProgress: (prog) => {
       const rendered = prog.renderedFrames;
@@ -245,12 +249,89 @@ export async function renderProductVariant({
 
   onLog(`[SUCCESS] Selesai dalam ${durationSec}s! File: out/${outFileName} (${sizeMB} MB)`);
 
+  // Otomatis buat cover/thumbnail pendamping yang selaras dengan varian video ini
+  let coverFileName = null;
+  if (autoRenderCover !== false && props.autoRenderCover !== false) {
+    try {
+      const coverRes = await renderProductCover({
+        productOrId: product,
+        variantKey,
+        customOutputName: rawTitle,
+        onLog,
+      });
+      coverFileName = coverRes.coverFileName;
+    } catch (coverErr) {
+      onLog(`[WARN COVER] Gagal membuat cover otomatis: ${coverErr.message}`);
+    }
+  }
+
   return {
     success: true,
     outFileName,
     outputLocation,
+    coverFileName,
     sizeMB,
     durationSec,
+  };
+}
+
+/**
+ * Render cover / thumbnail 1080x1920 (JPG) yang selaras dengan desain varian video
+ */
+export async function renderProductCover({
+  productOrId,
+  variantKey = 'v1',
+  customOutputName,
+  onLog = console.log,
+  onProgress = () => { },
+}) {
+  onProgress({ step: 'sync', message: 'Menyiapkan desain cover...', percent: 20 });
+  const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
+  const config = loadConfig();
+  const enableGpu = config.enableGpuRender !== false;
+  const { props } = resolveVariantProps(product, variantKey, { renderMode: 'cover' });
+
+  onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion...', percent: 45 });
+  const bundleLocation = await getOrBuildBundle(onLog);
+  syncPublicToBundle(bundleLocation, onLog);
+
+  onProgress({ step: 'select', message: 'Memuat komposisi cover 1080x1920...', percent: 70 });
+  const composition = await selectComposition({
+    serveUrl: bundleLocation,
+    id: 'TikTokAffiliate',
+    inputProps: props,
+  });
+
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true });
+  }
+
+  const rawTitle = customOutputName || product.name;
+  let cleanProductName = rawTitle.replace(/[/\\?%*:|"<>]/g, '-').trim();
+  const vRegex = new RegExp(`\\s+${variantKey}$`, 'i');
+  cleanProductName = cleanProductName.replace(vRegex, '').trim();
+  const coverFileName = `${cleanProductName} ${variantKey}-cover.jpg`;
+  const coverLocation = path.join(OUT_DIR, coverFileName);
+
+  onProgress({ step: 'render', message: 'Merender cover 1080x1920...', percent: 85 });
+  onLog(`[COVER] Merender thumbnail cover ke: out/${coverFileName}`);
+  await renderStill({
+    composition,
+    serveUrl: bundleLocation,
+    output: coverLocation,
+    inputProps: props,
+    frame: 0,
+    imageFormat: 'jpeg',
+    jpegQuality: 95,
+    chromiumOptions: enableGpu ? { gl: 'angle' } : { gl: null },
+  });
+
+  onProgress({ step: 'done', message: 'Cover berhasil dibuat!', percent: 100 });
+  onLog(`[COVER] Thumbnail selesai: out/${coverFileName}`);
+  return {
+    success: true,
+    coverFileName,
+    coverLocation,
   };
 }
 
@@ -261,6 +342,7 @@ export async function renderProductStill({
   productOrId,
   variantKey = 'v1',
   frame = 60,
+  renderMode,
   onLog = console.log,
   onProgress = () => { },
 }) {
@@ -268,7 +350,8 @@ export async function renderProductStill({
   const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
   const config = loadConfig();
   const enableGpu = config.enableGpuRender !== false;
-  const { props } = resolveVariantProps(product, variantKey);
+  const { props } = resolveVariantProps(product, variantKey, renderMode ? { renderMode } : {});
+  const targetFrame = renderMode === 'cover' ? 0 : parseInt(frame, 10);
 
   onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion (Webpack)...', percent: 45 });
   const bundleLocation = await getOrBuildBundle(onLog);
@@ -281,19 +364,22 @@ export async function renderProductStill({
     inputProps: props,
   });
 
+  const maxFrame = Math.max(0, (composition.durationInFrames || 1) - 1);
+  const safeFrame = renderMode === 'cover' ? 0 : Math.max(0, Math.min(maxFrame, Number.isFinite(targetFrame) ? targetFrame : 0));
+
   // Simpan ke direktori temp OS agar out/previews/ TIDAK PERNAH menumpuk file sampah
   const tempPreviewDir = path.join(os.tmpdir(), 'remotion_previews');
   if (!fs.existsSync(tempPreviewDir)) fs.mkdirSync(tempPreviewDir, { recursive: true });
   const previewPath = path.join(tempPreviewDir, `preview_live_${Date.now()}.png`);
 
-  onProgress({ step: 'render', message: `Merender frame ${frame} di Chromium headless...`, percent: 85 });
-  onLog(`[STILL] Merender still frame ${frame} untuk pratinjau cepat...`);
+  onProgress({ step: 'render', message: `Merender frame ${safeFrame} di Chromium headless...`, percent: 85 });
+  onLog(`[STILL] Merender still ${renderMode === 'cover' ? 'cover' : `frame ${safeFrame}`} untuk pratinjau cepat...`);
   await renderStill({
     composition,
     serveUrl: bundleLocation,
     output: previewPath,
     inputProps: props,
-    frame: parseInt(frame, 10),
+    frame: safeFrame,
     imageFormat: 'png',
     chromiumOptions: enableGpu ? { gl: 'angle' } : { gl: null },
   });

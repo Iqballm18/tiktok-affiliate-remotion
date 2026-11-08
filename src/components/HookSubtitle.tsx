@@ -658,7 +658,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
     const extraBottom =
         liftFromFrame !== undefined && liftPx > 0
             ? liftPx *
-            interpolate(frame, [liftFromFrame, liftFromFrame + Math.round(0.25 * fps)], [0, 1], {
+            interpolate(frame, [liftFromFrame - Math.round(0.12 * fps), liftFromFrame + Math.round(0.22 * fps)], [0, 1], {
                 easing: Easing.out(Easing.cubic),
                 extrapolateLeft: 'clamp',
                 extrapolateRight: 'clamp',
