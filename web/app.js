@@ -198,6 +198,7 @@
     btnOpenOutFolder: $('btnOpenOutFolder'),
     btnOpenPublicFolder: $('btnOpenPublicFolder'),
     btnRefreshPublicBrowser: $('btnRefreshPublicBrowser'),
+    btnUploadAllToGDrive: $('btnUploadAllToGDrive'),
     inputPublicSearch: $('inputPublicSearch'),
     btnClearPublicSearch: $('btnClearPublicSearch'),
     countPublicPreviews: $('countPublicPreviews'),
@@ -4163,9 +4164,101 @@
     }
   }
 
+  // GDrive Upload Queue State & Worker
+  let gdriveUploadQueue = [];
   let isUploadingToGDrive = false;
   let activeUploadToast = null;
   let activeUploadVideoName = null;
+  let currentUploadPercent = 0;
+  let currentUploadStep = 'idle';
+  let currentUploadMessage = '';
+  const gdriveUploadedMap = new Map();
+
+  function updateAllQueueUI() {
+    // 1. Update all table row buttons in Gallery
+    document.querySelectorAll('.btn-upload-gdrive-row').forEach(btn => {
+      const vName = btn.dataset.video;
+      if (!vName) return;
+
+      const isCurrent = (vName === activeUploadVideoName);
+      const qIdx = gdriveUploadQueue.indexOf(vName);
+      const isQueued = (qIdx !== -1);
+      const isUploaded = gdriveUploadedMap.has(vName);
+
+      if (isCurrent) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳</span> <span>${currentUploadPercent}%</span>`;
+        btn.style.color = '#38bdf8';
+        btn.style.background = 'rgba(56, 189, 248, 0.12)';
+        btn.style.borderColor = 'rgba(56, 189, 248, 0.35)';
+        btn.title = `Sedang diunggah ke Google Drive (${currentUploadPercent}%)`;
+      } else if (isQueued) {
+        btn.disabled = true;
+        btn.innerHTML = `${svgIcon('clock')} <span>Antrean #${qIdx + 1}</span>`;
+        btn.style.color = '#fbbf24';
+        btn.style.background = 'rgba(245, 158, 11, 0.12)';
+        btn.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+        btn.title = `Dalam antrean upload ke Google Drive (urutan #${qIdx + 1})`;
+      } else if (isUploaded) {
+        btn.disabled = false;
+        btn.innerHTML = `${svgIcon('check')} <span>Selesai</span>`;
+        btn.style.color = '#34d399';
+        btn.style.background = 'rgba(16, 185, 129, 0.12)';
+        btn.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        btn.title = 'Sudah terunggah di Google Drive (klik untuk unggah ulang)';
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = `${svgIcon('upload')} <span>Upload</span>`;
+        btn.style.color = '';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.title = 'Unggah video ini langsung ke Google Drive';
+      }
+    });
+
+    // 2. Update Studio player upload button
+    if (el.btnUploadToGDrive) {
+      const curSel = el.selectOutputVideo?.value;
+      if (!curSel) {
+        el.btnUploadToGDrive.disabled = false;
+        el.btnUploadToGDrive.innerHTML = `${svgIcon('upload')} Upload ke Drive`;
+        el.btnUploadToGDrive.style.color = '#34d399';
+      } else if (curSel === activeUploadVideoName) {
+        el.btnUploadToGDrive.disabled = true;
+        el.btnUploadToGDrive.innerHTML = `<span>⏳</span> ${currentUploadPercent}%`;
+        el.btnUploadToGDrive.style.color = '#38bdf8';
+      } else if (gdriveUploadQueue.includes(curSel)) {
+        const qIdx = gdriveUploadQueue.indexOf(curSel);
+        el.btnUploadToGDrive.disabled = true;
+        el.btnUploadToGDrive.innerHTML = `${svgIcon('clock')} Antrean #${qIdx + 1}`;
+        el.btnUploadToGDrive.style.color = '#fbbf24';
+      } else if (gdriveUploadedMap.has(curSel)) {
+        el.btnUploadToGDrive.disabled = false;
+        el.btnUploadToGDrive.innerHTML = `${svgIcon('check')} Selesai`;
+        el.btnUploadToGDrive.style.color = '#34d399';
+      } else {
+        el.btnUploadToGDrive.disabled = false;
+        el.btnUploadToGDrive.innerHTML = `${svgIcon('upload')} Upload ke Drive`;
+        el.btnUploadToGDrive.style.color = '#34d399';
+      }
+    }
+
+    // 3. Update Toolbar "Upload Semua ke Drive" Button
+    if (el.btnUploadAllToGDrive) {
+      const totalVids = (state.videos || []).length;
+      const inQueueCount = gdriveUploadQueue.length + (activeUploadVideoName ? 1 : 0);
+      if (totalVids > 0 && inQueueCount >= totalVids) {
+        el.btnUploadAllToGDrive.innerHTML = `${svgIcon('check')} Semua Masuk Antrean`;
+        el.btnUploadAllToGDrive.style.color = '#34d399';
+      } else if (inQueueCount > 0) {
+        el.btnUploadAllToGDrive.innerHTML = `${svgIcon('upload')} Tambah ke Antrean (${inQueueCount} aktif)`;
+        el.btnUploadAllToGDrive.style.color = '#fbbf24';
+      } else {
+        el.btnUploadAllToGDrive.innerHTML = `${svgIcon('upload')} Upload Semua ke Drive`;
+        el.btnUploadAllToGDrive.style.color = '#34d399';
+      }
+    }
+  }
 
   function handleGDriveUploadProgressSSE(data) {
     const filename = data.filename || activeUploadVideoName || 'Video';
@@ -4175,6 +4268,13 @@
       ? `${data.sentMB} MB / ${data.totalMB} MB`
       : `${percent}%`;
 
+    currentUploadPercent = percent;
+    currentUploadStep = data.step;
+    currentUploadMessage = message;
+
+    const qRemaining = gdriveUploadQueue.length;
+    const queueStatusSuffix = qRemaining > 0 ? ` • Sisa Antrean: ${qRemaining} video` : '';
+
     // 1. Update Floating Toast Notification (Melayang di atas semua tab)
     if (activeUploadToast) {
       const pctEl = activeUploadToast.querySelector('.toast-progress-pct');
@@ -4183,9 +4283,10 @@
       if (pctEl) pctEl.textContent = `${percent}%`;
       if (fillEl) fillEl.style.width = `${percent}%`;
       if (statusEl) {
-        statusEl.textContent = (data.sentMB && data.totalMB)
+        const baseMsg = (data.sentMB && data.totalMB)
           ? `${message} (${data.sentMB} / ${data.totalMB} MB)`
           : message;
+        statusEl.textContent = `${baseMsg}${queueStatusSuffix}`;
       }
     }
 
@@ -4207,7 +4308,7 @@
           fillEl.style.width = `${percent}%`;
           fillEl.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
         }
-        if (statusEl) statusEl.textContent = message;
+        if (statusEl) statusEl.textContent = `${message}${queueStatusSuffix}`;
         if (sizeEl) sizeEl.textContent = sizeText;
       } else if (data.step === 'done') {
         if (pulseEl) pulseEl.style.background = '#10b981';
@@ -4216,14 +4317,21 @@
           fillEl.style.width = '100%';
           fillEl.style.background = '#10b981';
         }
-        if (statusEl) statusEl.textContent = 'Video berhasil tersimpan di Google Drive.';
-        if (sizeEl) sizeEl.textContent = '100% Selesai';
-        if (actionsEl) actionsEl.style.display = 'flex';
-        if (viewBtnEl && data.url) viewBtnEl.href = data.url;
+        if (qRemaining > 0) {
+          if (titleEl) titleEl.textContent = `Selesai: ${filename}`;
+          if (statusEl) statusEl.textContent = `Tersimpan! Mempersiapkan antrean berikutnya (${qRemaining} lagi)...`;
+          if (sizeEl) sizeEl.textContent = 'Lanjut Antrean';
+        } else {
+          if (titleEl) titleEl.textContent = `Semua Upload Selesai`;
+          if (statusEl) statusEl.textContent = `Video '${filename}' berhasil tersimpan di Google Drive.`;
+          if (sizeEl) sizeEl.textContent = '100% Selesai';
+          if (actionsEl) actionsEl.style.display = 'flex';
+          if (viewBtnEl && data.url) viewBtnEl.href = data.url;
+        }
       } else if (data.step === 'error') {
         if (pulseEl) pulseEl.style.background = '#f43f5e';
         if (fillEl) fillEl.style.background = '#f43f5e';
-        if (statusEl) statusEl.textContent = `Gagal: ${message}`;
+        if (statusEl) statusEl.textContent = `Gagal: ${message}${queueStatusSuffix}`;
         if (actionsEl) actionsEl.style.display = 'flex';
       }
     }
@@ -4254,12 +4362,9 @@
       el.btnGdriveGalleryViewUploaded
     );
 
-    // 3. Sync Table Row Buttons in Gallery & Player Button
-    const safeTarget = (window.CSS && CSS.escape) ? CSS.escape(filename) : filename.replace(/"/g, '\\"');
-    const rowButtons = document.querySelectorAll(`.btn-upload-gdrive-row[data-video="${safeTarget}"]`);
-
     if (data.step === 'done') {
-      if (activeUploadToast) {
+      gdriveUploadedMap.set(filename, data.url || true);
+      if (activeUploadToast && qRemaining === 0) {
         removeToast(activeUploadToast);
         activeUploadToast = null;
       }
@@ -4271,25 +4376,14 @@
         type: 'success',
         title: successTitle,
         message: successMsg,
-        duration: 9000,
+        duration: 8000,
         actionLabel: 'Buka video',
         onAction: () => {
           if (data.url) window.open(data.url, '_blank');
         }
       });
-
-      rowButtons.forEach(btn => {
-        btn.disabled = false;
-        btn.innerHTML = `${svgIcon('check')} Selesai`;
-        btn.style.color = '#10b981';
-      });
-
-      if (el.btnUploadToGDrive) {
-        el.btnUploadToGDrive.disabled = false;
-        el.btnUploadToGDrive.innerHTML = `${svgIcon('upload')} Upload ke Drive`;
-      }
     } else if (data.step === 'error') {
-      if (activeUploadToast) {
+      if (activeUploadToast && qRemaining === 0) {
         removeToast(activeUploadToast);
         activeUploadToast = null;
       }
@@ -4299,134 +4393,165 @@
         message: message,
         duration: 8000
       });
-
-      rowButtons.forEach(btn => {
-        btn.disabled = false;
-        btn.innerHTML = `${svgIcon('upload')} Upload`;
-        btn.style.color = '#34d399';
-      });
-
-      if (el.btnUploadToGDrive) {
-        el.btnUploadToGDrive.disabled = false;
-        el.btnUploadToGDrive.innerHTML = `${svgIcon('upload')} Upload ke Drive`;
-      }
-    } else {
-      // In-Progress (uploading / packaging / compressing)
-      rowButtons.forEach(btn => {
-        btn.disabled = true;
-        btn.innerHTML = `<span>⏳</span> ${percent}%`;
-        btn.style.color = '#38bdf8';
-      });
-
-      if (el.btnUploadToGDrive) {
-        el.btnUploadToGDrive.disabled = true;
-        el.btnUploadToGDrive.innerHTML = `<span>⏳</span> ${percent}%`;
-      }
     }
+
+    updateAllQueueUI();
   }
 
-  async function uploadVideoToGDrive(videoName) {
+  function enqueueVideoForGDrive(videoName) {
     if (!videoName) {
       showToast({ type: 'warning', title: 'Pilih Video', message: 'Silakan pilih video yang ingin diunggah terlebih dahulu.' });
       return;
     }
-    if (isUploadingToGDrive) {
-      showToast({ type: 'warning', title: 'Sedang Mengunggah', message: 'Proses unggah video lain sedang berjalan, harap tunggu hingga selesai.' });
+
+    // Jika sedang aktif diunggah
+    if (activeUploadVideoName === videoName) {
+      showToast({ type: 'warning', title: 'Sedang Berjalan', message: `"${videoName}" saat ini sedang dalam proses unggah.` });
       return;
     }
 
-    activeUploadVideoName = videoName;
+    // Jika sudah ada di antrean
+    if (gdriveUploadQueue.includes(videoName)) {
+      const qPos = gdriveUploadQueue.indexOf(videoName) + 1;
+      showToast({ type: 'info', title: 'Sudah di Antrean', message: `"${videoName}" sudah ada di dalam antrean (urutan #${qPos}).` });
+      return;
+    }
+
+    gdriveUploadQueue.push(videoName);
+    updateAllQueueUI();
+
+    if (isUploadingToGDrive) {
+      const qPos = gdriveUploadQueue.length;
+      showToast({
+        type: 'info',
+        title: 'Masuk Antrean Upload',
+        message: `"${videoName}" ditambahkan ke antrean (urutan #${qPos}).`,
+        duration: 3500
+      });
+      if (activeUploadToast) {
+        const statusEl = activeUploadToast.querySelector('.toast-progress-status');
+        if (statusEl) {
+          statusEl.textContent = `${currentUploadMessage} • Sisa Antrean: ${gdriveUploadQueue.length} video`;
+        }
+      }
+    } else {
+      processNextInGDriveQueue();
+    }
+  }
+
+  async function processNextInGDriveQueue() {
+    if (isUploadingToGDrive) return;
+    if (gdriveUploadQueue.length === 0) {
+      activeUploadVideoName = null;
+      isUploadingToGDrive = false;
+      updateAllQueueUI();
+      return;
+    }
+
+    const nextVideo = gdriveUploadQueue.shift();
+    activeUploadVideoName = nextVideo;
     isUploadingToGDrive = true;
+    currentUploadPercent = 5;
+    currentUploadStep = 'init';
+    currentUploadMessage = 'Menyiapkan berkas video...';
 
-    // 1. Initialize Studio Progress Box
-    if (el.gdriveUploadProgressBox) {
-      el.gdriveUploadProgressBox.style.display = 'block';
-      if (el.gdriveUploadTitle) el.gdriveUploadTitle.textContent = `Mengunggah: ${videoName}`;
-      if (el.gdriveUploadPercent) el.gdriveUploadPercent.textContent = '5%';
-      if (el.gdriveUploadBarFill) {
-        el.gdriveUploadBarFill.style.width = '5%';
-        el.gdriveUploadBarFill.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
-      }
-      if (el.gdriveUploadStatusText) el.gdriveUploadStatusText.textContent = 'Menyiapkan berkas video...';
-      if (el.gdriveUploadSizeText) el.gdriveUploadSizeText.textContent = 'Memulai...';
-      if (el.gdriveUploadSuccessActions) el.gdriveUploadSuccessActions.style.display = 'none';
-      if (el.uploadPulseDot) {
-        el.uploadPulseDot.style.display = 'inline-block';
-        el.uploadPulseDot.style.background = '#34d399';
-      }
-    }
+    updateAllQueueUI();
 
-    // 2. Initialize Gallery Progress Box (Langsung tampak di Tab 3 Galeri)
-    if (el.gdriveGalleryUploadProgressBox) {
-      el.gdriveGalleryUploadProgressBox.style.display = 'block';
-      if (el.gdriveGalleryUploadTitle) el.gdriveGalleryUploadTitle.textContent = `Mengunggah: ${videoName}`;
-      if (el.gdriveGalleryUploadPercent) el.gdriveGalleryUploadPercent.textContent = '5%';
-      if (el.gdriveGalleryUploadBarFill) {
-        el.gdriveGalleryUploadBarFill.style.width = '5%';
-        el.gdriveGalleryUploadBarFill.style.background = 'linear-gradient(90deg, #10b981, #06b6d4)';
-      }
-      if (el.gdriveGalleryUploadStatusText) el.gdriveGalleryUploadStatusText.textContent = 'Menyiapkan berkas video...';
-      if (el.gdriveGalleryUploadSizeText) el.gdriveGalleryUploadSizeText.textContent = 'Memulai...';
-      if (el.gdriveGalleryUploadSuccessActions) el.gdriveGalleryUploadSuccessActions.style.display = 'none';
-      if (el.uploadGalleryPulseDot) {
-        el.uploadGalleryPulseDot.style.display = 'inline-block';
-        el.uploadGalleryPulseDot.style.background = '#34d399';
-      }
-    }
-
-    // 3. Update Row Button in Table
-    const safeTarget = (window.CSS && CSS.escape) ? CSS.escape(videoName) : videoName.replace(/"/g, '\\"');
-    document.querySelectorAll(`.btn-upload-gdrive-row[data-video="${safeTarget}"]`).forEach(btn => {
-      btn.disabled = true;
-      btn.innerHTML = '<span>⏳</span> 5%';
-      btn.style.color = '#38bdf8';
-    });
-
-    if (el.btnUploadToGDrive) {
-      el.btnUploadToGDrive.disabled = true;
-      el.btnUploadToGDrive.innerHTML = '<span>⏳</span> 5%';
-    }
-
-    // 4. Show Floating Toast with Live Progress Bar
+    // Show floating toast
     if (activeUploadToast) {
       removeToast(activeUploadToast);
       activeUploadToast = null;
     }
+    const qCount = gdriveUploadQueue.length;
     activeUploadToast = showToast({
       type: 'upload',
       title: 'Mengunggah ke Google Drive...',
-      message: videoName,
+      message: qCount > 0 ? `${nextVideo} (Sisa antrean: ${qCount})` : nextVideo,
       duration: 0,
       showProgress: true
+    });
+
+    handleGDriveUploadProgressSSE({
+      filename: nextVideo,
+      step: 'init',
+      percent: 5,
+      message: 'Menyiapkan berkas video...'
     });
 
     try {
       const res = await fetch('/api/gdrive-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoName })
+        body: JSON.stringify({ videoName: nextVideo })
       });
       const data = await res.json();
 
       if (res.ok && data.success) {
+        gdriveUploadedMap.set(nextVideo, data.url || true);
         handleGDriveUploadProgressSSE({
-          filename: videoName,
+          filename: nextVideo,
           step: 'done',
           percent: 100,
-          url: data.url
+          url: data.url,
+          coverUploaded: data.coverUploaded
         });
       } else {
         throw new Error(data.error || 'Gagal mengunggah ke Google Drive');
       }
     } catch (err) {
       handleGDriveUploadProgressSSE({
-        filename: videoName,
+        filename: nextVideo,
         step: 'error',
         percent: 0,
         message: err.message
       });
     } finally {
       isUploadingToGDrive = false;
+      updateAllQueueUI();
+
+      if (gdriveUploadQueue.length > 0) {
+        setTimeout(() => {
+          processNextInGDriveQueue();
+        }, 600);
+      } else {
+        activeUploadVideoName = null;
+        updateAllQueueUI();
+      }
+    }
+  }
+
+  function enqueueAllVideosForGDrive() {
+    const videos = state.videos || [];
+    if (videos.length === 0) {
+      showToast({ type: 'warning', title: 'Belum Ada Video', message: 'Tidak ada video di folder out/ yang dapat diunggah.' });
+      return;
+    }
+
+    let enqueuedCount = 0;
+    videos.forEach(v => {
+      const vName = v.name;
+      if (vName !== activeUploadVideoName && !gdriveUploadQueue.includes(vName)) {
+        gdriveUploadQueue.push(vName);
+        enqueuedCount++;
+      }
+    });
+
+    if (enqueuedCount === 0) {
+      showToast({ type: 'info', title: 'Semua Sudah di Antrean', message: 'Semua video sudah ada di dalam antrean atau sedang diunggah.' });
+      return;
+    }
+
+    showToast({
+      type: 'success',
+      title: 'Semua Video Masuk Antrean',
+      message: `${enqueuedCount} video berhasil dimasukkan ke antrean upload Google Drive!`,
+      duration: 5000
+    });
+
+    updateAllQueueUI();
+
+    if (!isUploadingToGDrive) {
+      processNextInGDriveQueue();
     }
   }
 
@@ -4475,7 +4600,14 @@
   if (el.btnUploadToGDrive) {
     el.btnUploadToGDrive.addEventListener('click', () => {
       const vid = el.selectOutputVideo?.value;
-      uploadVideoToGDrive(vid);
+      enqueueVideoForGDrive(vid);
+    });
+  }
+
+  // Toolbar Button: Upload Semua ke Drive
+  if (el.btnUploadAllToGDrive) {
+    el.btnUploadAllToGDrive.addEventListener('click', () => {
+      enqueueAllVideosForGDrive();
     });
   }
 
@@ -4483,7 +4615,7 @@
   document.addEventListener('click', e => {
     const btnUpload = e.target.closest('.btn-upload-gdrive-row');
     if (btnUpload && btnUpload.dataset.video) {
-      uploadVideoToGDrive(btnUpload.dataset.video);
+      enqueueVideoForGDrive(btnUpload.dataset.video);
       return;
     }
   });
@@ -5451,6 +5583,7 @@
       if (prevVal && Array.from(el.selectOutputVideo.options).some(o => o.value === prevVal)) {
         el.selectOutputVideo.value = prevVal;
       }
+      updateAllQueueUI();
     } catch (err) {
       console.error(err);
     }
@@ -5481,7 +5614,10 @@
     el.btnOpenExternal.href = videoUrl;
     el.btnDownloadVideo.style.display = 'inline-flex';
     el.btnDownloadVideo.href = videoUrl;
-    if (el.btnUploadToGDrive) el.btnUploadToGDrive.style.display = 'inline-flex';
+    if (el.btnUploadToGDrive) {
+      el.btnUploadToGDrive.style.display = 'inline-flex';
+      updateAllQueueUI();
+    }
 
     const vidObj = (state.videos || []).find(v => v.name === videoName);
     if (vidObj?.coverFile) {
@@ -5596,6 +5732,32 @@
               : (isV2 ? '<span class="pill" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35); font-weight: 700;">Versi 2 (V2)</span>' : '<span class="pill neutral">Video MP4</span>');
             const dateStr = new Date(v.mtime).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'medium' });
 
+            const isCurrent = (v.name === activeUploadVideoName);
+            const qIdx = gdriveUploadQueue.indexOf(v.name);
+            const isQueued = (qIdx !== -1);
+            const isUploaded = gdriveUploadedMap.has(v.name);
+
+            let gdriveBtnHtml = `${svgIcon('upload')} <span>Upload</span>`;
+            let gdriveBtnStyle = '';
+            let gdriveBtnDisabled = '';
+            let gdriveBtnTitle = 'Unggah video ini langsung ke Google Drive';
+
+            if (isCurrent) {
+              gdriveBtnHtml = `<span>⏳</span> <span>${currentUploadPercent}%</span>`;
+              gdriveBtnStyle = 'color: #38bdf8; background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.35);';
+              gdriveBtnDisabled = 'disabled';
+              gdriveBtnTitle = `Sedang diunggah ke Google Drive (${currentUploadPercent}%)`;
+            } else if (isQueued) {
+              gdriveBtnHtml = `${svgIcon('clock')} <span>Antrean #${qIdx + 1}</span>`;
+              gdriveBtnStyle = 'color: #fbbf24; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35);';
+              gdriveBtnDisabled = 'disabled';
+              gdriveBtnTitle = `Dalam antrean upload ke Google Drive (urutan #${qIdx + 1})`;
+            } else if (isUploaded) {
+              gdriveBtnHtml = `${svgIcon('check')} <span>Selesai</span>`;
+              gdriveBtnStyle = 'color: #34d399; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3);';
+              gdriveBtnTitle = 'Sudah terunggah di Google Drive (klik untuk unggah ulang)';
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
               <td style="font-weight: 500;">${escapeHtml(v.name)}</td>
@@ -5608,9 +5770,8 @@
                     <svg class="ic" aria-hidden="true"><use href="#i-frame-play"></use></svg>
                     <span>Putar</span>
                   </button>
-                  <button class="btn small btn-upload-gdrive-row" data-video="${escapeHtml(v.name)}" title="Unggah video ini langsung ke Google Drive">
-                    <svg class="ic" aria-hidden="true"><use href="#i-upload"></use></svg>
-                    <span>Upload</span>
+                  <button class="btn small btn-upload-gdrive-row" data-video="${escapeHtml(v.name)}" ${gdriveBtnDisabled} style="${gdriveBtnStyle}" title="${gdriveBtnTitle}">
+                    ${gdriveBtnHtml}
                   </button>
                   <a class="btn small" href="/out/${encodeURIComponent(v.name)}" download title="Unduh video MP4">
                     <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg>

@@ -213,6 +213,10 @@
       <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12" />
       <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17" />
     </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><!-- @license lucide-static v1.70.0 - ISC -->
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </symbol>
   </svg>
   <div class="app-shell">
 
@@ -1632,6 +1636,13 @@
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
                 Buka Folder public/
+              </button>
+              <button class="btn small" id="btnUploadAllToGDrive" type="button"
+                style="background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);"
+                title="Unggah semua video di folder out/ yang belum diunggah ke Google Drive">
+                <svg class="ic" aria-hidden="true">
+                  <use href="#i-upload"></use>
+                </svg> Upload Semua ke Drive
               </button>
               <button class="btn small primary" id="btnRefreshPublicBrowser" type="button">
                 <svg class="ic" aria-hidden="true">
