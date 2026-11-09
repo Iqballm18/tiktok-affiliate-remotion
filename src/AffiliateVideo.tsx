@@ -1669,28 +1669,530 @@ const EditorialCTA: React.FC<{
     const arrowNudge = Math.sin(frame / (fps * 0.20)) * 9;
     const y = interpolate(enter, [0, 1], [45, 0]);
 
+    const resolvedCard = resolveHookSelection(cardStyle)?.layout ?? cardStyle;
+
     const defaultSubLabel =
         platform === 'instagram'
             ? 'KLIK LIHAT PRODUK DI KIRI BAWAH'
             : platform === 'universal'
                 ? 'KLIK IKON DI KIRI BAWAH'
                 : 'KLIK IKON DI KIRI BAWAH';
-    const subLabel = label || defaultSubLabel;
 
-    // Panah Penunjuk CTA (TikTok & Instagram Reels sama-sama berada di Kiri Bawah)
+    let ctaTitle = text;
+    let ctaSub = label || defaultSubLabel;
+
+    if (platform === 'instagram') {
+        ctaTitle = ctaTitle.replace(/keranjang\s+kuning/gi, 'Keranjang Belanja');
+        ctaSub = ctaSub.replace(/keranjang\s+kuning/gi, 'Keranjang Belanja');
+    }
+
+    // Panah Penunjuk CTA (Menyesuaikan Desain Template / CardStyle & Platform Video)
     const renderPointer = () => {
+        const containerStyle: React.CSSProperties = {
+            marginTop: 18,
+            marginLeft: 14,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
+        };
+
+        // 1. Template: LABEL_TAPE (Dymo Embossed Label Tape)
+        if (resolvedCard === 'label_tape') {
+            if (platform === 'instagram') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#111215',
+                                border: '2.5px solid #DD2A7B',
+                                borderLeft: '8px solid #F58529',
+                                padding: '9px 22px',
+                                borderRadius: 3,
+                                fontFamily: FONT.mono,
+                                fontSize: 23,
+                                fontWeight: 800,
+                                letterSpacing: 1.8,
+                                color: '#FFFFFF',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 10px 28px rgba(0,0,0,0.65), 0 0 16px rgba(221,42,123,0.35)',
+                                transform: 'rotate(-1.2deg)',
+                            }}
+                        >
+                            <span style={{ fontSize: 28, color: '#F58529', lineHeight: 1 }}>↙</span>
+                            <span style={{ fontSize: 22 }}>🛍️</span>
+                            <span>KERANJANG BELANJA DI SINI</span>
+                        </div>
+                    </div>
+                );
+            }
+            if (platform === 'universal') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#111215',
+                                border: `2.5px solid ${theme.colors.accent}`,
+                                borderLeft: `8px solid ${theme.colors.accent}`,
+                                padding: '9px 22px',
+                                borderRadius: 3,
+                                fontFamily: FONT.mono,
+                                fontSize: 23,
+                                fontWeight: 800,
+                                letterSpacing: 1.8,
+                                color: '#FFFFFF',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 10px 28px rgba(0,0,0,0.65)',
+                                transform: 'rotate(-1.2deg)',
+                            }}
+                        >
+                            <span style={{ fontSize: 28, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
+                            <span>CEK KERANJANG DI SINI</span>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div style={containerStyle}>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            backgroundColor: '#111215',
+                            border: '2.5px solid #FFE600',
+                            borderLeft: '8px solid #FFE600',
+                            padding: '9px 22px',
+                            borderRadius: 3,
+                            fontFamily: FONT.mono,
+                            fontSize: 23,
+                            fontWeight: 800,
+                            letterSpacing: 1.8,
+                            color: '#FFE600',
+                            textTransform: 'uppercase',
+                            boxShadow: '0 10px 28px rgba(0,0,0,0.65)',
+                            transform: 'rotate(-1.2deg)',
+                        }}
+                    >
+                        <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
+                        <span style={{ color: '#FFFFFF' }}>KERANJANG KUNING DI SINI</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. Template: RECEIPT (Thermal Struk Belanja / Coupon Tear-off)
+        if (resolvedCard === 'receipt') {
+            if (platform === 'instagram') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#FAF8F3',
+                                color: '#111111',
+                                border: '2px solid #111111',
+                                borderTop: '3px dashed #DD2A7B',
+                                borderBottom: '3px dashed #DD2A7B',
+                                padding: '10px 22px',
+                                borderRadius: 2,
+                                fontFamily: FONT.mono,
+                                fontSize: 22,
+                                fontWeight: 800,
+                                letterSpacing: 1.2,
+                                boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, color: '#DD2A7B', lineHeight: 1 }}>↙</span>
+                            <span style={{ fontSize: 22 }}>🛍️</span>
+                            <span>KERANJANG BELANJA DI SINI</span>
+                        </div>
+                    </div>
+                );
+            }
+            if (platform === 'universal') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#FAF8F3',
+                                color: '#111111',
+                                border: '2px solid #111111',
+                                borderTop: '3px dashed #111111',
+                                borderBottom: '3px dashed #111111',
+                                padding: '10px 22px',
+                                borderRadius: 2,
+                                fontFamily: FONT.mono,
+                                fontSize: 22,
+                                fontWeight: 800,
+                                letterSpacing: 1.2,
+                                boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, lineHeight: 1 }}>↙</span>
+                            <span>*** CEK KERANJANG DI SINI ***</span>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div style={containerStyle}>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            backgroundColor: '#FAF8F3',
+                            color: '#111111',
+                            border: '2px solid #111111',
+                            borderTop: '3px dashed #FFE600',
+                            borderBottom: '3px dashed #FFE600',
+                            padding: '10px 22px',
+                            borderRadius: 2,
+                            fontFamily: FONT.mono,
+                            fontSize: 22,
+                            fontWeight: 800,
+                            letterSpacing: 1.2,
+                            boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        <span style={{ fontSize: 26, color: '#000000', lineHeight: 1, backgroundColor: '#FFE600', padding: '0 6px', borderRadius: 2 }}>↙</span>
+                        <span>*** KERANJANG KUNING DI SINI ***</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // 3. Template: STICKY_NOTE (Catatan Tempel Fisik & Washi Tape)
+        if (resolvedCard === 'sticky_note') {
+            if (platform === 'instagram') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                position: 'relative',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#FEF08A',
+                                color: '#18181B',
+                                padding: '10px 22px 10px 18px',
+                                borderRadius: 4,
+                                transform: 'rotate(-2.2deg)',
+                                boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
+                                borderLeft: '6px solid #DD2A7B',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    top: -10,
+                                    left: 20,
+                                    width: 48,
+                                    height: 18,
+                                    backgroundColor: 'rgba(255,255,255,0.7)',
+                                    transform: 'rotate(2deg)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                }}
+                            />
+                            <span style={{ fontSize: 28, color: '#DD2A7B', lineHeight: 1, fontWeight: 900 }}>↙</span>
+                            <span style={{ fontSize: 22 }}>🛍️</span>
+                            <span
+                                style={{
+                                    fontFamily: FONT.hand,
+                                    fontSize: 30,
+                                    fontWeight: 700,
+                                    color: '#18181B',
+                                    lineHeight: 1,
+                                }}
+                            >
+                                Keranjang Belanja di sini!
+                            </span>
+                        </div>
+                    </div>
+                );
+            }
+            if (platform === 'universal') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                position: 'relative',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: '#FEF08A',
+                                color: '#18181B',
+                                padding: '10px 22px 10px 18px',
+                                borderRadius: 4,
+                                transform: 'rotate(-2.2deg)',
+                                boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
+                                borderLeft: `6px solid ${theme.colors.accent}`,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    top: -10,
+                                    left: 20,
+                                    width: 48,
+                                    height: 18,
+                                    backgroundColor: 'rgba(255,255,255,0.7)',
+                                    transform: 'rotate(2deg)',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                                }}
+                            />
+                            <span style={{ fontSize: 28, color: '#B45309', lineHeight: 1, fontWeight: 900 }}>↙</span>
+                            <span
+                                style={{
+                                    fontFamily: FONT.hand,
+                                    fontSize: 30,
+                                    fontWeight: 700,
+                                    color: '#18181B',
+                                    lineHeight: 1,
+                                }}
+                            >
+                                Cek Keranjang di sini!
+                            </span>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div style={containerStyle}>
+                    <div
+                        style={{
+                            position: 'relative',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            backgroundColor: '#FEF08A',
+                            color: '#18181B',
+                            padding: '10px 22px 10px 18px',
+                            borderRadius: 4,
+                            transform: 'rotate(-2.2deg)',
+                            boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
+                            borderLeft: '6px solid #EAB308',
+                        }}
+                    >
+                        <div
+                            style={{
+                                position: 'absolute',
+                                top: -10,
+                                left: 20,
+                                width: 48,
+                                height: 18,
+                                backgroundColor: 'rgba(255,255,255,0.7)',
+                                transform: 'rotate(2deg)',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                            }}
+                        />
+                        <span style={{ fontSize: 28, color: '#CA8A04', lineHeight: 1, fontWeight: 900 }}>↙</span>
+                        <span
+                            style={{
+                                fontFamily: FONT.hand,
+                                fontSize: 30,
+                                fontWeight: 700,
+                                color: '#18181B',
+                                lineHeight: 1,
+                            }}
+                        >
+                            Keranjang Kuning di sini!
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+
+        // 4. Template: QUIET_SERIF (Editorial Luxury Boutique)
+        if (resolvedCard === 'quiet_serif') {
+            if (platform === 'instagram') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                backgroundColor: 'rgba(12, 12, 16, 0.90)',
+                                border: '1px solid rgba(255,255,255,0.22)',
+                                borderLeft: '5px solid #DD2A7B',
+                                borderRadius: 8,
+                                padding: '10px 24px',
+                                fontFamily: FONT.grotesk,
+                                fontSize: 21,
+                                fontWeight: 700,
+                                letterSpacing: 2.2,
+                                color: '#FFFFFF',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 14px 34px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12)',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, color: '#F58529', lineHeight: 1 }}>↙</span>
+                            <span style={{ fontSize: 22 }}>🛍️</span>
+                            <span>KERANJANG BELANJA</span>
+                            <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• LIHAT PRODUK</span>
+                        </div>
+                    </div>
+                );
+            }
+            if (platform === 'universal') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                backgroundColor: 'rgba(12, 12, 16, 0.90)',
+                                border: '1px solid rgba(255,255,255,0.22)',
+                                borderLeft: `5px solid ${theme.colors.accent}`,
+                                borderRadius: 8,
+                                padding: '10px 24px',
+                                fontFamily: FONT.grotesk,
+                                fontSize: 21,
+                                fontWeight: 700,
+                                letterSpacing: 2.2,
+                                color: '#FFFFFF',
+                                textTransform: 'uppercase',
+                                boxShadow: '0 14px 34px rgba(0,0,0,0.6)',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
+                            <span>CEK KERANJANG</span>
+                            <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• SEKARANG</span>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div style={containerStyle}>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            backgroundColor: 'rgba(12, 12, 16, 0.90)',
+                            border: '1px solid rgba(255,255,255,0.22)',
+                            borderLeft: '5px solid #FFE600',
+                            borderRadius: 8,
+                            padding: '10px 24px',
+                            fontFamily: FONT.grotesk,
+                            fontSize: 21,
+                            fontWeight: 700,
+                            letterSpacing: 2.2,
+                            color: '#FFFFFF',
+                            textTransform: 'uppercase',
+                            boxShadow: '0 14px 34px rgba(0,0,0,0.6)',
+                        }}
+                    >
+                        <span style={{ fontSize: 26, color: '#FFE600', lineHeight: 1 }}>↙</span>
+                        <span>KERANJANG KUNING</span>
+                        <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• CEK SEKARANG</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // 5. Template: CHAT_THREAD (Message Bubble)
+        if (resolvedCard === 'chat_thread') {
+            if (platform === 'instagram') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: 'rgba(26, 28, 36, 0.94)',
+                                border: '1.5px solid rgba(221, 42, 123, 0.65)',
+                                borderRadius: '20px 20px 20px 4px',
+                                padding: '10px 22px',
+                                fontFamily: FONT.grotesk,
+                                fontSize: 22,
+                                fontWeight: 800,
+                                letterSpacing: -0.2,
+                                color: '#FFFFFF',
+                                boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, color: '#DD2A7B', lineHeight: 1 }}>↙</span>
+                            <span style={{ fontSize: 22 }}>🛍️</span>
+                            <span>Keranjang Belanja di Sini</span>
+                        </div>
+                    </div>
+                );
+            }
+            if (platform === 'universal') {
+                return (
+                    <div style={containerStyle}>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 10,
+                                backgroundColor: 'rgba(26, 28, 36, 0.94)',
+                                border: `1.5px solid ${theme.colors.accent}`,
+                                borderRadius: '20px 20px 20px 4px',
+                                padding: '10px 22px',
+                                fontFamily: FONT.grotesk,
+                                fontSize: 22,
+                                fontWeight: 800,
+                                letterSpacing: -0.2,
+                                color: '#FFFFFF',
+                                boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
+                            }}
+                        >
+                            <span style={{ fontSize: 26, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
+                            <span>Cek Keranjang di Sini</span>
+                        </div>
+                    </div>
+                );
+            }
+            return (
+                <div style={containerStyle}>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            backgroundColor: 'rgba(26, 28, 36, 0.94)',
+                            border: '1.5px solid rgba(255, 230, 0, 0.65)',
+                            borderRadius: '20px 20px 20px 4px',
+                            padding: '10px 22px',
+                            fontFamily: FONT.grotesk,
+                            fontSize: 22,
+                            fontWeight: 800,
+                            letterSpacing: -0.2,
+                            color: '#FFFFFF',
+                            boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
+                        }}
+                    >
+                        <span style={{ fontSize: 26, color: '#FFE600', lineHeight: 1 }}>↙</span>
+                        <span>Keranjang Kuning di Sini</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // 6. Template: TYPE_STACK / Default (Bold Punchy Brutalist Pill)
         if (platform === 'instagram') {
             return (
-                <div
-                    style={{
-                        marginTop: 18,
-                        marginLeft: 14,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
-                    }}
-                >
+                <div style={containerStyle}>
                     <div
                         style={{
                             background: 'linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%)',
@@ -1709,6 +2211,7 @@ const EditorialCTA: React.FC<{
                         }}
                     >
                         <span style={{ fontSize: 26, lineHeight: 1 }}>↙</span>
+                        <span style={{ fontSize: 22 }}>🛍️</span>
                         <span>KERANJANG BELANJA DI SINI</span>
                     </div>
                 </div>
@@ -1717,16 +2220,7 @@ const EditorialCTA: React.FC<{
 
         if (platform === 'universal') {
             return (
-                <div
-                    style={{
-                        marginTop: 18,
-                        marginLeft: 14,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
-                    }}
-                >
+                <div style={containerStyle}>
                     <div
                         style={{
                             backgroundColor: '#FFE600',
@@ -1751,18 +2245,9 @@ const EditorialCTA: React.FC<{
             );
         }
 
-        // Default: TikTok
+        // TikTok default
         return (
-            <div
-                style={{
-                    marginTop: 18,
-                    marginLeft: 14,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
-                }}
-            >
+            <div style={containerStyle}>
                 <div
                     style={{
                         backgroundColor: '#FFE600',
@@ -1788,7 +2273,6 @@ const EditorialCTA: React.FC<{
     };
 
     let cardContent: React.ReactNode;
-    const resolvedCard = resolveHookSelection(cardStyle)?.layout ?? cardStyle;
 
     if (resolvedCard === 'sticky_note') {
         // Gaya Catatan Tempel Fisik
@@ -1823,11 +2307,11 @@ const EditorialCTA: React.FC<{
                         fontFamily: FONT.hand,
                         fontSize: 34,
                         fontWeight: 700,
-                        color: '#DC2626',
+                        color: platform === 'instagram' ? '#DD2A7B' : '#DC2626',
                         marginBottom: 4,
                     }}
                 >
-                    {subLabel}
+                    {ctaSub}
                 </div>
                 <div
                     style={{
@@ -1839,7 +2323,7 @@ const EditorialCTA: React.FC<{
                         color: '#111827',
                     }}
                 >
-                    {text}
+                    {ctaTitle}
                 </div>
             </div>
         );
@@ -1864,12 +2348,12 @@ const EditorialCTA: React.FC<{
                         fontSize: 20,
                         fontWeight: 500,
                         letterSpacing: 1.5,
-                        color: '#52525B',
+                        color: platform === 'instagram' ? '#DD2A7B' : '#52525B',
                         marginBottom: 8,
                         textTransform: 'uppercase',
                     }}
                 >
-                    *** {subLabel} ***
+                    *** {ctaSub} ***
                 </div>
                 <div
                     style={{
@@ -1883,7 +2367,7 @@ const EditorialCTA: React.FC<{
                         lineHeight: 1.15,
                     }}
                 >
-                    {text}
+                    {ctaTitle}
                 </div>
             </div>
         );
@@ -1893,8 +2377,8 @@ const EditorialCTA: React.FC<{
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
                 <div
                     style={{
-                        backgroundColor: theme.colors.accent,
-                        color: theme.colors.accentText,
+                        backgroundColor: platform === 'instagram' ? '#DD2A7B' : theme.colors.accent,
+                        color: platform === 'instagram' ? '#FFFFFF' : theme.colors.accentText,
                         padding: '6px 16px',
                         fontFamily: FONT.mono,
                         fontSize: 20,
@@ -1905,14 +2389,14 @@ const EditorialCTA: React.FC<{
                         boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
                     }}
                 >
-                    {subLabel}
+                    {ctaSub}
                 </div>
                 <div
                     style={{
                         backgroundColor: '#111215',
                         color: '#FFFFFF',
                         padding: '18px 28px',
-                        border: '1.5px solid rgba(255,255,255,0.22)',
+                        border: platform === 'instagram' ? '1.5px solid rgba(221,42,123,0.5)' : '1.5px solid rgba(255,255,255,0.22)',
                         fontFamily: FONT.grotesk,
                         fontSize: 42,
                         fontWeight: 800,
@@ -1921,7 +2405,7 @@ const EditorialCTA: React.FC<{
                         boxShadow: '0 14px 32px rgba(0,0,0,0.55)',
                     }}
                 >
-                    {text}
+                    {ctaTitle}
                 </div>
             </div>
         );
@@ -1931,7 +2415,7 @@ const EditorialCTA: React.FC<{
             <div
                 style={{
                     backgroundColor: 'rgba(12, 12, 16, 0.84)',
-                    borderTop: `2px solid ${theme.colors.accent}`,
+                    borderTop: platform === 'instagram' ? '2px solid #DD2A7B' : `2px solid ${theme.colors.accent}`,
                     padding: '24px 32px',
                     borderRadius: 12,
                     boxShadow: '0 18px 42px rgba(0,0,0,0.5)',
@@ -1944,12 +2428,12 @@ const EditorialCTA: React.FC<{
                         fontSize: 19,
                         fontWeight: 600,
                         letterSpacing: 2.5,
-                        color: theme.colors.accent,
+                        color: platform === 'instagram' ? '#F58529' : theme.colors.accent,
                         textTransform: 'uppercase',
                         marginBottom: 6,
                     }}
                 >
-                    {subLabel}
+                    {ctaSub}
                 </div>
                 <div
                     style={{
@@ -1960,7 +2444,7 @@ const EditorialCTA: React.FC<{
                         lineHeight: 1.08,
                     }}
                 >
-                    {text}
+                    {ctaTitle}
                 </div>
             </div>
         );
@@ -1970,7 +2454,7 @@ const EditorialCTA: React.FC<{
             <div
                 style={{
                     background: 'rgba(12, 14, 20, 0.90)',
-                    border: `2px solid ${theme.colors.accent}`,
+                    border: platform === 'instagram' ? '2px solid #DD2A7B' : `2px solid ${theme.colors.accent}`,
                     borderRadius: 24,
                     padding: '20px 28px',
                     display: 'flex',
@@ -1984,7 +2468,9 @@ const EditorialCTA: React.FC<{
                         width: 68,
                         height: 68,
                         borderRadius: 18,
-                        backgroundColor: theme.colors.accent,
+                        background: platform === 'instagram'
+                            ? 'linear-gradient(45deg, #F58529 0%, #DD2A7B 100%)'
+                            : theme.colors.accent,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -1996,7 +2482,7 @@ const EditorialCTA: React.FC<{
                         style={{
                             fontSize: 38,
                             fontWeight: 900,
-                            color: theme.colors.accentText,
+                            color: platform === 'instagram' ? '#FFFFFF' : theme.colors.accentText,
                             transform: `translate(${-arrowNudge * 0.5}px, ${arrowNudge * 0.5}px)`,
                             display: 'inline-block',
                         }}
@@ -2011,11 +2497,11 @@ const EditorialCTA: React.FC<{
                             fontSize: 19,
                             fontWeight: 700,
                             letterSpacing: 1.6,
-                            color: theme.colors.accent,
+                            color: platform === 'instagram' ? '#F58529' : theme.colors.accent,
                             textTransform: 'uppercase',
                         }}
                     >
-                        {subLabel}
+                        {ctaSub}
                     </span>
                     <span
                         style={{
@@ -2027,7 +2513,7 @@ const EditorialCTA: React.FC<{
                             lineHeight: 1.15,
                         }}
                     >
-                        {text}
+                        {ctaTitle}
                     </span>
                 </div>
             </div>

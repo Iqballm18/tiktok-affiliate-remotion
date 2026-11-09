@@ -358,6 +358,7 @@ export async function renderProductStill({
   variantKey = 'v1',
   frame = 60,
   renderMode,
+  ctaPlatform,
   onLog = console.log,
   onProgress = () => { },
 }) {
@@ -365,7 +366,10 @@ export async function renderProductStill({
   const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
   const config = loadConfig();
   const enableGpu = config.enableGpuRender !== false;
-  const { props } = resolveVariantProps(product, variantKey, renderMode ? { renderMode } : {});
+  const resolveOpts = {};
+  if (renderMode) resolveOpts.renderMode = renderMode;
+  if (ctaPlatform) resolveOpts.ctaPlatform = ctaPlatform;
+  const { props } = resolveVariantProps(product, variantKey, resolveOpts);
   const targetFrame = renderMode === 'cover' ? 0 : parseInt(frame, 10);
 
   onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion (Webpack)...', percent: 45 });
