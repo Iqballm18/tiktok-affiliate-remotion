@@ -1632,6 +1632,16 @@ const EditorialHeadline: React.FC<{
         );
     };
 
+// Token tema web (disalin dari :root di web/app.css) untuk penunjuk keranjang di babak CTA.
+const WEB_THEME = {
+    ground: '#131312',
+    rule: '#3b3b36',
+    text: '#ece8de',
+    signal: '#f2a93b',
+    signalInk: '#1c1303',
+    radius: 6,
+};
+
 // ==========================================
 // EDITORIAL LOWER-THIRD CTA (Multi-Platform: TikTok & IG Reels Keranjang Belanja)
 // ==========================================
@@ -1686,587 +1696,127 @@ const EditorialCTA: React.FC<{
         ctaSub = ctaSub.replace(/keranjang\s+kuning/gi, 'Keranjang Belanja');
     }
 
-    // Panah Penunjuk CTA (Menyesuaikan Desain Template / CardStyle & Platform Video)
+    // Panah Penunjuk Keranjang: memakai token tema web (ground gelap hangat + signal amber,
+    // radius kecil, label mono IBM Plex) agar TikTok & Reels tampil seragam dengan dashboard.
+    // Platform dibedakan lewat ikon (keranjang / tas), teks, dan tag mono, bukan lewat warna merek.
     const renderPointer = () => {
-        const containerStyle: React.CSSProperties = {
-            marginTop: 18,
-            marginLeft: 14,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
-        };
+        const pointerCopy =
+            platform === 'instagram'
+                ? { tag: 'REELS', title: 'KERANJANG BELANJA DI SINI', icon: 'bag' as const }
+                : platform === 'tiktok'
+                    ? { tag: 'TIKTOK', title: 'KERANJANG KUNING DI SINI', icon: 'basket' as const }
+                    : { tag: 'TIKTOK · REELS', title: 'CEK KERANJANG DI SINI', icon: 'basket' as const };
 
-        // 1. Template: LABEL_TAPE (Dymo Embossed Label Tape)
-        if (resolvedCard === 'label_tape') {
-            if (platform === 'instagram') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#111215',
-                                border: '2.5px solid #DD2A7B',
-                                borderLeft: '8px solid #F58529',
-                                padding: '9px 22px',
-                                borderRadius: 3,
-                                fontFamily: FONT.mono,
-                                fontSize: 23,
-                                fontWeight: 800,
-                                letterSpacing: 1.8,
-                                color: '#FFFFFF',
-                                textTransform: 'uppercase',
-                                boxShadow: '0 10px 28px rgba(0,0,0,0.65), 0 0 16px rgba(221,42,123,0.35)',
-                                transform: 'rotate(-1.2deg)',
-                            }}
-                        >
-                            <span style={{ fontSize: 28, color: '#F58529', lineHeight: 1 }}>↙</span>
-                            <span style={{ fontSize: 22 }}>🛍️</span>
-                            <span>KERANJANG BELANJA DI SINI</span>
-                        </div>
-                    </div>
-                );
-            }
-            if (platform === 'universal') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#111215',
-                                border: `2.5px solid ${theme.colors.accent}`,
-                                borderLeft: `8px solid ${theme.colors.accent}`,
-                                padding: '9px 22px',
-                                borderRadius: 3,
-                                fontFamily: FONT.mono,
-                                fontSize: 23,
-                                fontWeight: 800,
-                                letterSpacing: 1.8,
-                                color: '#FFFFFF',
-                                textTransform: 'uppercase',
-                                boxShadow: '0 10px 28px rgba(0,0,0,0.65)',
-                                transform: 'rotate(-1.2deg)',
-                            }}
-                        >
-                            <span style={{ fontSize: 28, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
-                            <span>CEK KERANJANG DI SINI</span>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <div style={containerStyle}>
+        // Gerak maju-mundur searah panah (diagonal kiri-bawah), bukan seluruh chip ikut bergoyang.
+        const arrowShift = arrowNudge * 0.55;
+
+        return (
+            <div
+                style={{
+                    marginTop: 18,
+                    marginLeft: 14,
+                    display: 'flex',
+                    transformOrigin: 'left center',
+                    transform: `scale(${badgeEnter})`,
+                }}
+            >
+                <div
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'stretch',
+                        backgroundColor: WEB_THEME.ground,
+                        border: `1.5px solid ${WEB_THEME.rule}`,
+                        borderRadius: WEB_THEME.radius,
+                        overflow: 'hidden',
+                        boxShadow: '0 14px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,169,59,0.10)',
+                    }}
+                >
+                    {/* Blok panah: signal amber, panah ↙ digambar sebagai SVG agar tajam dan tepat diagonal */}
                     <div
                         style={{
-                            display: 'inline-flex',
+                            width: 70,
+                            display: 'flex',
                             alignItems: 'center',
-                            gap: 10,
-                            backgroundColor: '#111215',
-                            border: '2.5px solid #FFE600',
-                            borderLeft: '8px solid #FFE600',
-                            padding: '9px 22px',
-                            borderRadius: 3,
-                            fontFamily: FONT.mono,
-                            fontSize: 23,
-                            fontWeight: 800,
-                            letterSpacing: 1.8,
-                            color: '#FFE600',
-                            textTransform: 'uppercase',
-                            boxShadow: '0 10px 28px rgba(0,0,0,0.65)',
-                            transform: 'rotate(-1.2deg)',
+                            justifyContent: 'center',
+                            backgroundColor: WEB_THEME.signal,
                         }}
                     >
-                        <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
-                        <span style={{ color: '#FFFFFF' }}>KERANJANG KUNING DI SINI</span>
+                        <svg
+                            width={38}
+                            height={38}
+                            viewBox="0 0 32 32"
+                            fill="none"
+                            stroke={WEB_THEME.signalInk}
+                            strokeWidth={3.6}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            style={{ transform: `translate(${-arrowShift}px, ${arrowShift}px)` }}
+                        >
+                            <path d="M25 7 L8 24" />
+                            <path d="M8 12 V24 H20" />
+                        </svg>
                     </div>
-                </div>
-            );
-        }
 
-        // 2. Template: RECEIPT (Thermal Struk Belanja / Coupon Tear-off)
-        if (resolvedCard === 'receipt') {
-            if (platform === 'instagram') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#FAF8F3',
-                                color: '#111111',
-                                border: '2px solid #111111',
-                                borderTop: '3px dashed #DD2A7B',
-                                borderBottom: '3px dashed #DD2A7B',
-                                padding: '10px 22px',
-                                borderRadius: 2,
-                                fontFamily: FONT.mono,
-                                fontSize: 22,
-                                fontWeight: 800,
-                                letterSpacing: 1.2,
-                                boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
-                                textTransform: 'uppercase',
-                            }}
-                        >
-                            <span style={{ fontSize: 26, color: '#DD2A7B', lineHeight: 1 }}>↙</span>
-                            <span style={{ fontSize: 22 }}>🛍️</span>
-                            <span>KERANJANG BELANJA DI SINI</span>
-                        </div>
-                    </div>
-                );
-            }
-            if (platform === 'universal') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#FAF8F3',
-                                color: '#111111',
-                                border: '2px solid #111111',
-                                borderTop: '3px dashed #111111',
-                                borderBottom: '3px dashed #111111',
-                                padding: '10px 22px',
-                                borderRadius: 2,
-                                fontFamily: FONT.mono,
-                                fontSize: 22,
-                                fontWeight: 800,
-                                letterSpacing: 1.2,
-                                boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
-                                textTransform: 'uppercase',
-                            }}
-                        >
-                            <span style={{ fontSize: 26, lineHeight: 1 }}>↙</span>
-                            <span>*** CEK KERANJANG DI SINI ***</span>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <div style={containerStyle}>
                     <div
                         style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            backgroundColor: '#FAF8F3',
-                            color: '#111111',
-                            border: '2px solid #111111',
-                            borderTop: '3px dashed #FFE600',
-                            borderBottom: '3px dashed #FFE600',
-                            padding: '10px 22px',
-                            borderRadius: 2,
-                            fontFamily: FONT.mono,
-                            fontSize: 22,
-                            fontWeight: 800,
-                            letterSpacing: 1.2,
-                            boxShadow: '0 12px 28px rgba(0,0,0,0.45)',
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        <span style={{ fontSize: 26, color: '#000000', lineHeight: 1, backgroundColor: '#FFE600', padding: '0 6px', borderRadius: 2 }}>↙</span>
-                        <span>*** KERANJANG KUNING DI SINI ***</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // 3. Template: STICKY_NOTE (Catatan Tempel Fisik & Washi Tape)
-        if (resolvedCard === 'sticky_note') {
-            if (platform === 'instagram') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                position: 'relative',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#FEF08A',
-                                color: '#18181B',
-                                padding: '10px 22px 10px 18px',
-                                borderRadius: 4,
-                                transform: 'rotate(-2.2deg)',
-                                boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
-                                borderLeft: '6px solid #DD2A7B',
-                            }}
-                        >
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    top: -10,
-                                    left: 20,
-                                    width: 48,
-                                    height: 18,
-                                    backgroundColor: 'rgba(255,255,255,0.7)',
-                                    transform: 'rotate(2deg)',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                }}
-                            />
-                            <span style={{ fontSize: 28, color: '#DD2A7B', lineHeight: 1, fontWeight: 900 }}>↙</span>
-                            <span style={{ fontSize: 22 }}>🛍️</span>
-                            <span
-                                style={{
-                                    fontFamily: FONT.hand,
-                                    fontSize: 30,
-                                    fontWeight: 700,
-                                    color: '#18181B',
-                                    lineHeight: 1,
-                                }}
-                            >
-                                Keranjang Belanja di sini!
-                            </span>
-                        </div>
-                    </div>
-                );
-            }
-            if (platform === 'universal') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                position: 'relative',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: '#FEF08A',
-                                color: '#18181B',
-                                padding: '10px 22px 10px 18px',
-                                borderRadius: 4,
-                                transform: 'rotate(-2.2deg)',
-                                boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
-                                borderLeft: `6px solid ${theme.colors.accent}`,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    position: 'absolute',
-                                    top: -10,
-                                    left: 20,
-                                    width: 48,
-                                    height: 18,
-                                    backgroundColor: 'rgba(255,255,255,0.7)',
-                                    transform: 'rotate(2deg)',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                }}
-                            />
-                            <span style={{ fontSize: 28, color: '#B45309', lineHeight: 1, fontWeight: 900 }}>↙</span>
-                            <span
-                                style={{
-                                    fontFamily: FONT.hand,
-                                    fontSize: 30,
-                                    fontWeight: 700,
-                                    color: '#18181B',
-                                    lineHeight: 1,
-                                }}
-                            >
-                                Cek Keranjang di sini!
-                            </span>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <div style={containerStyle}>
-                    <div
-                        style={{
-                            position: 'relative',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            backgroundColor: '#FEF08A',
-                            color: '#18181B',
-                            padding: '10px 22px 10px 18px',
-                            borderRadius: 4,
-                            transform: 'rotate(-2.2deg)',
-                            boxShadow: '0 12px 24px rgba(0,0,0,0.38)',
-                            borderLeft: '6px solid #EAB308',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            gap: 4,
+                            padding: '10px 22px 11px 18px',
                         }}
                     >
                         <div
                             style={{
-                                position: 'absolute',
-                                top: -10,
-                                left: 20,
-                                width: 48,
-                                height: 18,
-                                backgroundColor: 'rgba(255,255,255,0.7)',
-                                transform: 'rotate(2deg)',
-                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                            }}
-                        />
-                        <span style={{ fontSize: 28, color: '#CA8A04', lineHeight: 1, fontWeight: 900 }}>↙</span>
-                        <span
-                            style={{
-                                fontFamily: FONT.hand,
-                                fontSize: 30,
-                                fontWeight: 700,
-                                color: '#18181B',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 7,
+                                fontFamily: FONT.plex,
+                                fontSize: 15,
+                                fontWeight: 600,
+                                letterSpacing: 2,
+                                color: WEB_THEME.signal,
                                 lineHeight: 1,
                             }}
                         >
-                            Keranjang Kuning di sini!
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-
-        // 4. Template: QUIET_SERIF (Editorial Luxury Boutique)
-        if (resolvedCard === 'quiet_serif') {
-            if (platform === 'instagram') {
-                return (
-                    <div style={containerStyle}>
+                            <svg
+                                width={17}
+                                height={17}
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke={WEB_THEME.signal}
+                                strokeWidth={2.2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                {pointerCopy.icon === 'bag' ? (
+                                    <>
+                                        <path d="M5 8h14l-1 12H6L5 8z" />
+                                        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <path d="M3 10h18l-2 9H5l-2-9z" />
+                                        <path d="M8 10l3-5M16 10l-3-5" />
+                                    </>
+                                )}
+                            </svg>
+                            <span>{pointerCopy.tag}</span>
+                        </div>
                         <div
                             style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                backgroundColor: 'rgba(12, 12, 16, 0.90)',
-                                border: '1px solid rgba(255,255,255,0.22)',
-                                borderLeft: '5px solid #DD2A7B',
-                                borderRadius: 8,
-                                padding: '10px 24px',
-                                fontFamily: FONT.grotesk,
-                                fontSize: 21,
+                                fontFamily: FONT.ui,
+                                fontSize: 27,
                                 fontWeight: 700,
-                                letterSpacing: 2.2,
-                                color: '#FFFFFF',
-                                textTransform: 'uppercase',
-                                boxShadow: '0 14px 34px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12)',
+                                letterSpacing: 0.4,
+                                color: WEB_THEME.text,
+                                lineHeight: 1.05,
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            <span style={{ fontSize: 26, color: '#F58529', lineHeight: 1 }}>↙</span>
-                            <span style={{ fontSize: 22 }}>🛍️</span>
-                            <span>KERANJANG BELANJA</span>
-                            <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• LIHAT PRODUK</span>
+                            {pointerCopy.title}
                         </div>
                     </div>
-                );
-            }
-            if (platform === 'universal') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                backgroundColor: 'rgba(12, 12, 16, 0.90)',
-                                border: '1px solid rgba(255,255,255,0.22)',
-                                borderLeft: `5px solid ${theme.colors.accent}`,
-                                borderRadius: 8,
-                                padding: '10px 24px',
-                                fontFamily: FONT.grotesk,
-                                fontSize: 21,
-                                fontWeight: 700,
-                                letterSpacing: 2.2,
-                                color: '#FFFFFF',
-                                textTransform: 'uppercase',
-                                boxShadow: '0 14px 34px rgba(0,0,0,0.6)',
-                            }}
-                        >
-                            <span style={{ fontSize: 26, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
-                            <span>CEK KERANJANG</span>
-                            <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• SEKARANG</span>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <div style={containerStyle}>
-                    <div
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 12,
-                            backgroundColor: 'rgba(12, 12, 16, 0.90)',
-                            border: '1px solid rgba(255,255,255,0.22)',
-                            borderLeft: '5px solid #FFE600',
-                            borderRadius: 8,
-                            padding: '10px 24px',
-                            fontFamily: FONT.grotesk,
-                            fontSize: 21,
-                            fontWeight: 700,
-                            letterSpacing: 2.2,
-                            color: '#FFFFFF',
-                            textTransform: 'uppercase',
-                            boxShadow: '0 14px 34px rgba(0,0,0,0.6)',
-                        }}
-                    >
-                        <span style={{ fontSize: 26, color: '#FFE600', lineHeight: 1 }}>↙</span>
-                        <span>KERANJANG KUNING</span>
-                        <span style={{ fontSize: 15, color: 'rgba(255,255,255,0.5)', letterSpacing: 1 }}>• CEK SEKARANG</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // 5. Template: CHAT_THREAD (Message Bubble)
-        if (resolvedCard === 'chat_thread') {
-            if (platform === 'instagram') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: 'rgba(26, 28, 36, 0.94)',
-                                border: '1.5px solid rgba(221, 42, 123, 0.65)',
-                                borderRadius: '20px 20px 20px 4px',
-                                padding: '10px 22px',
-                                fontFamily: FONT.grotesk,
-                                fontSize: 22,
-                                fontWeight: 800,
-                                letterSpacing: -0.2,
-                                color: '#FFFFFF',
-                                boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
-                            }}
-                        >
-                            <span style={{ fontSize: 26, color: '#DD2A7B', lineHeight: 1 }}>↙</span>
-                            <span style={{ fontSize: 22 }}>🛍️</span>
-                            <span>Keranjang Belanja di Sini</span>
-                        </div>
-                    </div>
-                );
-            }
-            if (platform === 'universal') {
-                return (
-                    <div style={containerStyle}>
-                        <div
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 10,
-                                backgroundColor: 'rgba(26, 28, 36, 0.94)',
-                                border: `1.5px solid ${theme.colors.accent}`,
-                                borderRadius: '20px 20px 20px 4px',
-                                padding: '10px 22px',
-                                fontFamily: FONT.grotesk,
-                                fontSize: 22,
-                                fontWeight: 800,
-                                letterSpacing: -0.2,
-                                color: '#FFFFFF',
-                                boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
-                            }}
-                        >
-                            <span style={{ fontSize: 26, color: theme.colors.accent, lineHeight: 1 }}>↙</span>
-                            <span>Cek Keranjang di Sini</span>
-                        </div>
-                    </div>
-                );
-            }
-            return (
-                <div style={containerStyle}>
-                    <div
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            backgroundColor: 'rgba(26, 28, 36, 0.94)',
-                            border: '1.5px solid rgba(255, 230, 0, 0.65)',
-                            borderRadius: '20px 20px 20px 4px',
-                            padding: '10px 22px',
-                            fontFamily: FONT.grotesk,
-                            fontSize: 22,
-                            fontWeight: 800,
-                            letterSpacing: -0.2,
-                            color: '#FFFFFF',
-                            boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
-                        }}
-                    >
-                        <span style={{ fontSize: 26, color: '#FFE600', lineHeight: 1 }}>↙</span>
-                        <span>Keranjang Kuning di Sini</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // 6. Template: TYPE_STACK / Default (Bold Punchy Brutalist Pill)
-        if (platform === 'instagram') {
-            return (
-                <div style={containerStyle}>
-                    <div
-                        style={{
-                            background: 'linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%)',
-                            color: '#FFFFFF',
-                            border: '2.5px solid #FFFFFF',
-                            borderRadius: 999,
-                            padding: '10px 24px',
-                            fontFamily: FONT.grotesk,
-                            fontSize: 23,
-                            fontWeight: 800,
-                            letterSpacing: -0.2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            boxShadow: '0 8px 24px rgba(221, 42, 123, 0.45)',
-                        }}
-                    >
-                        <span style={{ fontSize: 26, lineHeight: 1 }}>↙</span>
-                        <span style={{ fontSize: 22 }}>🛍️</span>
-                        <span>KERANJANG BELANJA DI SINI</span>
-                    </div>
-                </div>
-            );
-        }
-
-        if (platform === 'universal') {
-            return (
-                <div style={containerStyle}>
-                    <div
-                        style={{
-                            backgroundColor: '#FFE600',
-                            color: '#0B0C10',
-                            border: '2.5px solid #0B0C10',
-                            borderRadius: 999,
-                            padding: '10px 24px',
-                            fontFamily: FONT.grotesk,
-                            fontSize: 24,
-                            fontWeight: 800,
-                            letterSpacing: -0.3,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
-                        }}
-                    >
-                        <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
-                        <span>CEK KERANJANG DI SINI</span>
-                    </div>
-                </div>
-            );
-        }
-
-        // TikTok default
-        return (
-            <div style={containerStyle}>
-                <div
-                    style={{
-                        backgroundColor: '#FFE600',
-                        color: '#0B0C10',
-                        border: '2.5px solid #0B0C10',
-                        borderRadius: 999,
-                        padding: '10px 22px',
-                        fontFamily: FONT.grotesk,
-                        fontSize: 24,
-                        fontWeight: 800,
-                        letterSpacing: -0.3,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
-                    }}
-                >
-                    <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
-                    <span>KERANJANG KUNING DI SINI</span>
                 </div>
             </div>
         );
