@@ -410,6 +410,18 @@
       const data = await res.json();
       state.assets = data;
 
+      // Amankan pilihan aktif saat ini di formulir agar tidak hilang/ter-reset saat live update
+      const prevVideo = el.selectProductVideo ? el.selectProductVideo.value : '';
+      const prevVo = el.selectVoiceOver ? el.selectVoiceOver.value : '';
+      const prevTranscript = el.selectTranscriptFile ? el.selectTranscriptFile.value : '';
+      const prevBgm = el.selectBgmTrack ? el.selectBgmTrack.value : '';
+      const prevCover = el.selectCoverImage ? el.selectCoverImage.value : '';
+      const prevClips = Array.from(document.querySelectorAll('.clip-video-select')).map(sel => ({
+        sel,
+        val: sel.value,
+        idx: parseInt(sel.dataset.clip, 10),
+      }));
+
       // Update Video selector
       el.selectProductVideo.innerHTML = '';
       if (data.videos.length === 0) {
@@ -424,11 +436,11 @@
         });
       }
 
-      // Update dropdown video per babak di storyboard
+      // Update dropdown video per babak di storyboard (pertahankan klip yang sedang aktif dipilih)
       const activeClips = state.currentProduct?.variants?.[state.activeVariantKey]?.clips || [];
-      document.querySelectorAll('.clip-video-select').forEach(sel => {
-        const idx = parseInt(sel.dataset.clip, 10);
-        populateClipVideoSelect(sel, activeClips[idx]?.src);
+      prevClips.forEach(({ sel, val, idx }) => {
+        const chosenSrc = val || activeClips[idx]?.src;
+        populateClipVideoSelect(sel, chosenSrc);
       });
 
       // Update Voiceover selector
@@ -493,17 +505,45 @@
         }
       }
 
-      // Retain selections if product is loaded
-      if (state.currentProduct) {
-        if (state.currentProduct.videoSource) {
-          el.selectProductVideo.value = state.currentProduct.videoSource;
+      // Restore selections: prioritaskan pilihan aktif di UI, fallback ke saved product config
+      const v = state.currentProduct?.variants?.[state.activeVariantKey];
+
+      const targetVideo = (prevVideo && Array.from(el.selectProductVideo.options).some(o => o.value === prevVideo))
+        ? prevVideo
+        : (state.currentProduct?.videoSource || '');
+      if (targetVideo && Array.from(el.selectProductVideo.options).some(o => o.value === targetVideo)) {
+        el.selectProductVideo.value = targetVideo;
+      }
+
+      const targetVo = (prevVo && Array.from(el.selectVoiceOver.options).some(o => o.value === prevVo))
+        ? prevVo
+        : (v?.voiceOver || '');
+      if (targetVo && Array.from(el.selectVoiceOver.options).some(o => o.value === targetVo)) {
+        el.selectVoiceOver.value = targetVo;
+      }
+
+      const targetTranscript = (prevTranscript && Array.from(el.selectTranscriptFile.options).some(o => o.value === prevTranscript))
+        ? prevTranscript
+        : '';
+      if (targetTranscript && Array.from(el.selectTranscriptFile.options).some(o => o.value === targetTranscript)) {
+        el.selectTranscriptFile.value = targetTranscript;
+      }
+
+      if (el.selectBgmTrack) {
+        const targetBgm = (prevBgm && Array.from(el.selectBgmTrack.options).some(o => o.value === prevBgm))
+          ? prevBgm
+          : (v?.bgmTrack || '');
+        if (targetBgm && Array.from(el.selectBgmTrack.options).some(o => o.value === targetBgm)) {
+          el.selectBgmTrack.value = targetBgm;
         }
-        const v = state.currentProduct.variants?.[state.activeVariantKey];
-        if (v && v.voiceOver) {
-          el.selectVoiceOver.value = v.voiceOver;
-        }
-        if (v && v.coverImage && el.selectCoverImage) {
-          el.selectCoverImage.value = v.coverImage;
+      }
+
+      if (el.selectCoverImage) {
+        const targetCover = (prevCover && Array.from(el.selectCoverImage.options).some(o => o.value === prevCover))
+          ? prevCover
+          : (v?.coverImage || '');
+        if (targetCover && Array.from(el.selectCoverImage.options).some(o => o.value === targetCover)) {
+          el.selectCoverImage.value = targetCover;
         }
       }
     } catch (err) {
@@ -515,7 +555,8 @@
   // -------------------------------------------------------------
   // Product Management (products/ folder)
   // -------------------------------------------------------------
-  async function loadProductsList() {
+  async function loadProductsList(options = {}) {
+    const { preserveActive = false } = options;
     try {
       const res = await fetch('/api/products');
       if (!res.ok) throw new Error('Gagal memuat daftar produk');
@@ -534,6 +575,12 @@
         opt.textContent = `${p.name} (${p.id})`;
         el.selectProduct.appendChild(opt);
       });
+
+      // Jika preserveActive dan produk aktif saat ini masih ada, cukup sinkronkan dropdown tanpa mereset form
+      if (preserveActive && state.activeProductId && products.some(p => p.id === state.activeProductId)) {
+        el.selectProduct.value = state.activeProductId;
+        return;
+      }
 
       // Prioritas pemilihan:
       // 1. URL parameter ?product=... atau ?pid=...
@@ -580,6 +627,9 @@
 
       // Refresh asset options terlebih dahulu agar dropdown video/VO berisi aset produk aktif sebelum renderProductToForm
       await loadAssets();
+      if (typeof loadPublicBrowser === 'function') {
+        await loadPublicBrowser();
+      }
       renderProductToForm(prod);
       appendLog(`[PRODUK] Berhasil memuat data: ${prod.name}`);
     } catch (err) {
@@ -4487,6 +4537,9 @@
       appendLog(`[UPLOAD SELESAI] File public/${data.filename} siap digunakan!`, true);
 
       await loadAssets();
+      if (typeof loadPublicBrowser === 'function') {
+        await loadPublicBrowser();
+      }
 
       // If video file, auto-select as product video
       if (file.name.endsWith('.mp4') || file.name.endsWith('.mov')) {
@@ -5325,16 +5378,64 @@
       handleGDriveUploadProgressSSE(data);
     });
 
+    es.addEventListener('files_changed', e => {
+      try {
+        const data = JSON.parse(e.data);
+        handleFilesChanged(data);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    es.onopen = () => {
+      // Re-sync saat koneksi SSE aktif / pulih
+      handleFilesChanged({ scopes: ['assets', 'products', 'videos'] });
+    };
+
     es.onerror = () => {
       // Reconnection handled automatically by browser
     };
   }
+
+  // Sinkronisasi otomatis saat berkas ditambah / dihapus / diubah tanpa perlu refresh (F5)
+  let filesChangedDebounceTimer = null;
+  function handleFilesChanged(data) {
+    if (filesChangedDebounceTimer) clearTimeout(filesChangedDebounceTimer);
+    filesChangedDebounceTimer = setTimeout(async () => {
+      const scopes = data?.scopes || ['assets', 'products', 'videos'];
+      try {
+        if (scopes.includes('assets')) {
+          await loadAssets();
+          if (typeof loadPublicBrowser === 'function') {
+            await loadPublicBrowser();
+          }
+        }
+        if (scopes.includes('products')) {
+          await loadProductsList({ preserveActive: true });
+        }
+        if (scopes.includes('videos')) {
+          await loadVideos();
+          if (typeof loadPublicBrowser === 'function') {
+            await loadPublicBrowser();
+          }
+        }
+      } catch (err) {
+        console.warn('[SYNC ERROR]', err);
+      }
+    }, 180);
+  }
+
+  // Sinkronisasi otomatis saat user berpindah dari Windows Explorer kembali ke jendela browser
+  window.addEventListener('focus', () => {
+    handleFilesChanged({ scopes: ['assets', 'products', 'videos'] });
+  });
 
   // -------------------------------------------------------------
   // Video Output Selector & Player
   // -------------------------------------------------------------
   async function loadVideos() {
     try {
+      const prevVal = el.selectOutputVideo?.value;
       const res = await fetch('/api/videos');
       if (!res.ok) throw new Error('Gagal memuat galeri video');
       const videos = await res.json();
@@ -5347,6 +5448,9 @@
         opt.textContent = `${v.name} (${formatBytes(v.size)})`;
         el.selectOutputVideo.appendChild(opt);
       });
+      if (prevVal && Array.from(el.selectOutputVideo.options).some(o => o.value === prevVal)) {
+        el.selectOutputVideo.value = prevVal;
+      }
     } catch (err) {
       console.error(err);
     }
@@ -5936,6 +6040,9 @@
       if (!res.ok) throw new Error(data.error || 'Gagal menghapus berkas');
       showToast({ type: 'success', title: 'Berkas Dihapus', message: `${fileName} berhasil dihapus dari folder public/` });
       await loadAssets();
+      if (typeof loadPublicBrowser === 'function') {
+        await loadPublicBrowser();
+      }
       await loadPublicBrowser();
     } catch (err) {
       showToast({ type: 'error', title: 'Gagal Hapus', message: err.message });
@@ -6350,6 +6457,9 @@
       if (!res.ok) throw new Error(data.error || 'Gagal memotong jeda napas');
 
       await loadAssets();
+      if (typeof loadPublicBrowser === 'function') {
+        await loadPublicBrowser();
+      }
       showToast({
         type: 'success',
         title: 'Jeda Napas Dipangkas!',

@@ -157,6 +157,77 @@ function appendLog(line) {
   broadcast('log', { text: line, timestamp: Date.now() });
 }
 
+// =============================================================
+// Real-time File System Watcher & Live Browser Synchronization
+// Mendeteksi berkas yang ditambah / dihapus / diubah di folder:
+// - public/ (assets: audio, video, json, image, font, sfx)
+// - products/ (daftar konfigurasi json produk)
+// - out/ (video render MP4, cover JPG, preview frame)
+// Browser akan otomatis memperbarui daftar tanpa perlu refresh (F5).
+// =============================================================
+const fileWatcher = (() => {
+  const watchTargets = [
+    { dir: PUBLIC_DIR, scope: 'assets' },
+    { dir: PRODUCTS_DIR, scope: 'products' },
+    { dir: OUT_DIR, scope: 'videos' },
+  ];
+
+  let debounceTimer = null;
+  const pendingScopes = new Set();
+  const watchers = [];
+
+  function notifyFileChange(scope, filename = '') {
+    if (filename) {
+      const lower = filename.toLowerCase();
+      // Filter out temporary / noisy internal files
+      if (
+        lower.startsWith('.') ||
+        lower.includes('/.') ||
+        lower.includes('\\.') ||
+        lower.includes('.remotion-in-progress') ||
+        lower.includes('.crdownload') ||
+        lower.includes('.part') ||
+        lower.endsWith('.tmp') ||
+        lower.endsWith('.swp') ||
+        lower.startsWith('~')
+      ) {
+        return;
+      }
+    }
+
+    pendingScopes.add(scope);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      const scopes = Array.from(pendingScopes);
+      pendingScopes.clear();
+      if (scopes.length === 0) return;
+
+      if (scopes.includes('assets')) {
+        syncBundlePublic();
+      }
+
+      broadcast('files_changed', {
+        scopes,
+        timestamp: Date.now(),
+      });
+    }, 300);
+  }
+
+  for (const { dir, scope } of watchTargets) {
+    try {
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      const w = fs.watch(dir, { recursive: true }, (eventType, filename) => {
+        notifyFileChange(scope, filename ? filename.replace(/\\/g, '/') : '');
+      });
+      watchers.push(w);
+    } catch (err) {
+      console.warn(`[WATCHER WARN] Gagal memantau direktori ${dir}:`, err.message);
+    }
+  }
+
+  return { notifyFileChange, watchers };
+})();
+
 // Serve static file with Range Request support for Video Scrubbing
 function serveStaticFile(req, res, filePath, contentType) {
   if (!fs.existsSync(filePath)) {
@@ -316,6 +387,7 @@ const server = http.createServer(async (req, res) => {
           fs.mkdirSync(productDir, { recursive: true });
         }
         appendLog(`[PRODUK] Berhasil menyimpan produk '${productData.name || id}' (${saved.filePath})`);
+        fileWatcher.notifyFileChange('products', saved.id);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, id: saved.id }));
       } catch (err) {
@@ -332,6 +404,8 @@ const server = http.createServer(async (req, res) => {
     try {
       const result = deleteProduct(id, deleteAssets);
       appendLog(`[PRODUK] Berhasil menghapus produk '${id}' (hapus aset: ${deleteAssets ? 'Ya' : 'Tidak'})`);
+      fileWatcher.notifyFileChange('products', id);
+      if (deleteAssets) fileWatcher.notifyFileChange('assets', id);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(result));
     } catch (err) {
@@ -497,6 +571,7 @@ const server = http.createServer(async (req, res) => {
       const sizeMB = (stat.size / (1024 * 1024)).toFixed(1);
       appendLog(`[UPLOAD] File tersimpan: public/${relPath} (${sizeMB} MB)`);
       syncBundlePublic();
+      fileWatcher.notifyFileChange('assets', relPath);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: relPath, sizeMB }));
     });
@@ -913,6 +988,7 @@ const server = http.createServer(async (req, res) => {
         try { fs.unlinkSync(coverPath); } catch (_) { }
       }
       appendLog(`[HAPUS] Video out/${safeFilename} berhasil dihapus.`);
+      fileWatcher.notifyFileChange('videos', safeFilename);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: safeFilename }));
     } catch (err) {
@@ -967,6 +1043,7 @@ const server = http.createServer(async (req, res) => {
     try {
       fs.unlinkSync(targetPath);
       appendLog(`[HAPUS] Preview out/previews/${safeFilename} berhasil dihapus.`);
+      fileWatcher.notifyFileChange('videos', safeFilename);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: safeFilename }));
     } catch (err) {
@@ -1060,6 +1137,7 @@ const server = http.createServer(async (req, res) => {
       fs.unlinkSync(targetPath);
       syncBundlePublic();
       appendLog(`[HAPUS] Berkas public/${normalizedFile} berhasil dihapus.`);
+      fileWatcher.notifyFileChange('assets', normalizedFile);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ success: true, filename: normalizedFile }));
     } catch (err) {
