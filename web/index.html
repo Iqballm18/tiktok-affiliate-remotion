@@ -368,6 +368,12 @@
                 </div>
                 <div class="variant-actions-group">
                   <div id="durationMatchPill" class="pill emerald">Memeriksa durasi...</div>
+                  <button class="btn small" id="btnAutoFitClipsToVO" type="button"
+                    title="Pangkas jeda kosong (dead air) dan sesuaikan durasi klip agar pas dengan voiceover">
+                    <svg class="ic" aria-hidden="true">
+                      <use href="#i-sparkles"></use>
+                    </svg> Pas-kan ke VO
+                  </button>
                   <button class="btn small" id="btnSyncClipsBetweenVariants" type="button"
                     title="Salin waktu klip babak 1-4 dari versi ini ke versi lainnya">
                     <svg class="ic" aria-hidden="true">
@@ -929,6 +935,17 @@
                           <span class="char-counter" id="countCtaText">0/34</span>
                         </label>
                         <input class="input" type="text" id="inputCtaText" value="Cek Promo di Keranjang Kuning">
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label" for="selectCtaPlatform">
+                          <span>Target Platform Outro CTA</span>
+                          <span class="pill neutral" style="font-size: 10px; padding: 1px 6px;">TikTok &amp; Instagram</span>
+                        </label>
+                        <select class="select" id="selectCtaPlatform">
+                          <option value="universal" selected>🌐 Multi-Platform (Cek Keranjang di Kiri Bawah ↙)</option>
+                          <option value="tiktok">🎵 Khusus TikTok (Keranjang Kuning ↙)</option>
+                          <option value="instagram">📸 Khusus Instagram Reels (Keranjang Belanja 🛍️)</option>
+                        </select>
                       </div>
                       <div class="form-row">
                         <div class="form-group">
@@ -2177,6 +2194,18 @@
           style="font-size: 11px; color: var(--text-muted); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); padding: 6px 12px; border-radius: var(--radius-control); display: flex; justify-content: space-between; align-items: center;">
           <span>Target Berkas:</span>
           <strong id="renderModalOutputName" style="color: #fff; font-family: monospace;">out/*.mp4</strong>
+        </div>
+
+        <!-- Pilihan Target Platform CTA -->
+        <div
+          style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <span style="font-size: 11px; color: var(--text-muted); flex-shrink: 0;">Target Platform CTA:</span>
+          <select class="input" id="renderModalPlatform" style="height: 30px; font-size: 11px; width: auto; max-width: 280px;">
+            <option value="both" selected>👥 Dual Platform (TikTok &amp; Reels Sekaligus — 2 Video)</option>
+            <option value="universal">🌐 1 Video Multi-Platform (Cek Keranjang ↙)</option>
+            <option value="tiktok">🎵 Khusus TikTok Saja (Keranjang ↙)</option>
+            <option value="instagram">📸 Khusus IG Reels Saja (Keranjang 🛍️)</option>
+          </select>
         </div>
 
         <!-- Toggle Render Cover Sekaligus -->

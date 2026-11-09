@@ -103,6 +103,7 @@
     // Variant Form
     variantSegmented: $('variantSegmented'),
     btnSyncClipsBetweenVariants: $('btnSyncClipsBetweenVariants'),
+    btnAutoFitClipsToVO: $('btnAutoFitClipsToVO'),
     durationMatchPill: $('durationMatchPill'),
     selectThemeStyle: $('selectThemeStyle'),
     selectCardStyle: $('selectCardStyle'),
@@ -120,6 +121,7 @@
     designReasonBox: $('designReasonBox'),
     designReasonText: $('designReasonText'),
     selectBadgeStyle: $('selectBadgeStyle'),
+    selectCtaPlatform: $('selectCtaPlatform'),
     inputCtaLabel: $('inputCtaLabel'),
     inputUrgencyTag: $('inputUrgencyTag'),
     inputVoiceOverDelay: $('inputVoiceOverDelay'),
@@ -297,6 +299,7 @@
     renderModalOutputName: $('renderModalOutputName'),
     renderModalFps: $('renderModalFps'),
     renderModalQuality: $('renderModalQuality'),
+    renderModalPlatform: $('renderModalPlatform'),
     renderModalV1Title: $('renderModalV1Title'),
     renderModalV2Title: $('renderModalV2Title'),
     chkGpuRender: $('chkGpuRender'),
@@ -704,6 +707,7 @@
     el.inputSpecLine1.value = v.specLine1 || '';
     el.inputSpecHighlight.value = v.specHighlight || '';
     el.inputCtaText.value = v.ctaText || 'Cek Promo di Keranjang Kuning';
+    if (el.selectCtaPlatform) el.selectCtaPlatform.value = v.ctaPlatform || 'universal';
     if (el.inputCtaLabel) el.inputCtaLabel.value = v.ctaLabel || '';
     if (el.inputUrgencyTag) el.inputUrgencyTag.value = v.urgencyTag || '';
     if (el.inputTiktokCaption) el.inputTiktokCaption.value = v.tiktokCaption || '';
@@ -2336,6 +2340,7 @@
     v.specLine1 = el.inputSpecLine1.value.trim();
     v.specHighlight = el.inputSpecHighlight.value.trim();
     v.ctaText = el.inputCtaText.value.trim();
+    if (el.selectCtaPlatform) v.ctaPlatform = el.selectCtaPlatform.value;
     if (el.inputReferenceScript && el.inputReferenceScript.value.trim()) {
       v.voiceOverScript = el.inputReferenceScript.value.trim();
     }
@@ -2430,6 +2435,83 @@
       title: 'Timestamp Klip Disinkronkan!',
       message: `Semua 4 babak berhasil disalin dari ${currentKey.toUpperCase()} ke ${targetKey.toUpperCase()}.`,
       duration: 3500
+    });
+  });
+
+  // Auto-fit Clips to VoiceOver duration & eliminate dead air
+  el.btnAutoFitClipsToVO?.addEventListener('click', async () => {
+    syncFormToVariant();
+    const v = state.currentProduct?.variants?.[state.activeVariantKey];
+    if (!v || !v.clips || v.clips.length === 0) {
+      showToast({ type: 'warn', title: 'Data Belum Siap', message: 'Data klip varian belum tersedia.' });
+      return;
+    }
+
+    const curVO = el.selectVoiceOver?.value;
+    if (!curVO) {
+      showToast({ type: 'warn', title: 'Voiceover Belum Dipilih', message: 'Pilih file audio voiceover terlebih dahulu di tab Audio & Desain.' });
+      return;
+    }
+
+    let voEndSec = 0;
+    const jsonBase = curVO.replace(/\.[^/.]+$/, '');
+    try {
+      const res = await fetch(`/public/${jsonBase}.json`);
+      if (res.ok) {
+        const words = await res.json();
+        if (Array.isArray(words) && words.length > 0) {
+          const last = words[words.length - 1];
+          if (last && last.endMs) {
+            voEndSec = (last.endMs / 1000) + (v.voiceOverDelaySec || 0);
+          }
+        }
+      }
+    } catch (_) { }
+
+    if (!voEndSec) {
+      const voAsset = state.assets?.voiceOvers?.find(a => a.name === curVO);
+      if (voAsset && voAsset.durationSec) {
+        voEndSec = voAsset.durationSec;
+      }
+    }
+
+    if (!voEndSec || voEndSec <= 0) {
+      showToast({ type: 'warn', title: 'Durasi VO Tidak Terdeteksi', message: 'Audio belum memiliki transkrip JSON atau durasi audio belum terbaca.' });
+      return;
+    }
+
+    const currentTotalSec = v.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
+    const tailBufferSec = 1.4;
+    const targetTotalSec = Math.round((voEndSec + tailBufferSec) * 10) / 10;
+    const diff = Math.round((targetTotalSec - currentTotalSec) * 10) / 10;
+
+    if (Math.abs(diff) < 0.2) {
+      showToast({ type: 'info', title: 'Durasi Sudah Pas', message: `Total klip (${currentTotalSec.toFixed(1)}s) sudah selaras dengan akhir voiceover (${voEndSec.toFixed(1)}s, sisa napas ${(currentTotalSec - voEndSec).toFixed(1)}s).` });
+      return;
+    }
+
+    const lastIdx = v.clips.length - 1;
+    const lastClip = v.clips[lastIdx];
+    // Pastikan klip terakhir minimal 3.0 detik agar CTA Babak 4 tidak terpotong terlalu pendek
+    const minClipEnd = Math.round((lastClip.startSec + 3.0) * 10) / 10;
+    const newEnd = Math.max(minClipEnd, Math.round((lastClip.endSec + diff) * 10) / 10);
+    lastClip.endSec = newEnd;
+
+    renderClipsTable(v.clips);
+    checkDurationMatch(v);
+    triggerAutoSave();
+    document.dispatchEvent(new CustomEvent('clipsUpdated'));
+
+    const finalTotalSec = v.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
+    const finalBuffer = (finalTotalSec - voEndSec).toFixed(1);
+
+    showToast({
+      type: 'success',
+      title: '⚡ Durasi Klip Diselaraskan!',
+      message: diff > 0
+        ? `Klip terakhir ditambah ${diff.toFixed(1)}s agar narasi audio tidak terpotong (Total: ${finalTotalSec.toFixed(1)}s, jeda napas: ${finalBuffer}s).`
+        : `Dead air dipangkas ${Math.abs(diff).toFixed(1)}s (Total: ${finalTotalSec.toFixed(1)}s, jeda napas: ${finalBuffer}s agar ending halus).`,
+      duration: 4000
     });
   });
 
@@ -2979,6 +3061,12 @@
         triggerAutoSave();
       });
     }
+  });
+
+  el.selectCtaPlatform?.addEventListener('change', () => {
+    syncFormToVariant();
+    triggerAutoSave();
+    updateThemeVisualPreview();
   });
 
   el.selectProduct.addEventListener('change', () => {
@@ -4800,17 +4888,40 @@
   function syncRenderModalTargetDisplay(target) {
     if (!el.renderModalOutputName || !state.currentProduct) return;
     const rawName = (el.inputCustomOutputName?.value.trim() || state.currentProduct.name || 'video').replace(/[/\\?%*:|"<>]/g, '-').trim();
-    if (target === 'v1') {
-      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4`;
-      el.renderModalOutputName.title = `out/${rawName} v1.mp4`;
-    } else if (target === 'v2') {
-      el.renderModalOutputName.textContent = `out/${rawName} v2.mp4`;
-      el.renderModalOutputName.title = `out/${rawName} v2.mp4`;
+    const plat = el.renderModalPlatform ? el.renderModalPlatform.value : 'both';
+
+    let platLabel = ' (Multi-Platform)';
+    if (plat === 'both') platLabel = ' [TikTok & Reels]';
+    else if (plat === 'tiktok') platLabel = ' (TikTok)';
+    else if (plat === 'instagram') platLabel = ' (Reels)';
+
+    const effectiveTarget = target || document.querySelector('input[name="renderTargetOption"]:checked')?.value || 'all';
+
+    if (effectiveTarget === 'v1') {
+      if (plat === 'both') {
+        el.renderModalOutputName.textContent = `out/${rawName} v1 (TikTok).mp4 & (Reels).mp4`;
+      } else {
+        el.renderModalOutputName.textContent = `out/${rawName} v1${platLabel}.mp4`;
+      }
+    } else if (effectiveTarget === 'v2') {
+      if (plat === 'both') {
+        el.renderModalOutputName.textContent = `out/${rawName} v2 (TikTok).mp4 & (Reels).mp4`;
+      } else {
+        el.renderModalOutputName.textContent = `out/${rawName} v2${platLabel}.mp4`;
+      }
     } else {
-      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4 & v2.mp4`;
-      el.renderModalOutputName.title = `out/${rawName} v1.mp4 & ${rawName} v2.mp4`;
+      if (plat === 'both') {
+        el.renderModalOutputName.textContent = `out/${rawName} v1 & v2 [4 Video: TikTok + Reels]`;
+      } else {
+        el.renderModalOutputName.textContent = `out/${rawName} v1${platLabel}.mp4 & v2${platLabel}.mp4`;
+      }
     }
+    el.renderModalOutputName.title = el.renderModalOutputName.textContent;
   }
+
+  el.renderModalPlatform?.addEventListener('change', () => {
+    syncRenderModalTargetDisplay();
+  });
 
   function updateRenderScopeCards(selectedVal) {
     document.querySelectorAll('.render-scope-card').forEach(card => {
@@ -4866,6 +4977,10 @@
     }
     if (el.renderModalFps && el.selectFps) {
       el.renderModalFps.value = el.selectFps.value || '60';
+    }
+    if (el.renderModalPlatform) {
+      const savedPlat = state.currentProduct.variants?.[state.activeVariantKey]?.ctaPlatform;
+      el.renderModalPlatform.value = savedPlat && (savedPlat === 'tiktok' || savedPlat === 'instagram' || savedPlat === 'universal') ? savedPlat : 'both';
     }
 
     const v1Title = state.currentProduct.variants?.v1?.title || 'Problem-Solution (Pastel)';
@@ -4941,6 +5056,7 @@
       const fps = el.renderModalFps?.value || el.selectFps?.value || '60';
       if (el.selectFps) el.selectFps.value = fps;
       const quality = el.renderModalQuality?.value || 'balanced';
+      const ctaPlatform = el.renderModalPlatform ? el.renderModalPlatform.value : (state.currentProduct.variants?.[state.activeVariantKey]?.ctaPlatform || 'universal');
 
       const useGpu = el.chkGpuRender ? el.chkGpuRender.checked : false;
       let customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
@@ -4973,9 +5089,12 @@
         const labelTarget = target === 'all'
           ? 'Kedua Versi (V1 & V2)'
           : (target === 'v2' ? 'Hanya Versi 2 (V2)' : 'Hanya Versi 1 (V1)');
+        const platLabel = ctaPlatform === 'both'
+          ? 'Dual Platform (TikTok & Reels)'
+          : (ctaPlatform === 'tiktok' ? 'Khusus TikTok' : (ctaPlatform === 'instagram' ? 'Khusus IG Reels' : 'Multi-Platform'));
         const engineLabel = useGpu ? 'GPU AMD Radeon' : 'CPU';
         const qLabel = quality === 'high' ? 'Tinggi (CRF 17)' : (quality === 'eco' ? 'Hemat (CRF 24)' : 'Standar (CRF 20)');
-        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
+        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} • ${platLabel} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
 
         const res = await fetch('/api/render', {
           method: 'POST',
@@ -4988,6 +5107,7 @@
             quality,
             customOutputName,
             useGpu,
+            ctaPlatform,
             autoRenderCover: el.chkAutoRenderCover ? el.chkAutoRenderCover.checked : true
           })
         });

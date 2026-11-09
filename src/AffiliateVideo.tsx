@@ -146,6 +146,8 @@ export const affiliateSchema = z.object({
     ctaLabel: z.string().optional(),
     // Tag di ujung kanan strip top_banner_promo (mis. "STOK TERBATAS"). Kosong = tidak ditampilkan.
     urgencyTag: z.string().optional(),
+    // Target Platform CTA: universal (multi-platform: TikTok & IG) | tiktok (khusus TikTok ↙) | instagram (khusus IG Reels 🔗)
+    ctaPlatform: z.enum(['universal', 'tiktok', 'instagram']).optional(),
     fps: z.number().optional(),
     clips: z.array(clipItemSchema),
 
@@ -1631,7 +1633,7 @@ const EditorialHeadline: React.FC<{
     };
 
 // ==========================================
-// EDITORIAL LOWER-THIRD CTA (Selaras Layout Hook + Panah Keranjang Kuning)
+// EDITORIAL LOWER-THIRD CTA (Multi-Platform: TikTok & IG Reels Keranjang Belanja)
 // ==========================================
 const EditorialCTA: React.FC<{
     text: string;
@@ -1639,7 +1641,8 @@ const EditorialCTA: React.FC<{
     durationInFrames: number;
     theme: ThemeDefinition;
     cardStyle?: string;
-}> = ({ text, label, durationInFrames, theme, cardStyle }) => {
+    platform?: 'universal' | 'tiktok' | 'instagram';
+}> = ({ text, label, durationInFrames, theme, cardStyle, platform = 'universal' }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
@@ -1662,45 +1665,127 @@ const EditorialCTA: React.FC<{
         extrapolateRight: 'clamp',
     });
 
-    // Gerakan panah diagonal halus menunjuk Keranjang Kuning TikTok di kiri bawah
+    // Gerakan panah diagonal halus menunjuk Keranjang di kiri bawah
     const arrowNudge = Math.sin(frame / (fps * 0.20)) * 9;
     const y = interpolate(enter, [0, 1], [45, 0]);
-    const subLabel = label || 'KLIK IKON DI KIRI BAWAH';
 
-    // Panah Penunjuk Keranjang Kuning TikTok (Kiri Bawah)
-    const renderYellowBasketPointer = () => (
-        <div
-            style={{
-                marginTop: 18,
-                marginLeft: 14,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
-            }}
-        >
+    const defaultSubLabel =
+        platform === 'instagram'
+            ? 'KLIK LIHAT PRODUK DI KIRI BAWAH'
+            : platform === 'universal'
+                ? 'KLIK IKON DI KIRI BAWAH'
+                : 'KLIK IKON DI KIRI BAWAH';
+    const subLabel = label || defaultSubLabel;
+
+    // Panah Penunjuk CTA (TikTok & Instagram Reels sama-sama berada di Kiri Bawah)
+    const renderPointer = () => {
+        if (platform === 'instagram') {
+            return (
+                <div
+                    style={{
+                        marginTop: 18,
+                        marginLeft: 14,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
+                    }}
+                >
+                    <div
+                        style={{
+                            background: 'linear-gradient(45deg, #F58529 0%, #DD2A7B 50%, #8134AF 100%)',
+                            color: '#FFFFFF',
+                            border: '2.5px solid #FFFFFF',
+                            borderRadius: 999,
+                            padding: '10px 24px',
+                            fontFamily: FONT.grotesk,
+                            fontSize: 23,
+                            fontWeight: 800,
+                            letterSpacing: -0.2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            boxShadow: '0 8px 24px rgba(221, 42, 123, 0.45)',
+                        }}
+                    >
+                        <span style={{ fontSize: 26, lineHeight: 1 }}>↙</span>
+                        <span>KERANJANG BELANJA DI SINI</span>
+                    </div>
+                </div>
+            );
+        }
+
+        if (platform === 'universal') {
+            return (
+                <div
+                    style={{
+                        marginTop: 18,
+                        marginLeft: 14,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: '#FFE600',
+                            color: '#0B0C10',
+                            border: '2.5px solid #0B0C10',
+                            borderRadius: 999,
+                            padding: '10px 24px',
+                            fontFamily: FONT.grotesk,
+                            fontSize: 24,
+                            fontWeight: 800,
+                            letterSpacing: -0.3,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
+                        }}
+                    >
+                        <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
+                        <span>CEK KERANJANG DI SINI</span>
+                    </div>
+                </div>
+            );
+        }
+
+        // Default: TikTok
+        return (
             <div
                 style={{
-                    backgroundColor: '#FFE600',
-                    color: '#0B0C10',
-                    border: '2.5px solid #0B0C10',
-                    borderRadius: 999,
-                    padding: '10px 22px',
-                    fontFamily: FONT.grotesk,
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: -0.3,
+                    marginTop: 18,
+                    marginLeft: 14,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 10,
-                    boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
+                    gap: 12,
+                    transform: `translate(${-arrowNudge * 0.6}px, ${arrowNudge}px) scale(${badgeEnter})`,
                 }}
             >
-                <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
-                <span>KERANJANG KUNING DI SINI</span>
+                <div
+                    style={{
+                        backgroundColor: '#FFE600',
+                        color: '#0B0C10',
+                        border: '2.5px solid #0B0C10',
+                        borderRadius: 999,
+                        padding: '10px 22px',
+                        fontFamily: FONT.grotesk,
+                        fontSize: 24,
+                        fontWeight: 800,
+                        letterSpacing: -0.3,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        boxShadow: '4px 4px 0px #0B0C10, 0 8px 20px rgba(0,0,0,0.45)',
+                    }}
+                >
+                    <span style={{ fontSize: 28, lineHeight: 1 }}>↙</span>
+                    <span>KERANJANG KUNING DI SINI</span>
+                </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     let cardContent: React.ReactNode;
     const resolvedCard = resolveHookSelection(cardStyle)?.layout ?? cardStyle;
@@ -1964,7 +2049,7 @@ const EditorialCTA: React.FC<{
             }}
         >
             {cardContent}
-            {renderYellowBasketPointer()}
+            {renderPointer()}
         </div>
     );
 };
@@ -2023,6 +2108,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     ctaText,
     ctaLabel,
     urgencyTag,
+    ctaPlatform = 'universal',
     clips,
     renderMode,
     coverTemplate,
@@ -2574,6 +2660,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     durationInFrames={ctaDuration}
                     theme={theme}
                     cardStyle={cardStyle}
+                    platform={ctaPlatform}
                 />
             </Sequence>
 

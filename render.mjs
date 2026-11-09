@@ -114,6 +114,7 @@ export async function renderProductVariant({
   useGpu,
   quality = 'balanced',
   autoRenderCover = true,
+  ctaPlatform,
   onProgress,
   onLog = console.log,
   cancelSignal,
@@ -145,7 +146,7 @@ export async function renderProductVariant({
   onLog(`==================================================`);
 
   // 1. Resolve props, auto-fit duration & captions
-  const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps });
+  const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps, ctaPlatform });
   onLog(`[PROPS] Durasi video: ${totalClipsSec.toFixed(1)}s (${durationInFrames} frames @ ${fps}fps)`);
 
   // 2. Build or reuse bundle & sinkronkan aset public/ terbaru
@@ -164,10 +165,22 @@ export async function renderProductVariant({
     fs.mkdirSync(OUT_DIR, { recursive: true });
   }
 
-  // Sanitize filename
+  // Sanitize filename & tambahkan platform suffix agar tidak saling menimpa
   const rawTitle = customOutputName || product.name;
-  const cleanProductName = rawTitle.replace(/[/\\?%*:|"<>]/g, '-').trim();
-  const outFileName = `${cleanProductName} ${variantKey}.mp4`;
+  let cleanProductName = rawTitle.replace(/[/\\?%*:|"<>]/g, '-').trim();
+  const vRegex = new RegExp(`\\s+${variantKey}(?:\\s*\\([^)]+\\))?$`, 'i');
+  cleanProductName = cleanProductName.replace(vRegex, '').trim();
+
+  let platformSuffix = '';
+  if (props.ctaPlatform === 'tiktok') {
+    platformSuffix = ' (TikTok)';
+  } else if (props.ctaPlatform === 'instagram') {
+    platformSuffix = ' (Reels)';
+  } else if (props.ctaPlatform === 'universal') {
+    platformSuffix = ' (Multi-Platform)';
+  }
+
+  const outFileName = `${cleanProductName} ${variantKey}${platformSuffix}.mp4`;
   const outputLocation = path.join(OUT_DIR, outFileName);
 
   onLog(`[RENDER] Menyimpan video ke: out/${outFileName}`);
@@ -256,7 +269,8 @@ export async function renderProductVariant({
       const coverRes = await renderProductCover({
         productOrId: product,
         variantKey,
-        customOutputName: rawTitle,
+        customOutputName: cleanProductName,
+        platformSuffix,
         onLog,
       });
       coverFileName = coverRes.coverFileName;
@@ -282,6 +296,7 @@ export async function renderProductCover({
   productOrId,
   variantKey = 'v1',
   customOutputName,
+  platformSuffix = '',
   onLog = console.log,
   onProgress = () => { },
 }) {
@@ -308,9 +323,9 @@ export async function renderProductCover({
 
   const rawTitle = customOutputName || product.name;
   let cleanProductName = rawTitle.replace(/[/\\?%*:|"<>]/g, '-').trim();
-  const vRegex = new RegExp(`\\s+${variantKey}$`, 'i');
+  const vRegex = new RegExp(`\\s+${variantKey}(?:\\s*\\([^)]+\\))?$`, 'i');
   cleanProductName = cleanProductName.replace(vRegex, '').trim();
-  const coverFileName = `${cleanProductName} ${variantKey}-cover.jpg`;
+  const coverFileName = `${cleanProductName} ${variantKey}${platformSuffix}-cover.jpg`;
   const coverLocation = path.join(OUT_DIR, coverFileName);
 
   onProgress({ step: 'render', message: 'Merender cover 1080x1920...', percent: 85 });
@@ -420,6 +435,8 @@ Contoh:
   const quality = qualityArg ? qualityArg.split('=')[1] : 'balanced';
   const frameArg = args.find(a => a.startsWith('--frame='));
   const frame = frameArg ? parseInt(frameArg.split('=')[1], 10) : 60;
+  const platformArg = args.find(a => a.startsWith('--platform=') || a.startsWith('--cta-platform='));
+  const ctaPlatform = platformArg ? platformArg.split('=')[1] : null;
 
   try {
     if (isBatch) {
@@ -428,12 +445,18 @@ Contoh:
       for (const p of products) {
         console.log(`\n--- Memproses Produk: ${p.name} (${p.id}) ---`);
         for (const vk of p.variantKeys) {
-          await renderProductVariant({
-            productOrId: p.id,
-            variantKey: vk,
-            fpsOverride: fps,
-            quality,
-          });
+          const platformsToRender = (ctaPlatform === 'both' || ctaPlatform === 'dual')
+            ? ['tiktok', 'instagram']
+            : [ctaPlatform || 'universal'];
+          for (const plat of platformsToRender) {
+            await renderProductVariant({
+              productOrId: p.id,
+              variantKey: vk,
+              fpsOverride: fps,
+              quality,
+              ctaPlatform: plat,
+            });
+          }
         }
       }
       console.log('\n[BATCH] Semua produk selesai dirender!');
@@ -458,13 +481,20 @@ Contoh:
       ? Object.keys(product.variants || {})
       : (target === '1' ? ['v1'] : (target === '2' ? ['v2'] : [target]));
 
+    const platformsToRender = (ctaPlatform === 'both' || ctaPlatform === 'dual')
+      ? ['tiktok', 'instagram']
+      : [ctaPlatform || 'universal'];
+
     for (const vk of variantsToRender) {
-      await renderProductVariant({
-        productOrId: product,
-        variantKey: vk,
-        fpsOverride: fps,
-        quality,
-      });
+      for (const plat of platformsToRender) {
+        await renderProductVariant({
+          productOrId: product,
+          variantKey: vk,
+          fpsOverride: fps,
+          quality,
+          ctaPlatform: plat,
+        });
+      }
     }
 
     console.log('\n🎉 Render selesai sempurna!');

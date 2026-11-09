@@ -34,11 +34,11 @@ ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
 2. DILARANG KERAS mengarang angka detik yang melebihi durasi video!
    - Contoh Nyata: Jika video berdurasi 95 detik, detik klip TERAKHIR (endSec) maksimal adalah 95 detik (contoh: 86 s/d 93). Angka seperti 120, 127, atau 133 adalah ERROR FATAL karena video sudah selesai di detik ke-95!
 3. URUTAN 4 BABAK KLIP DALAM RENTANG PANJANG VIDEO:
-   - Klip 1 (Babak 1: Hook): Detik pembuka terbaik (~5-6s, contoh: 0 s/d 6). Jika user melampirkan 2 video, potong Babak 1 dari VIDEO 1 (Hook / Podcast / Reaksi / Review).
+   - Klip 1 (Babak 1: Hook): Wajib ACTION-FIRST di 2-3 detik pertama! DILARANG memilih visual statis (seperti hanya memegang produk diam di depan kamera atau memandang kemasan). Jika ada adegan aksi / demonstrasi fisik (misal: uji tiup kencang tisu melayang, semprotan tekstur, pemasangan jepit, perbandingan before-after), Klip 1 WAJIB mengambil potongan aksi paling scroll-stopping tersebut sebagai pembuka! (~5-6s, contoh: 0 s/d 6). Jika user melampirkan 2 video, potong Babak 1 dari VIDEO 1 (Hook / Podcast / Reaksi / Review).
    - Klip 2 (Babak 2: Solusi & Demo Tekstur): Momen saat produk dicoba/dipakai di sepertiga video produk (~7-8s, contoh: 20 s/d 28).
-   - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail botol/kemasan di paruh kedua video produk (~7-8s, contoh: 50 s/d 58).
-   - Klip 4 (Babak 4: CTA Keranjang Kuning): Momen closing kemasan utuh SEBELUM video produk berakhir (~5-6s, contoh: 86 s/d 93 dari video 95s).
-   * Total gabungan durasi 4 babak berkisar 24-28 detik.
+   - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail kemasan / fitur utama + 1 poin pematah keraguan pembeli (~7-8s, contoh: 50 s/d 58).
+   - Klip 4 (Babak 4: CTA Keranjang di Kiri Bawah): Momen closing kemasan utuh SEBELUM video produk berakhir (~5-6s, contoh: 86 s/d 92 dari video 95s).
+   * Total gabungan durasi 4 babak berkisar 23-26 detik (snappy & langsung loop mulus tanpa jeda kosong/dead air di akhir).
 4. FORMAT OBJEK KLIP (DUKUNGAN 1 VIDEO MAUPUN 2 VIDEO LANGSUNG):
    - Jika HANYA 1 video diunggah:
      { "startSec": number, "endSec": number }
@@ -157,16 +157,23 @@ ATURAN PENULISAN TEKS LAYAR:
      * Contoh Event: Line: "Tinggal taruh di lemari langsung rapi" | Highlight: "Mumpung stok promonya masih ada!"
 
 3. BABAK 3 - SPESIFIKASI & BUKTI (DETIK 10 - 18) [VALUE & OBJECTION KILLER]:
-   - ATURAN SPEC BADGE: "Kapasitas jumbo", "Rating 4.9/5.0", "Formula aman", "Hemat 2 bulan", "Paket bundle".
-   - TEKS SPESIFIKASI: Terjemahkan spek teknis menjadi manfaat konkret atau trik bundle hemat:
+   - ATURAN SPEC BADGE: "Kapasitas jumbo", "Rating 4.9/5.0", "Formula aman", "Hemat 2 bulan", "Paket bundle", "Suara halus".
+   - TEKS SPESIFIKASI & FORMULA PEMATAH KERAGUAN (OBJECTION HANDLING):
+     Calon pembeli selalu punya keraguan di benaknya sebelum checkout. WAJIB sertakan 1 poin yang mematahkan keraguan terbesar kategori produk:
+     * Elektronik / Kipas: Keraguan = suara bising / baterai boros -> Patahkan: Line: "Suaranya juga super halus..." | Highlight: "Nggak berisik pas dipakai tidur!"
+     * Skincare / Kosmetik: Keraguan = lengket / dempul / luntur -> Patahkan: Line: "Tekstur ringan gak dempul..." | Highlight: "Tahan keringat seharian!"
+     * Rumah Tangga / Perabot: Keraguan = repot / makan tempat -> Patahkan: Line: "Wadah praktis bisa diisi ulang..." | Highlight: "Jauh lebih hemat jangka panjang!"
      * Value Translation: Line: "Isi jumbo 450ml ekstra hemat..." | Highlight: "Satu kotak tahan 1-2 bulan!"
-     * Objection Killer: Line: "Aman buat pakaian anak & bayi" | Highlight: "Gak bikin noda & tanpa serbuk!"
      * Bundle Event: Line: "Ambil paket bundle isi 3 kotak..." | Highlight: "Jatuhnya jauh lebih murah banget!"
 
-4. BABAK 4 - CALL TO ACTION / CTA (DETIK 18 - 24) [URGENSI KERANJANG KUNING]:
-   - Berikan alasan psikologis kenapa harus klik SEKARANG (Promo, Diskon, Voucher, Stok terbatas):
-     * Hari Biasa: "Lagi promo diskon, klik keranjang!" / "Klaim voucher gratis ongkir di bawah!"
-     * Tanggal Kembar / Payday: "Klaim voucher 11.11 di keranjang!" / "Checkout sebelum vouchernya hangus!" / "Mumpung flash sale tanggal kembar!"
+4. BABAK 4 - CALL TO ACTION / CTA (DETIK 18 - 24) [URGENSI & RAMAH CROSS-POSTING TIKTOK + IG]:
+   - ATURAN VOICE OVER CTA (RAMAH TIKTOK & INSTAGRAM REELS):
+     Naskah Voiceover dibuat netral, persuasif, dan mendesak tanpa menyebut kaku hanya "keranjang kuning" di audio (agar 1 audio rekaman bisa di-upload ke TikTok & IG Reels sekaligus):
+     * Rekomendasi VO: "Mumpung lagi ada promo diskon, buruan amankan sekarang ya!" / "Cek harga flash sale-nya sebelum kehabisan!" / "Langsung klik dan checkout sebelum stoknya ludes!"
+   - ATURAN TEKS CTA LAYAR:
+     * Hari Biasa: "Cek Promo Diskon Sekarang!" / "Klaim Voucher Promo di Sini"
+     * Tanggal Kembar / Payday: "Klaim Voucher 11.11 Sekarang!" / "Checkout Mumpung Flash Sale!"
+   - Di JSON produk, sertakan field: "ctaPlatform": "universal" (secara default mengarahkan panah diagonal ↙ ke Keranjang di kiri bawah, kompatibel untuk TikTok & Instagram Reels).
 
 PENYESUAIAN COPY PER LAYOUT (supaya teks pas dengan bahannya):
 - chat_thread: Line 1 = ucapan atau pertanyaan orang lain ("Lemari kamu kok gak bau?"). Highlight = jawabanmu ("Rahasianya cuma ini!"). Badge = topik singkat.
@@ -283,7 +290,8 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "demoHighlight": "Air & lembap langsung terserap!",
       "specLine1": "Isi jumbo 450ml ekstra hemat...",
       "specHighlight": "Satu kotak tahan 1-2 bulan!",
-      "ctaText": "Lagi promo diskon, klik keranjang!",
+      "ctaText": "Lagi promo diskon, langsung cek yuk!",
+      "ctaPlatform": "universal",
       "clips": [
         { "startSec": 0, "endSec": 6, "videoIndex": 1 },
         { "startSec": 20, "endSec": 28, "videoIndex": 2 },
@@ -325,7 +333,8 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "demoHighlight": "Mumpung stok promonya masih ada!",
       "specLine1": "Ambil paket bundle isi 3 kotak...",
       "specHighlight": "Jatuhnya jauh lebih murah banget!",
-      "ctaText": "Klaim voucher 11.11 di keranjang!",
+      "ctaText": "Klaim voucher diskon sekarang!",
+      "ctaPlatform": "universal",
       "clips": [
         { "startSec": 5, "endSec": 11 },
         { "startSec": 28, "endSec": 35 },

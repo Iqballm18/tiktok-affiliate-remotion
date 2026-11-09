@@ -2087,11 +2087,13 @@ const server = http.createServer(async (req, res) => {
         let targetVariant = variantKey;
         let targetOutputName = customOutputName;
 
+        let detectedPlatformSuffix = '';
         if (!targetProduct && videoName) {
           const cleanName = path.basename(videoName).replace(/\.mp4$/i, '');
-          const match = cleanName.match(/^(.*?)\s+(v\d+)$/i);
+          const match = cleanName.match(/^(.*?)\s+(v\d+)(?:\s*\((.*?)\))?$/i);
           const parsedTitle = match ? match[1].trim() : cleanName;
           const parsedVariant = match ? match[2].toLowerCase() : 'v1';
+          if (match && match[3]) detectedPlatformSuffix = ` (${match[3].trim()})`;
           if (!targetVariant) targetVariant = parsedVariant;
           if (!targetOutputName) targetOutputName = parsedTitle;
 
@@ -2134,6 +2136,7 @@ const server = http.createServer(async (req, res) => {
             productOrId: targetProduct,
             variantKey: targetVariant,
             customOutputName: targetOutputName || targetProduct.name,
+            platformSuffix: detectedPlatformSuffix,
             onLog: appendLog,
             onProgress: () => { },
           });
@@ -2166,7 +2169,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { productId, productData, target, fps, customOutputName, useGpu, quality, autoRenderCover } = JSON.parse(body);
+        const { productId, productData, target, fps, customOutputName, useGpu, quality, autoRenderCover, ctaPlatform } = JSON.parse(body);
 
         let product;
         if (productData) {
@@ -2220,30 +2223,43 @@ const server = http.createServer(async (req, res) => {
               ? Object.keys(product.variants || {})
               : (target === '2' ? ['v2'] : (target === '1' ? ['v1'] : [target || 'v1']));
 
+            // Target Platform CTA:
+            // - 'both' / 'dual': render TikTok dan Instagram Reels sekaligus (2 video terpisah per varian)
+            // - 'tiktok': khusus TikTok (Keranjang Kuning)
+            // - 'instagram': khusus Instagram Reels (Keranjang Belanja)
+            // - 'universal': video multi-platform tunggal
+            const platformsToRender = (ctaPlatform === 'both' || ctaPlatform === 'dual')
+              ? ['tiktok', 'instagram']
+              : [ctaPlatform || 'universal'];
+
             const renderedOutputs = [];
             for (const vk of variantsToRender) {
-              if (!renderState.isRendering) break; // cancelled
-              appendLog(`[RENDER] Memulai rendering varian ${vk} untuk ${resolvedTitle}...`);
+              for (const plat of platformsToRender) {
+                if (!renderState.isRendering) break; // cancelled
+                const platLabel = plat === 'tiktok' ? 'TikTok' : (plat === 'instagram' ? 'Instagram Reels' : 'Multi-Platform');
+                appendLog(`[RENDER] Memulai rendering varian ${vk} (${platLabel}) untuk ${resolvedTitle}...`);
 
-              const { cancelSignal, cancel } = makeCancelSignal();
-              renderState.cancelFn = cancel;
+                const { cancelSignal, cancel } = makeCancelSignal();
+                renderState.cancelFn = cancel;
 
-              const vResult = await renderProductVariant({
-                productOrId: product,
-                variantKey: vk,
-                fpsOverride: renderState.fps,
-                customOutputName: resolvedTitle,
-                useGpu,
-                quality,
-                autoRenderCover: autoRenderCover !== false,
-                cancelSignal,
-                onLog: appendLog,
-                onProgress: (prog) => {
-                  renderState.currentProgress = prog;
-                  broadcast('progress', prog);
-                },
-              });
-              if (vResult?.outFileName) renderedOutputs.push(vResult.outFileName);
+                const vResult = await renderProductVariant({
+                  productOrId: product,
+                  variantKey: vk,
+                  fpsOverride: renderState.fps,
+                  customOutputName: resolvedTitle,
+                  useGpu,
+                  quality,
+                  autoRenderCover: autoRenderCover !== false,
+                  ctaPlatform: plat,
+                  cancelSignal,
+                  onLog: appendLog,
+                  onProgress: (prog) => {
+                    renderState.currentProgress = prog;
+                    broadcast('progress', prog);
+                  },
+                });
+                if (vResult?.outFileName) renderedOutputs.push(vResult.outFileName);
+              }
             }
 
             renderState.cancelFn = null;

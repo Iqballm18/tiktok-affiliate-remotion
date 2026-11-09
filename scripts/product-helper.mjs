@@ -342,14 +342,20 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
     }
   }
 
-  // Auto-fit duration logic (dengan penjagaan batas durasi video asli agar tidak freeze di akhir)
+  // Auto-fit duration logic (dengan penjagaan batas durasi video asli & pemangkasan jeda kosong / dead air)
   if (config.autoFitVoiceOver !== false && props.voiceOverCaptions && props.voiceOverCaptions.length > 0) {
     const lastWord = props.voiceOverCaptions[props.voiceOverCaptions.length - 1];
     if (lastWord && lastWord.endMs) {
       const voEndSec = (lastWord.endMs / 1000) + (props.voiceOverDelaySec || 0);
       const currentTotalSec = props.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
+
+      // Konfigurasi buffer napas ending (default 1.4s) & ambang batas dead air (default 2.5s)
+      const tailBufferSec = typeof config.deadAirBufferSec === 'number' ? config.deadAirBufferSec : 1.4;
+      const deadAirThresholdSec = typeof config.deadAirThresholdSec === 'number' ? config.deadAirThresholdSec : 2.5;
+      const minLastClipSec = typeof config.minLastClipSec === 'number' ? config.minLastClipSec : 3.0;
+
       if (currentTotalSec < voEndSec && props.clips.length > 0) {
-        const diff = Math.ceil((voEndSec - currentTotalSec + 0.8) * 10) / 10;
+        const diff = Math.ceil((voEndSec - currentTotalSec + tailBufferSec) * 10) / 10;
         const lastClip = props.clips[props.clips.length - 1];
         const lastVidDur = lastClip.src ? getVideoDurationSec(lastClip.src) : null;
         if (lastVidDur && lastVidDur > 0) {
@@ -364,10 +370,28 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
         } else {
           lastClip.endSec = Math.round((lastClip.endSec + diff) * 10) / 10;
         }
-        console.log(`[AUTO-FIT] Durasi voiceover (${voEndSec.toFixed(1)}s) melebihi klip (${currentTotalSec.toFixed(1)}s). Klip terakhir disesuaikan ke ${lastClip.startSec}-${lastClip.endSec}s.`);
+        console.log(`[AUTO-FIT] Durasi voiceover (${voEndSec.toFixed(1)}s) melebihi klip (${currentTotalSec.toFixed(1)}s). Klip terakhir disesuaikan ke ${lastClip.startSec}-${lastClip.endSec}s (sisa napas ${tailBufferSec}s).`);
+      } else if (currentTotalSec > voEndSec + deadAirThresholdSec && props.clips.length > 0) {
+        // Hanya pangkas jika ada jeda hening berlebih (> 2.5s). Berikan ruang napas 1.4s agar ending tidak patah
+        const excessSec = Math.round((currentTotalSec - (voEndSec + tailBufferSec)) * 10) / 10;
+        const lastClip = props.clips[props.clips.length - 1];
+        const currentClipDur = lastClip.endSec - lastClip.startSec;
+
+        // Jaga agar durasi klip terakhir (Babak 4 / CTA) tidak dipangkas terlalu pendek (minimal minLastClipSec)
+        const maxCanTrim = Math.max(0, currentClipDur - minLastClipSec);
+        const actualTrimSec = Math.min(excessSec, maxCanTrim);
+
+        if (actualTrimSec >= 0.4) {
+          lastClip.endSec = Math.round((lastClip.endSec - actualTrimSec) * 10) / 10;
+          const newTotalSec = props.clips.reduce((acc, c) => acc + Math.max(0, c.endSec - c.startSec), 0);
+          console.log(`[AUTO-TRIM DEAD AIR] Durasi klip (${currentTotalSec.toFixed(1)}s) memiliki jeda hening berlebih dibanding voiceover (${voEndSec.toFixed(1)}s). Memangkas ${actualTrimSec.toFixed(1)}s (Total akhir: ${newTotalSec.toFixed(1)}s, sisa napas ${(newTotalSec - voEndSec).toFixed(1)}s agar ending halus & tidak patah).`);
+        }
       }
     }
   }
+
+  // Target Platform CTA (universal | tiktok | instagram)
+  props.ctaPlatform = options.ctaPlatform || variant.ctaPlatform || config.defaultCtaPlatform || 'universal';
 
   // Resolve Cover Image if specified
   if (props.coverImage) {

@@ -935,6 +935,72 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
             frame: frame - (t0 + Math.round(0.38 * fps)),
             config: { damping: 13, stiffness: 230, mass: 0.7 },
         });
+
+        if (!isHook) {
+            // Babak 2 (Demo) & Babak 3 (Spec): Tidak lagi mengulang stiker "Membalas komentar @..."
+            // Tampilkan kartu highlight & pembuktian fitur yang bersih dan elegan agar mata penonton fokus ke produk
+            return (
+                <Shell exit={exit} top={196} left={56} right={56}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, width: '100%' }}>
+                        {badge ? (
+                            <div
+                                style={{
+                                    backgroundColor: '#0F172A',
+                                    color: p.theme.colors.accent,
+                                    border: `2px solid ${p.theme.colors.accent}`,
+                                    borderRadius: 999,
+                                    padding: '8px 22px',
+                                    fontFamily: FONT.grotesk,
+                                    fontSize: 24,
+                                    fontWeight: 800,
+                                    letterSpacing: 0.5,
+                                    textTransform: 'uppercase',
+                                    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.45)',
+                                    opacity: clamp01(stickerIn * 3),
+                                    transform: `translateY(${(1 - stickerIn) * 12}px)`,
+                                }}
+                            >
+                                {badge}
+                            </div>
+                        ) : null}
+                        <div
+                            style={{
+                                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                                color: '#FFFFFF',
+                                borderRadius: 18,
+                                padding: '16px 26px',
+                                maxWidth: 840,
+                                boxShadow: '0 12px 28px rgba(0, 0, 0, 0.45)',
+                                opacity: clamp01(stickerIn * 3),
+                            }}
+                        >
+                            <span style={{ fontFamily: FONT.grotesk, fontSize: 38, fontWeight: 700, lineHeight: 1.18 }}>
+                                {tidy(p.line1)}
+                            </span>
+                        </div>
+                        <div
+                            style={{
+                                alignSelf: 'flex-start',
+                                backgroundColor: p.theme.colors.accent,
+                                color: p.theme.colors.accentText,
+                                borderRadius: 20,
+                                padding: '18px 28px',
+                                maxWidth: 860,
+                                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.55)',
+                                border: '2.5px solid rgba(0, 0, 0, 0.85)',
+                                opacity: clamp01(replyIn * 3),
+                                transform: `translateY(${(1 - replyIn) * 14}px)`,
+                            }}
+                        >
+                            <span style={{ fontFamily: FONT.grotesk, fontSize: 48, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.08 }}>
+                                {tidy(p.highlightLine)}
+                            </span>
+                        </div>
+                    </div>
+                </Shell>
+            );
+        }
+
         return (
             <Shell exit={exit} top={196} left={56} right={56}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: '100%' }}>
