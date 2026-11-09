@@ -125,27 +125,27 @@ export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
         return renderWatermarkBadge(text, 520, 120, opacity, frame);
     }
     if (position === 'mid_left') {
-        return renderWatermarkBadge(text, 64, 680, opacity, frame);
+        return renderWatermarkBadge(text, 80, 760, opacity, frame);
     }
     if (position === 'mid_right') {
-        return renderWatermarkBadge(text, 500, 680, opacity, frame);
+        return renderWatermarkBadge(text, 520, 760, opacity, frame);
     }
 
     // Default 'floating': Bagi total durasi menjadi 5 interval posisi dinamis
     const intervalLength = Math.floor(durationInFrames / 5);
 
-    // Titik-titik posisi aman (DIJAMIN 100% TIDAK PERNAH MENABRAK ATAU TERTUTUP SUBTITLE):
-    // - Subtitle Karaoke berada di bottom: 460 (y: 1320 - 1460).
-    // - Headline Card berada di atas (y: 190 - 560).
-    // - CTA Keranjang berada di bawah (y: 1450 - 1620).
-    // Oleh karena itu, Watermark diletakkan di zona bersih (y: 660 s/d 840) pada Babak 1-3,
-    // dan di area atas (y: 260) pada Babak 4 (saat headline sudah hilang).
+    // Titik-titik posisi aman (DIJAMIN 100% TIDAK PERNAH MENABRAK HEADLINE CARD MAUPUN SUBTITLE):
+    // - Headline Card berada di atas (y: 190 - 685). JANGAN gunakan y < 720 selama babak 1-3.
+    // - Subtitle Karaoke berada di bottom: 460 (y: 1150 - 1460). JANGAN gunakan y > 1050.
+    // - CTA Keranjang berada di bawah (y: 1400 - 1750).
+    // Koridor steril teraman di layar 1080x1920 adalah y: 760 s/d 920.
+    // Seluruh 5 interval ditempatkan di koridor ini bergantian kiri-kanan agar dinamis tanpa pernah menabrak teks apa pun.
     const waypoints: Waypoint[] = [
-        { startFrame: 0, endFrame: intervalLength, x: 75, y: 680 }, // Interval 1 (Hook): Tengah Kiri
-        { startFrame: intervalLength, endFrame: intervalLength * 2, x: 500, y: 680 }, // Interval 2 (Demo): Tengah Kanan
-        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 75, y: 840 }, // Interval 3 (Spec): Tengah Kiri
-        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 500, y: 840 }, // Interval 4 (Spec/Proof): Tengah Kanan
-        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 75, y: 260 }, // Interval 5 (CTA): Atas Kiri
+        { startFrame: 0, endFrame: intervalLength, x: 80, y: 760 }, // Interval 1 (Hook): Tengah Kiri
+        { startFrame: intervalLength, endFrame: intervalLength * 2, x: 520, y: 800 }, // Interval 2 (Demo): Tengah Kanan
+        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 80, y: 890 }, // Interval 3 (Spec): Tengah Kiri Bawah
+        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 520, y: 920 }, // Interval 4 (Spec/Proof): Tengah Kanan Bawah
+        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 520, y: 760 }, // Interval 5 (CTA): Tengah Kanan Atas
     ];
 
     // Temukan waypoint aktif saat ini
