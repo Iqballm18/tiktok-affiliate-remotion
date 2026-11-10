@@ -42,6 +42,10 @@ ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
 4. FORMAT OBJEK KLIP (DUKUNGAN 1 VIDEO MAUPUN 2 VIDEO LANGSUNG):
    - Jika HANYA 1 video diunggah:
      { "startSec": number, "endSec": number }
+   - OPSI SUARA ASLI REKAMAN VIDEO (NATURAL ASMR / AKSI PRODUK):
+     Jika pada klip tertentu terdapat aksi fisik produk yang memuaskan didengar (seperti menyemprot cairan "psssht", membuka tutup botol "pop/klik", menggeser/mengunci produk, atau menuang tekstur), TAMBAHKAN properti:
+     `"muted": false, "volume": 0.8`
+     pada objek klip tersebut! Sistem Remotion akan otomatis mempertahankan suara asli aksinya untuk berpadu alami dengan voiceover AI. Jika klip tidak ada aksi fisik khusus, jangan cantumkan (default hening agar rekaman b-roll bebas noise).
    - Jika 2 VIDEO DIUNGGAH (Multi-Footage: Video 1 & Video 2):
      Sertakan "videoIndex": 1 atau "videoIndex": 2 di dalam setiap objek klip (atau cantumkan nama file aslinya di field "src").
      Contoh Klip Multi-Video:

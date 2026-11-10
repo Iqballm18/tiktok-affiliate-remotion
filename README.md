@@ -176,6 +176,8 @@ Setiap produk disimpan sebagai satu file JSON independen di folder `products/`:
 | `ctaPlatform` | `tiktok`, `instagram`, `both`, `universal` | Penyesuaian ikon, badge, dan teks CTA penunjuk keranjang |
 | `watermarkPosition` | `floating`, `top_left`, `top_right`, `mid_left`, `mid_right` | Mode posisi watermark akun media sosial |
 | `coverTemplate` | `hook_card`, `big_headline`, `promo_split` | Template visual untuk cover thumbnail 1080x1920 |
+| `clips[].muted` | `true`, `false` | Buka suara rekaman video asli (`false`) untuk momen semprotan / buka tutup ASMR |
+| `clips[].volume` | `0.1` - `1.0` | Pengatur volume suara asli rekaman (default `0.8` saat aktif) |
 
 ---
 
@@ -184,7 +186,8 @@ Setiap produk disimpan sebagai satu file JSON independen di folder `products/`:
 1. **Auto-Trim Dead Air Cerdas**: Memangkas jeda hening berlebih di akhir video dengan sisa jeda napas yang pas (~1.4s s/d 2.3s) agar transisi ke ending tidak patah.
 2. **Auto-Sync File System**: Web dashboard otomatis mendeteksi penambahan atau penghapusan file di `public/` tanpa perlu me-refresh tab browser.
 3. **Web-Themed CTA Pointer**: Desain badge penunjuk keranjang belanja memakai token tema web (`#131312` ground, `#3b3b36` border, `#ece8de` text, `#f2a93b` amber signal block) dengan panah SVG diagonal `↙` yang presisi.
-4. **Akselerasi GPU Hardware**: Chromium headless memanfaatkan ANGLE Direct3D 11 untuk layer compositing, blur, dan efek transisi cepat.
+4. **Natural Audio / ASMR Unmute**: Fitur unmute selektif per klip untuk mempertahankan suara rekaman asli video (semprotan botol, buka tutup kemasan, klik pengunci) yang di-mix otomatis dengan voiceover AI dan fade-in/fade-out halus.
+5. **Akselerasi GPU Hardware**: Chromium headless memanfaatkan ANGLE Direct3D 11 untuk layer compositing, blur, dan efek transisi cepat.
 
 ---
 

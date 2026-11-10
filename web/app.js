@@ -833,6 +833,36 @@
       if (endInp) endInp.value = formatTimeDisplay(c.endSec);
       if (durEl) durEl.textContent = `${dur.toFixed(1)}s`;
       if (vidSel) populateClipVideoSelect(vidSel, c.src);
+
+      // Suara Asli Video (Unmute & Volume)
+      const audioToggle = document.querySelector(`.clip-audio-toggle[data-clip="${i}"]`);
+      const volWrap = document.querySelector(`.clip-audio-vol-wrap[data-clip="${i}"]`);
+      const volSlider = document.querySelector(`.clip-vol-slider[data-clip="${i}"]`);
+      const volLabel = document.querySelector(`.clip-vol-label[data-clip="${i}"]`);
+
+      if (audioToggle) {
+        const isAudioActive = (c.muted === false);
+        audioToggle.dataset.muted = isAudioActive ? 'false' : 'true';
+        const statusEl = audioToggle.querySelector('.clip-audio-status');
+        if (statusEl) statusEl.textContent = isAudioActive ? 'Aktif' : 'Bisu';
+
+        if (isAudioActive) {
+          audioToggle.style.color = '#34d399';
+          audioToggle.style.background = 'rgba(16, 185, 129, 0.15)';
+          audioToggle.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+          if (volWrap) volWrap.style.display = 'inline-flex';
+          const volPct = typeof c.volume === 'number' ? Math.round(c.volume * 100) : 80;
+          if (volSlider) volSlider.value = volPct;
+          if (volLabel) volLabel.textContent = `${volPct}%`;
+        } else {
+          audioToggle.style.color = '';
+          audioToggle.style.background = '';
+          audioToggle.style.borderColor = '';
+          if (volWrap) volWrap.style.display = 'none';
+          if (volSlider) volSlider.value = 80;
+          if (volLabel) volLabel.textContent = '80%';
+        }
+      }
     }
 
     // Update timeline strip widths
@@ -2421,6 +2451,22 @@
         v.clips[idx].src = customSrc || state.currentProduct.videoSource || v.clips[idx].src || '';
       }
     });
+
+    document.querySelectorAll('.clip-audio-toggle').forEach(btn => {
+      const idx = parseInt(btn.dataset.clip, 10);
+      if (v.clips && v.clips[idx]) {
+        const isMuted = btn.dataset.muted !== 'false';
+        if (!isMuted) {
+          v.clips[idx].muted = false;
+          const slider = document.querySelector(`.clip-vol-slider[data-clip="${idx}"]`);
+          const volVal = slider ? parseInt(slider.value, 10) / 100 : 0.8;
+          v.clips[idx].volume = volVal;
+        } else {
+          delete v.clips[idx].muted;
+          delete v.clips[idx].volume;
+        }
+      }
+    });
   }
 
   // Debounced Auto-save: Menyimpan perubahan otomatis ke JSON produk agar saat refresh data tidak hilang
@@ -2600,6 +2646,52 @@
       document.dispatchEvent(new CustomEvent('clipsUpdated'));
       triggerAutoSave();
     }
+  });
+
+  // Storyboard Clips Audio (Unmute & Volume) Listeners
+  document.addEventListener('click', e => {
+    const toggle = e.target.closest('.clip-audio-toggle');
+    if (!toggle) return;
+    const clipIdx = toggle.dataset.clip;
+    const isMutedNow = toggle.dataset.muted !== 'false';
+    const setMuted = !isMutedNow;
+    toggle.dataset.muted = setMuted ? 'true' : 'false';
+
+    const statusEl = toggle.querySelector('.clip-audio-status');
+    const volWrap = document.querySelector(`.clip-audio-vol-wrap[data-clip="${clipIdx}"]`);
+
+    if (!setMuted) {
+      if (statusEl) statusEl.textContent = 'Aktif';
+      toggle.style.color = '#34d399';
+      toggle.style.background = 'rgba(16, 185, 129, 0.15)';
+      toggle.style.borderColor = 'rgba(16, 185, 129, 0.35)';
+      if (volWrap) volWrap.style.display = 'inline-flex';
+      showToast({
+        type: 'info',
+        title: `Suara Asli Babak ${parseInt(clipIdx, 10) + 1} Aktif`,
+        message: 'Suara rekaman asli klip ini akan berpadu dengan voiceover.',
+        duration: 2500
+      });
+    } else {
+      if (statusEl) statusEl.textContent = 'Bisu';
+      toggle.style.color = '';
+      toggle.style.background = '';
+      toggle.style.borderColor = '';
+      if (volWrap) volWrap.style.display = 'none';
+    }
+    syncFormToVariant();
+    triggerAutoSave();
+    document.dispatchEvent(new CustomEvent('clipsUpdated'));
+  });
+
+  document.addEventListener('input', e => {
+    const slider = e.target.closest('.clip-vol-slider');
+    if (!slider) return;
+    const clipIdx = slider.dataset.clip;
+    const label = document.querySelector(`.clip-vol-label[data-clip="${clipIdx}"]`);
+    if (label) label.textContent = `${slider.value}%`;
+    syncFormToVariant();
+    triggerAutoSave();
   });
 
   // Smart Linking Studio ⇄ Subtitle Editor
