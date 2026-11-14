@@ -138,14 +138,14 @@ export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
     // - Headline Card berada di atas (y: 190 - 685). JANGAN gunakan y < 720 selama babak 1-3.
     // - Subtitle Karaoke berada di bottom: 460 (y: 1150 - 1460). JANGAN gunakan y > 1050.
     // - CTA Keranjang berada di bawah (y: 1400 - 1750).
-    // Koridor steril teraman di layar 1080x1920 adalah y: 760 s/d 920.
+    // Koridor steril teraman di layar 1080x1920 adalah y: 760 s/d 845 (di bawah Social Proof Badge y: 702..744 dan di atas Subtitle terangkat y: 960+).
     // Seluruh 5 interval ditempatkan di koridor ini bergantian kiri-kanan agar dinamis tanpa pernah menabrak teks apa pun.
     const waypoints: Waypoint[] = [
         { startFrame: 0, endFrame: intervalLength, x: 80, y: 760 }, // Interval 1 (Hook): Tengah Kiri
         { startFrame: intervalLength, endFrame: intervalLength * 2, x: 520, y: 800 }, // Interval 2 (Demo): Tengah Kanan
-        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 80, y: 890 }, // Interval 3 (Spec): Tengah Kiri Bawah
-        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 520, y: 920 }, // Interval 4 (Spec/Proof): Tengah Kanan Bawah
-        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 520, y: 760 }, // Interval 5 (CTA): Tengah Kanan Atas
+        { startFrame: intervalLength * 2, endFrame: intervalLength * 3, x: 80, y: 835 }, // Interval 3 (Spec): Tengah Kiri Bawah
+        { startFrame: intervalLength * 3, endFrame: intervalLength * 4, x: 520, y: 835 }, // Interval 4 (Spec/Proof): Tengah Kanan Bawah
+        { startFrame: intervalLength * 4, endFrame: durationInFrames, x: 520, y: 760 }, // Interval 5 (CTA): Tengah Kanan Atas (kanan bebas SocialProofBadge kiri)
     ];
 
     // Temukan waypoint aktif saat ini

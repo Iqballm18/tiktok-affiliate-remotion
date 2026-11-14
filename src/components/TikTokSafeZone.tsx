@@ -1,15 +1,58 @@
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
 
-export const TikTokSafeZone: React.FC = () => {
+export const TikTokSafeZone: React.FC<{ platform?: 'universal' | 'tiktok' | 'instagram' }> = ({
+    platform = 'universal',
+}) => {
+    const isReels = platform === 'instagram';
+    const isUniversal = platform === 'universal';
+    const platformLabel = isReels
+        ? 'SAFE ZONE · INSTAGRAM REELS'
+        : isUniversal
+            ? 'SAFE ZONE · TIKTOK & REELS'
+            : 'SAFE ZONE · TIKTOK';
+    const bottomSafe = isReels ? 360 : 320;
+
     return (
         <AbsoluteFill style={{ pointerEvents: 'none', zIndex: 999 }}>
+            {/* Garis tipis Grid Profil 4:5 IG Reels (y: 285-1635) */}
+            {(isReels || isUniversal) && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 285,
+                        bottom: 285,
+                        left: 14,
+                        right: 14,
+                        border: '1.5px dotted rgba(245, 133, 41, 0.55)',
+                        borderRadius: 12,
+                    }}
+                >
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: -12,
+                            right: 16,
+                            backgroundColor: 'rgba(19, 19, 18, 0.85)',
+                            color: '#F58529',
+                            fontSize: 13,
+                            fontWeight: 700,
+                            fontFamily: 'sans-serif',
+                            padding: '1px 8px',
+                            borderRadius: 4,
+                        }}
+                    >
+                        CROP GRID IG 4:5 (y:285-1635)
+                    </span>
+                </div>
+            )}
+
             {/* 1. Safe Zone Outline Box */}
             <div
                 style={{
                     position: 'absolute',
                     top: 180,
-                    bottom: 320,
+                    bottom: bottomSafe,
                     left: 48,
                     right: 170,
                     border: '2px dashed rgba(34, 197, 94, 0.75)',
@@ -32,32 +75,53 @@ export const TikTokSafeZone: React.FC = () => {
                         letterSpacing: 1,
                     }}
                 >
-                    SAFE ZONE (AREA BEBAS ICON TIKTOK)
+                    {platformLabel}
                 </div>
             </div>
 
-            {/* 2. Top Bar Mock (Search & Tabs) */}
-            <div
-                style={{
-                    position: 'absolute',
-                    top: 80,
-                    left: 0,
-                    right: 0,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    gap: 32,
-                    color: 'rgba(255, 255, 255, 0.65)',
-                    fontSize: 28,
-                    fontWeight: 700,
-                    fontFamily: 'sans-serif',
-                }}
-            >
-                <span>Live</span>
-                <span style={{ color: '#FFFFFF', borderBottom: '3px solid #FFF', paddingBottom: 6 }}>
-                    Untuk Anda
-                </span>
-                <span>Mengikuti</span>
-            </div>
+            {/* 2. Top Bar Mock (TikTok Search/Tabs atau Reels Header) */}
+            {isReels ? (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 76,
+                        left: 48,
+                        right: 48,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        color: 'rgba(255, 255, 255, 0.82)',
+                        fontSize: 30,
+                        fontWeight: 800,
+                        fontFamily: 'sans-serif',
+                    }}
+                >
+                    <span>Reels</span>
+                    <span style={{ fontSize: 26 }}>📷</span>
+                </div>
+            ) : (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 80,
+                        left: 0,
+                        right: 0,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 32,
+                        color: 'rgba(255, 255, 255, 0.65)',
+                        fontSize: 28,
+                        fontWeight: 700,
+                        fontFamily: 'sans-serif',
+                    }}
+                >
+                    <span>Live</span>
+                    <span style={{ color: '#FFFFFF', borderBottom: '3px solid #FFF', paddingBottom: 6 }}>
+                        Untuk Anda
+                    </span>
+                    <span>Mengikuti</span>
+                </div>
+            )}
 
             {/* 3. Right Sidebar Mock (Profile, Like, Comment, Bookmark, Share, Disc) */}
             <div
@@ -150,22 +214,22 @@ export const TikTokSafeZone: React.FC = () => {
                     fontFamily: 'sans-serif',
                 }}
             >
-                {/* TikTok Yellow Basket Pill (Keranjang Kuning Asli) */}
+                {/* Platform Basket / Product Pill */}
                 <div
                     style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: 12,
-                        backgroundColor: 'rgba(254, 226, 226, 0.95)',
-                        border: '1.5px solid #F59E0B',
+                        backgroundColor: isReels ? 'rgba(19, 19, 18, 0.92)' : 'rgba(254, 226, 226, 0.95)',
+                        border: isReels ? '1.5px solid rgba(255,255,255,0.4)' : '1.5px solid #F59E0B',
                         padding: '10px 20px',
                         borderRadius: 10,
                         width: 'fit-content',
                     }}
                 >
-                    <span style={{ fontSize: 26 }}>🛒</span>
-                    <span style={{ color: '#B45309', fontSize: 22, fontWeight: 800 }}>
-                        Keranjang Kuning • Beli Sekarang
+                    <span style={{ fontSize: 26 }}>{isReels ? '🛍️' : '🛒'}</span>
+                    <span style={{ color: isReels ? '#FFFFFF' : '#B45309', fontSize: 22, fontWeight: 800 }}>
+                        {isReels ? 'Lihat Produk • Keranjang Reels' : 'Keranjang Kuning • Beli Sekarang'}
                     </span>
                 </div>
 

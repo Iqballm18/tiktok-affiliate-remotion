@@ -129,6 +129,7 @@ Floating watermark (`@handle` TikTok dan Instagram) dirancang khusus dengan kori
 * **Visual Video Trimmer:** Set detik Mulai, Selesai, serta Unmute Mulai/Selesai langsung dari playhead video di Web Studio.
 * **Auto-Cleanup Temp Remotion:** Pembersihan otomatis folder temp `remotion-webpack-bundle-*` saat startup, rebuild bundle, maupun tombol **Bersihkan Temp** di header.
 * **Sinkronisasi Caption & Riwayat Upload Drive:** Setiap upload ke Google Drive otomatis menyertakan file pendamping `-caption.txt` dan menyimpan status upload permanen di `config/upload-history.json`.
+* **Safe Zone Asimetris, Segmented Progress Bar & Blur Backdrop:** Margin kanan bebas sidebar UI TikTok/Reels (`right: 170`), kartu CTA tanpa panah ganda yang mengikuti palet video, progress bar 4 segmen per babak, opsi `blur_backdrop` untuk klip 16:9, opsi `productHeadlineMaxSec` auto-hide kartu Demo/Spec, serta panduan Safe Zone & grid crop 4:5 Instagram / TikTok.
 * **Koridor Watermark:** Bergantian secara dinamis di rentang **`y: 760 s/d 920`**.
 * Dilengkapi ikon vektor resmi TikTok dan Instagram dengan efek floating/drifting halus.
 

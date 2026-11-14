@@ -5,7 +5,9 @@
 export const SAFE = {
   top: 160, // area UI atas TikTok (search, following/for you)
   bottom: 440, // caption + tombol produk keranjang kuning
-  side: 120, // simetris; sisi kanan dipakai tombol like/komen/share
+  side: 120, // legacy simetris (tetap dipertahankan untuk kompatibilitas)
+  left: 64, // margin kiri bersih
+  right: 168, // margin kanan bebas sidebar like/komen/share TikTok & Reels
 } as const;
 
 export type PaletteName =

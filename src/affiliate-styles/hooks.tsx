@@ -7,7 +7,7 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from 'remotion';
-import {FONT, Palette, SAFE} from './tokens';
+import { FONT, Palette, SAFE } from './tokens';
 
 export interface HookProps {
   line1: string; // hookLine1
@@ -24,15 +24,15 @@ export type HookStyleName =
   | 'tilt_card'
   | 'mask_wipe';
 
-const CLAMP = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
+const CLAMP = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
 const useIn = (delay = 0, damping = 14, stiffness = 150) => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
+  const { fps } = useVideoConfig();
   return spring({
     frame: frame - delay,
     fps,
-    config: {damping, stiffness, mass: 0.8},
+    config: { damping, stiffness, mass: 0.8 },
   });
 };
 
@@ -44,7 +44,7 @@ const useExit = (durationInFrames: number, exitFrames = 8) => {
     [0, 1],
     CLAMP,
   );
-  return {opacity: 1 - t, y: -28 * t};
+  return { opacity: 1 - t, y: -28 * t };
 };
 
 const shake = (frame: number, delay: number, amp = 9) => {
@@ -57,7 +57,7 @@ const Frame: React.FC<{
   durationInFrames: number;
   align?: 'flex-start' | 'center';
   children: React.ReactNode;
-}> = ({durationInFrames, align = 'flex-start', children}) => {
+}> = ({ durationInFrames, align = 'flex-start', children }) => {
   const exit = useExit(durationInFrames);
   return (
     <AbsoluteFill
@@ -65,7 +65,7 @@ const Frame: React.FC<{
         boxSizing: 'border-box',
         width: '100%',
         height: '100%',
-        padding: `${SAFE.top}px ${SAFE.side}px 0 ${SAFE.side}px`,
+        padding: `${SAFE.top}px ${SAFE.right}px 0 ${SAFE.left}px`,
         alignItems: align,
         opacity: exit.opacity,
         transform: `translateY(${exit.y}px)`,
@@ -113,11 +113,11 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
         }}
       >
         {badge ? (
-          <div style={{fontSize: 22, fontWeight: 700, opacity: 0.7, marginBottom: 8}}>
+          <div style={{ fontSize: 22, fontWeight: 700, opacity: 0.7, marginBottom: 8 }}>
             {badge}
           </div>
         ) : null}
-        <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word'}}>{line1}</div>
+        <div style={{ fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word' }}>{line1}</div>
         <div
           style={{
             marginTop: 10,
@@ -358,7 +358,7 @@ export const TiltCardHook: React.FC<HookProps> = ({
             transformOrigin: 'center center',
           }}
         >
-          <div style={{fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word'}}>
+          <div style={{ fontSize: 38, fontWeight: 600, lineHeight: 1.22, wordBreak: 'break-word' }}>
             {line1}
           </div>
           <div
@@ -410,7 +410,7 @@ export const MaskWipeHook: React.FC<HookProps> = ({
 
   return (
     <Frame durationInFrames={durationInFrames}>
-      <div style={{boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, maxWidth: '100%'}}>
+      <div style={{ boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, maxWidth: '100%' }}>
         <div
           style={{
             boxSizing: 'border-box',
@@ -427,7 +427,7 @@ export const MaskWipeHook: React.FC<HookProps> = ({
           {line1}
         </div>
       </div>
-      <div style={{boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, marginTop: 8, maxWidth: '100%'}}>
+      <div style={{ boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, marginTop: 8, maxWidth: '100%' }}>
         <div
           style={{
             boxSizing: 'border-box',
@@ -459,7 +459,7 @@ export const HookStyles: Record<HookStyleName, React.FC<HookProps>> = {
   mask_wipe: MaskWipeHook,
 };
 
-export const AffiliateHook: React.FC<HookProps & {variant: HookStyleName}> = ({
+export const AffiliateHook: React.FC<HookProps & { variant: HookStyleName }> = ({
   variant,
   ...props
 }) => {

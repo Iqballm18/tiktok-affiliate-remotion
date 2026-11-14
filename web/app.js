@@ -136,6 +136,7 @@
     inputAfterLabel: $('inputAfterLabel'),
     inputSocialProofText: $('inputSocialProofText'),
     socialProofChips: $('socialProofChips'),
+    selectProductHeadlineDur: $('selectProductHeadlineDur'),
     storyboardContainer: $('storyboardContainer'),
     clipsTableBody: $('clipsTableBody'),
 
@@ -800,8 +801,9 @@
     if (el.inputBeforeLabel) el.inputBeforeLabel.value = ba.beforeLabel || 'BEFORE';
     if (el.inputAfterLabel) el.inputAfterLabel.value = ba.afterLabel || 'AFTER';
 
-    // Floating Social Proof Badge
+    // Floating Social Proof Badge & Durasi Kartu Demo/Spec
     if (el.inputSocialProofText) el.inputSocialProofText.value = v.socialProofText || '';
+    if (el.selectProductHeadlineDur) el.selectProductHeadlineDur.value = String(v.productHeadlineMaxSec || 0);
 
     // Cover / Thumbnail settings
     if (el.selectCoverTemplate) el.selectCoverTemplate.value = v.coverTemplate || 'hook_card';
@@ -909,6 +911,8 @@
       if (unmuteStartInp) unmuteStartInp.value = (c.unmuteStartSec !== undefined && c.unmuteStartSec !== null) ? String(c.unmuteStartSec) : '';
       if (unmuteEndInp) unmuteEndInp.value = (c.unmuteEndSec !== undefined && c.unmuteEndSec !== null) ? String(c.unmuteEndSec) : '';
       if (autoDuckChk) autoDuckChk.checked = (c.autoDucking !== false);
+      const fitSel = document.querySelector(`.clip-fit-select[data-clip="${i}"]`);
+      if (fitSel) fitSel.value = c.fitMode || 'cover';
     }
 
     // Update timeline strip widths
@@ -2434,6 +2438,9 @@
     setOptional('ctaLabel', el.inputCtaLabel?.value);
     setOptional('urgencyTag', el.inputUrgencyTag?.value);
     setOptional('socialProofText', el.inputSocialProofText?.value);
+    const hlMaxSec = parseFloat(el.selectProductHeadlineDur?.value || '0');
+    if (hlMaxSec > 0) v.productHeadlineMaxSec = hlMaxSec;
+    else delete v.productHeadlineMaxSec;
 
     if (el.chkBeforeAfter?.checked) {
       const startParsed = parseFloat(el.inputBeforeStartSec?.value || '0');
@@ -2545,6 +2552,14 @@
         }
       }
     });
+
+    document.querySelectorAll('.clip-fit-select').forEach(sel => {
+      const idx = parseInt(sel.dataset.clip, 10);
+      if (v.clips && v.clips[idx]) {
+        if (sel.value === 'blur_backdrop') v.clips[idx].fitMode = 'blur_backdrop';
+        else delete v.clips[idx].fitMode;
+      }
+    });
   }
 
   // Listeners for Before/After, Social Proof, Sub-Segment Unmute, and Temp Cleanup
@@ -2561,7 +2576,8 @@
     el.inputBeforeStartSec,
     el.inputBeforeLabel,
     el.inputAfterLabel,
-    el.inputSocialProofText
+    el.inputSocialProofText,
+    el.selectProductHeadlineDur
   ].forEach(ctrl => {
     if (!ctrl) return;
     ctrl.addEventListener('input', () => triggerAutoSave());
@@ -2574,7 +2590,7 @@
     triggerAutoSave();
   });
   document.addEventListener('change', e => {
-    if (e.target.matches('.clip-unmute-start, .clip-unmute-end, .clip-auto-duck')) {
+    if (e.target.matches('.clip-unmute-start, .clip-unmute-end, .clip-auto-duck, .clip-fit-select')) {
       triggerAutoSave();
     }
   });

@@ -141,8 +141,8 @@ const Layer: React.FC<{bottom: number; children: React.ReactNode}> = ({bottom, c
       justifyContent: 'flex-end',
       alignItems: 'center',
       paddingBottom: bottom,
-      paddingLeft: SAFE.side,
-      paddingRight: SAFE.side,
+      paddingLeft: SAFE.left,
+      paddingRight: SAFE.right,
       fontFamily: FONT.display,
       pointerEvents: 'none',
     }}
@@ -412,7 +412,7 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
           width: '100%',
           marginBottom: bottom - 24,
           background: withAlpha(palette.ink, 0.62),
-          padding: `14px ${SAFE.side}px`,
+          padding: `14px ${SAFE.right}px 14px ${SAFE.left}px`,
           textAlign: 'center',
         }}
       >

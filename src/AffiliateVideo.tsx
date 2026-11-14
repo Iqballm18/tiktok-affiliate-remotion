@@ -71,6 +71,7 @@ export const clipItemSchema = z.object({
     unmuteStartSec: z.number().optional(),
     unmuteEndSec: z.number().optional(),
     autoDucking: z.boolean().optional(),
+    fitMode: z.enum(['cover', 'blur_backdrop']).optional(),
     objectPosition: z.string().optional(),
     isPlaceholder: z.boolean().optional(),
 });
@@ -104,6 +105,8 @@ export const affiliateSchema = z.object({
     // Gaya badge: sticker | alert | marker | glass. Kosong = otomatis (hook: sticker, demo & spec: glass).
     badgeStyle: z.string().optional(),
     showProgressBar: z.boolean().optional(),
+    fitMode: z.enum(['cover', 'blur_backdrop']).optional(),
+    productHeadlineMaxSec: z.number().optional(),
     enableSfx: z.boolean().optional(),
     sfxPreset: z.enum(['viral', 'beauty', 'tech', 'minimal']).optional(),
     ctaSound: z.enum(['kaching', 'ding', 'glockenspiel', 'sparkle', 'notify']).optional(),
@@ -262,8 +265,64 @@ export const coverEmbedFrames = (props: Pick<AffiliateProps, 'coverEmbed' | 'cov
 const VideoProgressBar: React.FC<{
     theme: ThemeDefinition;
     durationInFrames: number;
-}> = ({ theme, durationInFrames }) => {
+    segmentDurations?: number[];
+}> = ({ theme, durationInFrames, segmentDurations }) => {
     const frame = useCurrentFrame();
+
+    if (segmentDurations && segmentDurations.length > 1) {
+        let acc = 0;
+        const segments = segmentDurations.map((rawDur, idx) => {
+            const dur = Math.max(1, rawDur);
+            const start = acc;
+            acc += dur;
+            const fillPct = interpolate(frame, [start, start + dur], [0, 100], {
+                extrapolateLeft: 'clamp',
+                extrapolateRight: 'clamp',
+            });
+            return { idx, dur, fillPct };
+        });
+
+        return (
+            <div
+                style={{
+                    position: 'absolute',
+                    top: 10,
+                    left: 16,
+                    right: 16,
+                    height: 6,
+                    display: 'flex',
+                    gap: 6,
+                    zIndex: 200,
+                    pointerEvents: 'none',
+                }}
+            >
+                {segments.map((seg) => (
+                    <div
+                        key={seg.idx}
+                        style={{
+                            flexGrow: seg.dur,
+                            flexBasis: 0,
+                            height: '100%',
+                            borderRadius: 999,
+                            backgroundColor: 'rgba(255, 255, 255, 0.22)',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        <div
+                            style={{
+                                height: '100%',
+                                width: `${seg.fillPct}%`,
+                                borderRadius: 999,
+                                background: theme.colors.indicatorColor,
+                                boxShadow: `0 0 10px ${theme.colors.indicatorColor}`,
+                            }}
+                        />
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
     const progress = interpolate(frame, [0, durationInFrames], [0, 100], {
         extrapolateRight: 'clamp',
     });
@@ -297,16 +356,20 @@ const VideoProgressBar: React.FC<{
 // ==========================================
 // LAYER 4 & 5: COLOR GRADE + VIGNETTE
 // ==========================================
-const CinematicOverlays: React.FC<{ theme: ThemeDefinition }> = ({ theme }) => {
+const CinematicOverlays: React.FC<{ theme: ThemeDefinition; strongTopScrim?: boolean }> = ({
+    theme,
+    strongTopScrim = false,
+}) => {
+    const topStop = strongTopScrim ? '36%' : '25%';
     return (
         <AbsoluteFill style={{ pointerEvents: 'none' }}>
-            {/* L4: Subtle Scrim adaptif mengikuti tema */}
+            {/* L4: Subtle Scrim adaptif mengikuti tema & kebutuhan kontras teks */}
             <AbsoluteFill
                 style={{
                     background: `linear-gradient(
             180deg,
-            ${theme.colors.scrimTop} 0%,
-            rgba(0, 0, 0, 0.00) 25%,
+            ${strongTopScrim ? 'rgba(0, 0, 0, 0.56)' : theme.colors.scrimTop} 0%,
+            ${strongTopScrim ? 'rgba(0, 0, 0, 0.18)' : 'rgba(0, 0, 0, 0.00)'} ${strongTopScrim ? '20%' : topStop},
             rgba(0, 0, 0, 0.00) 75%,
             ${theme.colors.scrimBottom} 100%
           )`,
@@ -706,6 +769,8 @@ const FootageClip: React.FC<{
     voStartFrame?: number;
     captions?: Caption[];
     beforeAfter?: BeforeAfterConfig;
+    fitMode?: 'cover' | 'blur_backdrop';
+    isCtaClip?: boolean;
 }> = ({
     clip,
     durationInFrames,
@@ -719,6 +784,8 @@ const FootageClip: React.FC<{
     voStartFrame = 0,
     captions,
     beforeAfter,
+    fitMode,
+    isCtaClip,
 }) => {
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
@@ -832,6 +899,25 @@ const FootageClip: React.FC<{
         const beforeLabel = (beforeAfter?.beforeLabel || 'BEFORE').trim();
         const afterLabel = (beforeAfter?.afterLabel || 'AFTER').trim();
         const sliderPct = 50 - 28 * Math.cos((frame / Math.max(1, durationInFrames)) * Math.PI * 1.5);
+        const activeFitMode = clip.fitMode || fitMode || 'cover';
+        const sliderLabelTop = isCtaClip ? 660 : 985;
+
+        const renderMainVideoElement = (styleOverride?: React.CSSProperties) => (
+            <OffthreadVideo
+                src={staticFile(clip.src)}
+                startFrom={Math.round(clip.startSec * fps)}
+                endAt={Math.round(clip.endSec * fps)}
+                muted={isMuted}
+                volume={effectiveVolume}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition,
+                    ...styleOverride,
+                }}
+            />
+        );
 
         const baLabelStyle: React.CSSProperties = {
             position: 'absolute',
@@ -914,8 +1000,8 @@ const FootageClip: React.FC<{
                             position: 'absolute', top: '50%', left: 0, width: '100%', height: 4,
                             backgroundColor: '#f2a93b', boxShadow: '0 0 18px rgba(242, 169, 59, 0.8)', zIndex: 5,
                         }} />
-                        <div style={{ ...baLabelStyle, top: 130, right: 44 }}>{beforeLabel}</div>
-                        <div style={{ ...baLabelStyle, top: 985, right: 44, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
+                        <div style={{ ...baLabelStyle, top: 130, right: 170 }}>{beforeLabel}</div>
+                        <div style={{ ...baLabelStyle, top: 985, right: 170, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
                     </AbsoluteFill>
                 ) : hasBeforeAfter ? (
                     <AbsoluteFill>
@@ -928,14 +1014,7 @@ const FootageClip: React.FC<{
                             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
                         />
                         <AbsoluteFill style={{ clipPath: `inset(0 0 0 ${sliderPct}%)` }}>
-                            <OffthreadVideo
-                                src={staticFile(clip.src)}
-                                startFrom={Math.round(clip.startSec * fps)}
-                                endAt={Math.round(clip.endSec * fps)}
-                                muted={isMuted}
-                                volume={effectiveVolume}
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
-                            />
+                            {renderMainVideoElement()}
                         </AbsoluteFill>
                         <div style={{
                             position: 'absolute', top: 0, bottom: 0, left: `${sliderPct}%`, width: 4,
@@ -951,23 +1030,46 @@ const FootageClip: React.FC<{
                                 ↔
                             </div>
                         </div>
-                        <div style={{ ...baLabelStyle, top: 672, left: 44 }}>{beforeLabel}</div>
-                        <div style={{ ...baLabelStyle, top: 672, right: 44, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
+                        <div style={{ ...baLabelStyle, top: sliderLabelTop, left: 48 }}>{beforeLabel}</div>
+                        <div style={{ ...baLabelStyle, top: sliderLabelTop, right: 170, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
+                    </AbsoluteFill>
+                ) : activeFitMode === 'blur_backdrop' ? (
+                    <AbsoluteFill style={{ backgroundColor: '#0E0E0D' }}>
+                        <OffthreadVideo
+                            src={staticFile(clip.src)}
+                            startFrom={Math.round(clip.startSec * fps)}
+                            endAt={Math.round(clip.endSec * fps)}
+                            muted
+                            volume={0}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                objectPosition,
+                                filter: 'blur(26px) brightness(0.42)',
+                                transform: 'scale(1.12)',
+                            }}
+                        />
+                        <AbsoluteFill
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '0 24px',
+                            }}
+                        >
+                            {renderMainVideoElement({
+                                width: '100%',
+                                height: 'auto',
+                                maxHeight: '72%',
+                                objectFit: 'contain',
+                                borderRadius: 20,
+                                boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65)',
+                            })}
+                        </AbsoluteFill>
                     </AbsoluteFill>
                 ) : (
-                    <OffthreadVideo
-                        src={staticFile(clip.src)}
-                        startFrom={Math.round(clip.startSec * fps)}
-                        endAt={Math.round(clip.endSec * fps)}
-                        muted={isMuted}
-                        volume={effectiveVolume}
-                        style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            objectPosition,
-                        }}
-                    />
+                    renderMainVideoElement()
                 )}
             </AbsoluteFill>
         );
@@ -1805,9 +1907,10 @@ const EditorialCTA: React.FC<{
     label?: string;
     durationInFrames: number;
     theme: ThemeDefinition;
+    palette?: Palette;
     cardStyle?: string;
     platform?: 'universal' | 'tiktok' | 'instagram';
-}> = ({ text, label, durationInFrames, theme, cardStyle, platform = 'universal' }) => {
+}> = ({ text, label, durationInFrames, theme, palette, cardStyle, platform = 'universal' }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
 
@@ -1849,7 +1952,14 @@ const EditorialCTA: React.FC<{
     if (platform === 'instagram') {
         ctaTitle = ctaTitle.replace(/keranjang\s+kuning/gi, 'Keranjang Belanja');
         ctaSub = ctaSub.replace(/keranjang\s+kuning/gi, 'Keranjang Belanja');
+    } else if (platform === 'universal') {
+        ctaTitle = ctaTitle.replace(/keranjang\s+kuning/gi, 'Keranjang');
+        ctaSub = ctaSub.replace(/keranjang\s+kuning/gi, 'Keranjang');
     }
+
+    const ctaAccent = palette?.accent ?? theme.colors.accent;
+    const ctaAccentText = palette?.accentInk ?? theme.colors.accentText;
+    const ctaAlert = palette?.alert ?? (platform === 'instagram' ? '#DD2A7B' : '#DC2626');
 
     // Panah Penunjuk Keranjang: memakai token tema web (ground gelap hangat + signal amber,
     // radius kecil, label mono IBM Plex) agar TikTok & Reels tampil seragam dengan dashboard.
@@ -2012,7 +2122,7 @@ const EditorialCTA: React.FC<{
                         fontFamily: FONT.hand,
                         fontSize: 34,
                         fontWeight: 700,
-                        color: platform === 'instagram' ? '#DD2A7B' : '#DC2626',
+                        color: ctaAlert,
                         marginBottom: 4,
                     }}
                 >
@@ -2053,7 +2163,7 @@ const EditorialCTA: React.FC<{
                         fontSize: 20,
                         fontWeight: 500,
                         letterSpacing: 1.5,
-                        color: platform === 'instagram' ? '#DD2A7B' : '#52525B',
+                        color: '#52525B',
                         marginBottom: 8,
                         textTransform: 'uppercase',
                     }}
@@ -2082,8 +2192,8 @@ const EditorialCTA: React.FC<{
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
                 <div
                     style={{
-                        backgroundColor: platform === 'instagram' ? '#DD2A7B' : theme.colors.accent,
-                        color: platform === 'instagram' ? '#FFFFFF' : theme.colors.accentText,
+                        backgroundColor: ctaAccent,
+                        color: ctaAccentText,
                         padding: '6px 16px',
                         fontFamily: FONT.mono,
                         fontSize: 20,
@@ -2101,7 +2211,7 @@ const EditorialCTA: React.FC<{
                         backgroundColor: '#111215',
                         color: '#FFFFFF',
                         padding: '18px 28px',
-                        border: platform === 'instagram' ? '1.5px solid rgba(221,42,123,0.5)' : '1.5px solid rgba(255,255,255,0.22)',
+                        border: `1.5px solid ${ctaAccent}`,
                         fontFamily: FONT.grotesk,
                         fontSize: 42,
                         fontWeight: 800,
@@ -2120,11 +2230,11 @@ const EditorialCTA: React.FC<{
             <div
                 style={{
                     backgroundColor: 'rgba(12, 12, 16, 0.84)',
-                    borderTop: platform === 'instagram' ? '2px solid #DD2A7B' : `2px solid ${theme.colors.accent}`,
+                    borderTop: `2.5px solid ${ctaAccent}`,
                     padding: '24px 32px',
                     borderRadius: 12,
                     boxShadow: '0 18px 42px rgba(0,0,0,0.5)',
-                    maxWidth: 880,
+                    maxWidth: 850,
                 }}
             >
                 <div
@@ -2133,7 +2243,7 @@ const EditorialCTA: React.FC<{
                         fontSize: 19,
                         fontWeight: 600,
                         letterSpacing: 2.5,
-                        color: platform === 'instagram' ? '#F58529' : theme.colors.accent,
+                        color: ctaAccent,
                         textTransform: 'uppercase',
                         marginBottom: 6,
                     }}
@@ -2154,73 +2264,47 @@ const EditorialCTA: React.FC<{
             </div>
         );
     } else {
-        // Default / Chat Thread / Type Stack / Floating Clean
+        // Default / Chat Thread / Type Stack / Web-Aligned Flat Card (tanpa panah ganda; satu panah di pointer bawah)
         cardContent = (
             <div
                 style={{
-                    background: 'rgba(12, 14, 20, 0.90)',
-                    border: platform === 'instagram' ? '2px solid #DD2A7B' : `2px solid ${theme.colors.accent}`,
-                    borderRadius: 24,
-                    padding: '20px 28px',
+                    background: 'rgba(19, 19, 18, 0.92)',
+                    border: `1.5px solid ${ctaAccent}`,
+                    borderLeft: `6px solid ${ctaAccent}`,
+                    borderRadius: 14,
+                    padding: '18px 26px',
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: 20,
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: 8,
+                    maxWidth: 850,
                     boxShadow: '0 18px 40px rgba(0, 0, 0, 0.55)',
                 }}
             >
-                <div
+                <span
                     style={{
-                        width: 68,
-                        height: 68,
-                        borderRadius: 18,
-                        background: platform === 'instagram'
-                            ? 'linear-gradient(45deg, #F58529 0%, #DD2A7B 100%)'
-                            : theme.colors.accent,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transform: `scale(${badgeEnter})`,
-                        flexShrink: 0,
+                        fontFamily: FONT.mono,
+                        fontSize: 18,
+                        fontWeight: 700,
+                        letterSpacing: 1.8,
+                        color: ctaAccent,
+                        textTransform: 'uppercase',
                     }}
                 >
-                    <span
-                        style={{
-                            fontSize: 38,
-                            fontWeight: 900,
-                            color: platform === 'instagram' ? '#FFFFFF' : theme.colors.accentText,
-                            transform: `translate(${-arrowNudge * 0.5}px, ${arrowNudge * 0.5}px)`,
-                            display: 'inline-block',
-                        }}
-                    >
-                        ↙
-                    </span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <span
-                        style={{
-                            fontFamily: FONT.mono,
-                            fontSize: 19,
-                            fontWeight: 700,
-                            letterSpacing: 1.6,
-                            color: platform === 'instagram' ? '#F58529' : theme.colors.accent,
-                            textTransform: 'uppercase',
-                        }}
-                    >
-                        {ctaSub}
-                    </span>
-                    <span
-                        style={{
-                            fontFamily: FONT.grotesk,
-                            fontSize: 40,
-                            fontWeight: 800,
-                            letterSpacing: -1,
-                            color: '#FFFFFF',
-                            lineHeight: 1.15,
-                        }}
-                    >
-                        {ctaTitle}
-                    </span>
-                </div>
+                    {ctaSub}
+                </span>
+                <span
+                    style={{
+                        fontFamily: FONT.grotesk,
+                        fontSize: 40,
+                        fontWeight: 800,
+                        letterSpacing: -0.8,
+                        color: '#FFFFFF',
+                        lineHeight: 1.15,
+                    }}
+                >
+                    {ctaTitle}
+                </span>
             </div>
         );
     }
@@ -2229,9 +2313,9 @@ const EditorialCTA: React.FC<{
         <div
             style={{
                 position: 'absolute',
-                bottom: 330,
+                bottom: 340,
                 left: 56,
-                right: 56,
+                right: 170,
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
@@ -2258,6 +2342,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     captionVariant: captionVariantProp,
     badgeStyle: badgeStyleProp,
     showProgressBar,
+    fitMode,
+    productHeadlineMaxSec,
     enableSfx,
     sfxPreset,
     ctaSound,
@@ -2494,7 +2580,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
         return (
             <AbsoluteFill style={{ backgroundColor: theme.colors.bg }}>
                 {coverElement}
-                {showSafeZoneGuide && <TikTokSafeZone />}
+                {showSafeZoneGuide && <TikTokSafeZone platform={ctaPlatform} />}
             </AbsoluteFill>
         );
     }
@@ -2551,6 +2637,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                                     ? beforeAfter
                                     : undefined
                             }
+                            fitMode={fitMode}
+                            isCtaClip={idx === clips.length - 1}
                         />
                     </Sequence>
                 );
@@ -2571,11 +2659,21 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             )}
 
             {/* L4 & L5: COLOR GRADE, VIGNETTE */}
-            <CinematicOverlays theme={theme} />
+            <CinematicOverlays
+                theme={theme}
+                strongTopScrim={Boolean(
+                    ['type_stack', 'kinetic_pill', 'strike_box', 'quiet_serif', 'floating_clean'].indexOf(cardStyle || '') !== -1 ||
+                    (!useNewHook && themeStyle === 'minimal')
+                )}
+            />
 
-            {/* PROGRESS BAR DI TEPI PALING ATAS (RETENSI PENONTON TIKTOK) */}
+            {/* PROGRESS BAR 4 SEGMEN PER BABAK (RETENSI PENONTON TIKTOK) */}
             {showProgressBar !== false && (
-                <VideoProgressBar theme={theme} durationInFrames={totalDurationInFrames} />
+                <VideoProgressBar
+                    theme={theme}
+                    durationInFrames={totalDurationInFrames}
+                    segmentDurations={[hookDuration, demoDuration, specDuration, ctaDuration]}
+                />
             )}
 
             {/* AUDIO SOUND EFFECTS (MICRO-SFX VIRAL TIKTOK) */}
@@ -2816,36 +2914,50 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             </Sequence>
 
             {/* 2. Babak 2: Demo Bukti (5 - 12 dtk) */}
-            <Sequence from={hookDuration} durationInFrames={demoDuration}>
-                <EditorialHeadline
-                    badge={demoBadge}
-                    line1={demoLine1}
-                    highlightLine={demoHighlight}
-                    durationInFrames={demoDuration}
-                    variant="solution"
-                    theme={theme}
-                    cardStyle={cardStyle}
-                    hookVariant={hookVariant}
-                    badgeStyle={badgeStyle}
-                    urgencyTag={urgencyTag}
-                />
-            </Sequence>
+            {(() => {
+                const demoHeadlineDur = productHeadlineMaxSec && productHeadlineMaxSec > 0
+                    ? Math.max(Math.round(1.5 * fps), Math.min(demoDuration, Math.round(productHeadlineMaxSec * fps)))
+                    : demoDuration;
+                return (
+                    <Sequence from={hookDuration} durationInFrames={demoHeadlineDur}>
+                        <EditorialHeadline
+                            badge={demoBadge}
+                            line1={demoLine1}
+                            highlightLine={demoHighlight}
+                            durationInFrames={demoHeadlineDur}
+                            variant="solution"
+                            theme={theme}
+                            cardStyle={cardStyle}
+                            hookVariant={hookVariant}
+                            badgeStyle={badgeStyle}
+                            urgencyTag={urgencyTag}
+                        />
+                    </Sequence>
+                );
+            })()}
 
             {/* 3. Babak 3: Spesifikasi & Fitur (12 - 19 dtk) */}
-            <Sequence from={hookDuration + demoDuration} durationInFrames={specDuration}>
-                <EditorialHeadline
-                    badge={specBadge}
-                    line1={specLine1}
-                    highlightLine={specHighlight}
-                    durationInFrames={specDuration}
-                    variant="solution"
-                    theme={theme}
-                    cardStyle={cardStyle}
-                    hookVariant={hookVariant}
-                    badgeStyle={badgeStyle}
-                    urgencyTag={urgencyTag}
-                />
-            </Sequence>
+            {(() => {
+                const specHeadlineDur = productHeadlineMaxSec && productHeadlineMaxSec > 0
+                    ? Math.max(Math.round(1.5 * fps), Math.min(specDuration, Math.round(productHeadlineMaxSec * fps)))
+                    : specDuration;
+                return (
+                    <Sequence from={hookDuration + demoDuration} durationInFrames={specHeadlineDur}>
+                        <EditorialHeadline
+                            badge={specBadge}
+                            line1={specLine1}
+                            highlightLine={specHighlight}
+                            durationInFrames={specHeadlineDur}
+                            variant="solution"
+                            theme={theme}
+                            cardStyle={cardStyle}
+                            hookVariant={hookVariant}
+                            badgeStyle={badgeStyle}
+                            urgencyTag={urgencyTag}
+                        />
+                    </Sequence>
+                );
+            })()}
 
             {/* 4. Babak 4: CTA Keranjang Kuning (19 - 24 dtk) */}
             <Sequence
@@ -2857,6 +2969,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     label={ctaLabel}
                     durationInFrames={ctaDuration}
                     theme={theme}
+                    palette={finalPalette}
                     cardStyle={cardStyle}
                     platform={ctaPlatform}
                 />
@@ -2871,20 +2984,21 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     <div
                         style={{
                             position: 'absolute',
-                            top: 672,
+                            top: 702,
                             left: 56,
+                            maxWidth: 440,
                             zIndex: 35,
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: 10,
-                            padding: '10px 22px',
+                            gap: 8,
+                            padding: '8px 18px',
                             borderRadius: 999,
                             backgroundColor: 'rgba(19, 19, 18, 0.88)',
                             border: '1.5px solid rgba(242, 169, 59, 0.55)',
                             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
                             color: '#ece8de',
                             fontFamily: theme.fonts.display,
-                            fontSize: 24,
+                            fontSize: 22,
                             fontWeight: 700,
                             letterSpacing: '0.01em',
                             backdropFilter: 'blur(8px)',
@@ -2948,8 +3062,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                 </Sequence>
             )}
 
-            {/* TIKTOK UI SAFE ZONE (PANDUAN VISUAL DI STUDIO) */}
-            {showSafeZoneGuide && <TikTokSafeZone />}
+            {/* TIKTOK & REELS UI SAFE ZONE (PANDUAN VISUAL DI STUDIO) */}
+            {showSafeZoneGuide && <TikTokSafeZone platform={ctaPlatform} />}
         </AbsoluteFill>
     );
 };

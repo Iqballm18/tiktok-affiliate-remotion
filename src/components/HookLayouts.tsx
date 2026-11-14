@@ -246,7 +246,7 @@ const Shell: React.FC<{
     left?: number;
     right?: number;
     children: React.ReactNode;
-}> = ({ exit, top = 200, left = 56, right = 56, children }) => (
+}> = ({ exit, top = 200, left = 64, right = 110, children }) => (
     <div
         style={{
             position: 'absolute',

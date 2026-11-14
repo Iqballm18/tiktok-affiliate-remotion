@@ -213,7 +213,8 @@ PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
 - cardSfx: true (default, memutar SFX khas struk printer/kertas/label sesuai cardStyle).
 - socialProofText (opsional): Teks badge trust singkat di Babak 3 & 4 (mis. "⭐ 4.9 • 10rb+ Terjual"). Isi hanya jika klaimnya valid/sesuai data produk.
 - beforeAfter (opsional): Mode split-screen/slider perbandingan Before vs After pada satu babak (mis. `{ "enabled": true, "targetClipIndex": 1, "mode": "slider_lr", "beforeStartSec": 0, "beforeLabel": "BEFORE", "afterLabel": "AFTER" }`).
-- Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec` (detik absolut video sumber agar suara asli produk hanya aktif di momen aksi tertentu), dan `autoDucking: true` (otomatis kecilkan suara video asli ke 0.45x saat VoiceOver berbicara).
+- Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec` (detik absolut video sumber agar suara asli produk hanya aktif di momen aksi tertentu), `autoDucking: true` (otomatis kecilkan suara video asli ke 0.45x saat VoiceOver berbicara), dan `fitMode: "blur_backdrop"` (untuk video sumber horizontal 16:9 agar tidak terpotong).
+- productHeadlineMaxSec (opsional): Angka dalam detik (mis. 3.5) agar kartu teks Babak Demo & Spec otomatis hilang setelah beberapa detik sehingga produk tampil penuh tanpa tertutup teks.
 
 ================================================================================
 OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
