@@ -211,6 +211,9 @@ PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
 - transitionVariant: "v1" (halus), "v2" (cepat & dinamis), atau "v3" (aksen sinematik).
 - ctaSound: Suara saat kartu CTA muncul. Pilihan: "kaching" (kasir), "ding" (bel ringkas), "glockenspiel" (melodi ceria), "sparkle" (kilau lembut), "notify" (ping notifikasi HP).
 - cardSfx: true (default, memutar SFX khas struk printer/kertas/label sesuai cardStyle).
+- socialProofText (opsional): Teks badge trust singkat di Babak 3 & 4 (mis. "⭐ 4.9 • 10rb+ Terjual"). Isi hanya jika klaimnya valid/sesuai data produk.
+- beforeAfter (opsional): Mode split-screen/slider perbandingan Before vs After pada satu babak (mis. `{ "enabled": true, "targetClipIndex": 1, "mode": "slider_lr", "beforeStartSec": 0, "beforeLabel": "BEFORE", "afterLabel": "AFTER" }`).
+- Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec` (detik absolut video sumber agar suara asli produk hanya aktif di momen aksi tertentu), dan `autoDucking: true` (otomatis kecilkan suara video asli ke 0.45x saat VoiceOver berbicara).
 
 ================================================================================
 OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):

@@ -256,6 +256,12 @@
           </svg>
           <span>Link GDrive</span>
         </button>
+        <button class="btn small" id="btnCleanupTemp" type="button"
+          title="Bersihkan file cache/temp Remotion yang menumpuk di folder temporary sistem">
+          <svg class="ic" aria-hidden="true">
+            <use href="#i-trash"></use>
+          </svg> Bersihkan Temp
+        </button>
         <button class="btn small" id="btnOpenBatchModal" title="Antrean Render Multi-Produk sekaligus">
           <svg class="ic" aria-hidden="true">
             <use href="#i-layers"></use>
@@ -342,7 +348,8 @@
                 <div class="form-group">
                   <label class="form-label" for="selectProductVideo">
                     <span>File Video Utama Produk (public/)</span>
-                    <span style="font-size: 11px; color: var(--text-faint);">Default untuk semua babak (bisa diganti per babak di Storyboard)</span>
+                    <span style="font-size: 11px; color: var(--text-faint);">Default untuk semua babak (bisa diganti per
+                      babak di Storyboard)</span>
                   </label>
                   <select class="input" id="selectProductVideo">
                     <!-- Populated dynamically from public/*.mp4 -->
@@ -656,6 +663,10 @@
                         title="Isi detik Mulai babak aktif (I)">[ Set Mulai</button>
                       <button type="button" class="btn small primary" id="scrubberSetEnd"
                         title="Isi detik Selesai babak aktif (O)">Set Selesai ]</button>
+                      <button type="button" class="btn small" id="scrubberSetUnmuteStart"
+                        title="Isi detik Mulai Unmute aksi produk (suara asli aktif mulai detik ini)">🔊 Unmute Mulai</button>
+                      <button type="button" class="btn small" id="scrubberSetUnmuteEnd"
+                        title="Isi detik Selesai Unmute aksi produk">Unmute Selesai 🔇</button>
                       <button type="button" class="btn small" id="scrubberJump"
                         title="Lompat ke detik Mulai babak aktif">Putar babak</button>
                     </div>
@@ -703,7 +714,8 @@
                       <div class="storyboard-timing-bar">
                         <div class="timing-field video-field">
                           <span class="timing-label">Sumber:</span>
-                          <select class="input clip-video-select" data-clip="0" title="Pilih video mentah spesifik untuk Babak 1 (atau gunakan Video Utama)">
+                          <select class="input clip-video-select" data-clip="0"
+                            title="Pilih video mentah spesifik untuk Babak 1 (atau gunakan Video Utama)">
                             <option value="">(Gunakan Video Utama)</option>
                           </select>
                         </div>
@@ -719,13 +731,27 @@
                           <span class="timing-label">Suara Asli:</span>
                           <button type="button" class="btn small clip-audio-toggle" data-clip="0" data-muted="true"
                             title="Aktifkan suara rekaman asli video untuk klip ini (misal suara semprotan, buka tutup, atau klik ASMR)">
-                            <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg>
+                            <svg class="ic" aria-hidden="true">
+                              <use href="#i-volume"></use>
+                            </svg>
                             <span class="clip-audio-status">Bisu</span>
                           </button>
-                          <div class="clip-audio-vol-wrap" data-clip="0" style="display: none; align-items: center; gap: 4px;">
-                            <input type="range" class="clip-vol-slider" data-clip="0" min="10" max="100" value="80" step="5"
-                              style="width: 55px; height: 14px; accent-color: #34d399;" title="Volume suara asli video">
-                            <span class="clip-vol-label num" data-clip="0" style="font-size: 11px; color: #34d399;">80%</span>
+                          <div class="clip-audio-vol-wrap" data-clip="0"
+                            style="display: none; align-items: center; gap: 4px;">
+                            <input type="range" class="clip-vol-slider" data-clip="0" min="10" max="100" value="80"
+                              step="5" style="width: 55px; height: 14px; accent-color: #34d399;"
+                              title="Volume suara asli video">
+                            <span class="clip-vol-label num" data-clip="0"
+                              style="font-size: 11px; color: #34d399;">80%</span>
+                            <input type="text" class="input clip-unmute-start" data-clip="0" placeholder="Unmute dari"
+                              title="Detik mulai unmute (opsional, mis. 2.5)" style="width: 68px; padding: 2px 5px; font-size: 11px;">
+                            <input type="text" class="input clip-unmute-end" data-clip="0" placeholder="s/d"
+                              title="Detik selesai unmute (opsional, mis. 4.5)" style="width: 56px; padding: 2px 5px; font-size: 11px;">
+                            <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-muted); cursor: pointer;"
+                              title="Kecilkan suara video otomatis (0.45x) saat VoiceOver aktif berbicara">
+                              <input type="checkbox" class="clip-auto-duck" data-clip="0" checked style="accent-color: #34d399;">
+                              Duck
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -803,7 +829,8 @@
                       <div class="storyboard-timing-bar">
                         <div class="timing-field video-field">
                           <span class="timing-label">Sumber:</span>
-                          <select class="input clip-video-select" data-clip="1" title="Pilih video mentah spesifik untuk Babak 2 (atau gunakan Video Utama)">
+                          <select class="input clip-video-select" data-clip="1"
+                            title="Pilih video mentah spesifik untuk Babak 2 (atau gunakan Video Utama)">
                             <option value="">(Gunakan Video Utama)</option>
                           </select>
                         </div>
@@ -819,13 +846,27 @@
                           <span class="timing-label">Suara Asli:</span>
                           <button type="button" class="btn small clip-audio-toggle" data-clip="1" data-muted="true"
                             title="Aktifkan suara rekaman asli video untuk klip ini (misal suara semprotan, buka tutup, atau klik ASMR)">
-                            <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg>
+                            <svg class="ic" aria-hidden="true">
+                              <use href="#i-volume"></use>
+                            </svg>
                             <span class="clip-audio-status">Bisu</span>
                           </button>
-                          <div class="clip-audio-vol-wrap" data-clip="1" style="display: none; align-items: center; gap: 4px;">
-                            <input type="range" class="clip-vol-slider" data-clip="1" min="10" max="100" value="80" step="5"
-                              style="width: 55px; height: 14px; accent-color: #34d399;" title="Volume suara asli video">
-                            <span class="clip-vol-label num" data-clip="1" style="font-size: 11px; color: #34d399;">80%</span>
+                          <div class="clip-audio-vol-wrap" data-clip="1"
+                            style="display: none; align-items: center; gap: 4px;">
+                            <input type="range" class="clip-vol-slider" data-clip="1" min="10" max="100" value="80"
+                              step="5" style="width: 55px; height: 14px; accent-color: #34d399;"
+                              title="Volume suara asli video">
+                            <span class="clip-vol-label num" data-clip="1"
+                              style="font-size: 11px; color: #34d399;">80%</span>
+                            <input type="text" class="input clip-unmute-start" data-clip="1" placeholder="Unmute dari"
+                              title="Detik mulai unmute (opsional, mis. 7.0)" style="width: 68px; padding: 2px 5px; font-size: 11px;">
+                            <input type="text" class="input clip-unmute-end" data-clip="1" placeholder="s/d"
+                              title="Detik selesai unmute (opsional, mis. 9.5)" style="width: 56px; padding: 2px 5px; font-size: 11px;">
+                            <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-muted); cursor: pointer;"
+                              title="Kecilkan suara video otomatis (0.45x) saat VoiceOver aktif berbicara">
+                              <input type="checkbox" class="clip-auto-duck" data-clip="1" checked style="accent-color: #34d399;">
+                              Duck
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -873,7 +914,8 @@
                       <div class="storyboard-timing-bar">
                         <div class="timing-field video-field">
                           <span class="timing-label">Sumber:</span>
-                          <select class="input clip-video-select" data-clip="2" title="Pilih video mentah spesifik untuk Babak 3 (atau gunakan Video Utama)">
+                          <select class="input clip-video-select" data-clip="2"
+                            title="Pilih video mentah spesifik untuk Babak 3 (atau gunakan Video Utama)">
                             <option value="">(Gunakan Video Utama)</option>
                           </select>
                         </div>
@@ -889,13 +931,27 @@
                           <span class="timing-label">Suara Asli:</span>
                           <button type="button" class="btn small clip-audio-toggle" data-clip="2" data-muted="true"
                             title="Aktifkan suara rekaman asli video untuk klip ini (misal suara semprotan, buka tutup, atau klik ASMR)">
-                            <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg>
+                            <svg class="ic" aria-hidden="true">
+                              <use href="#i-volume"></use>
+                            </svg>
                             <span class="clip-audio-status">Bisu</span>
                           </button>
-                          <div class="clip-audio-vol-wrap" data-clip="2" style="display: none; align-items: center; gap: 4px;">
-                            <input type="range" class="clip-vol-slider" data-clip="2" min="10" max="100" value="80" step="5"
-                              style="width: 55px; height: 14px; accent-color: #34d399;" title="Volume suara asli video">
-                            <span class="clip-vol-label num" data-clip="2" style="font-size: 11px; color: #34d399;">80%</span>
+                          <div class="clip-audio-vol-wrap" data-clip="2"
+                            style="display: none; align-items: center; gap: 4px;">
+                            <input type="range" class="clip-vol-slider" data-clip="2" min="10" max="100" value="80"
+                              step="5" style="width: 55px; height: 14px; accent-color: #34d399;"
+                              title="Volume suara asli video">
+                            <span class="clip-vol-label num" data-clip="2"
+                              style="font-size: 11px; color: #34d399;">80%</span>
+                            <input type="text" class="input clip-unmute-start" data-clip="2" placeholder="Unmute dari"
+                              title="Detik mulai unmute (opsional)" style="width: 68px; padding: 2px 5px; font-size: 11px;">
+                            <input type="text" class="input clip-unmute-end" data-clip="2" placeholder="s/d"
+                              title="Detik selesai unmute (opsional)" style="width: 56px; padding: 2px 5px; font-size: 11px;">
+                            <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-muted); cursor: pointer;"
+                              title="Kecilkan suara video otomatis (0.45x) saat VoiceOver aktif berbicara">
+                              <input type="checkbox" class="clip-auto-duck" data-clip="2" checked style="accent-color: #34d399;">
+                              Duck
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -943,7 +999,8 @@
                       <div class="storyboard-timing-bar">
                         <div class="timing-field video-field">
                           <span class="timing-label">Sumber:</span>
-                          <select class="input clip-video-select" data-clip="3" title="Pilih video mentah spesifik untuk Babak 4 (atau gunakan Video Utama)">
+                          <select class="input clip-video-select" data-clip="3"
+                            title="Pilih video mentah spesifik untuk Babak 4 (atau gunakan Video Utama)">
                             <option value="">(Gunakan Video Utama)</option>
                           </select>
                         </div>
@@ -959,13 +1016,27 @@
                           <span class="timing-label">Suara Asli:</span>
                           <button type="button" class="btn small clip-audio-toggle" data-clip="3" data-muted="true"
                             title="Aktifkan suara rekaman asli video untuk klip ini (misal suara semprotan, buka tutup, atau klik ASMR)">
-                            <svg class="ic" aria-hidden="true"><use href="#i-volume"></use></svg>
+                            <svg class="ic" aria-hidden="true">
+                              <use href="#i-volume"></use>
+                            </svg>
                             <span class="clip-audio-status">Bisu</span>
                           </button>
-                          <div class="clip-audio-vol-wrap" data-clip="3" style="display: none; align-items: center; gap: 4px;">
-                            <input type="range" class="clip-vol-slider" data-clip="3" min="10" max="100" value="80" step="5"
-                              style="width: 55px; height: 14px; accent-color: #34d399;" title="Volume suara asli video">
-                            <span class="clip-vol-label num" data-clip="3" style="font-size: 11px; color: #34d399;">80%</span>
+                          <div class="clip-audio-vol-wrap" data-clip="3"
+                            style="display: none; align-items: center; gap: 4px;">
+                            <input type="range" class="clip-vol-slider" data-clip="3" min="10" max="100" value="80"
+                              step="5" style="width: 55px; height: 14px; accent-color: #34d399;"
+                              title="Volume suara asli video">
+                            <span class="clip-vol-label num" data-clip="3"
+                              style="font-size: 11px; color: #34d399;">80%</span>
+                            <input type="text" class="input clip-unmute-start" data-clip="3" placeholder="Unmute dari"
+                              title="Detik mulai unmute (opsional)" style="width: 68px; padding: 2px 5px; font-size: 11px;">
+                            <input type="text" class="input clip-unmute-end" data-clip="3" placeholder="s/d"
+                              title="Detik selesai unmute (opsional)" style="width: 56px; padding: 2px 5px; font-size: 11px;">
+                            <label style="display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--text-muted); cursor: pointer;"
+                              title="Kecilkan suara video otomatis (0.45x) saat VoiceOver aktif berbicara">
+                              <input type="checkbox" class="clip-auto-duck" data-clip="3" checked style="accent-color: #34d399;">
+                              Duck
+                            </label>
                           </div>
                         </div>
                       </div>
@@ -995,7 +1066,8 @@
                       <div class="form-group">
                         <label class="form-label" for="selectCtaPlatform">
                           <span>Target Platform Outro CTA</span>
-                          <span class="pill neutral" style="font-size: 10px; padding: 1px 6px;">TikTok &amp; Instagram</span>
+                          <span class="pill neutral" style="font-size: 10px; padding: 1px 6px;">TikTok &amp;
+                            Instagram</span>
                         </label>
                         <select class="select" id="selectCtaPlatform">
                           <option value="universal" selected>🌐 Multi-Platform (Cek Keranjang di Kiri Bawah ↙)</option>
@@ -1018,6 +1090,82 @@
                       </div>
                       <div style="font-size: 11px; color: var(--text-faint); margin-bottom: 4px;">Isi hanya klaim yang
                         benar. Klaim promo atau stok terbatas yang palsu bisa melanggar kebijakan iklan TikTok.</div>
+                    </div>
+
+                    <!-- Mode Before vs After Split-Screen -->
+                    <div class="storyboard-card" style="border-left: 3px solid #f2a93b;">
+                      <div class="storyboard-header" style="margin-bottom: 10px;">
+                        <div class="storyboard-title-wrap">
+                          <span class="storyboard-num-badge">⚡ Efek</span>
+                          <h3 class="storyboard-title">Mode Before vs After Split-Screen</h3>
+                        </div>
+                        <label style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                          <input type="checkbox" id="chkBeforeAfter" style="accent-color: #f2a93b;">
+                          Aktifkan
+                        </label>
+                      </div>
+                      <div id="beforeAfterControls" style="display: none; flex-direction: column; gap: 10px;">
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="selectBeforeAfterClip">Tampilkan di Babak</label>
+                            <select class="input" id="selectBeforeAfterClip">
+                              <option value="1" selected>Babak 2 (Demo)</option>
+                              <option value="2">Babak 3 (Spec)</option>
+                              <option value="0">Babak 1 (Hook)</option>
+                              <option value="3">Babak 4 (CTA)</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="selectBeforeAfterMode">Gaya Tampilan</label>
+                            <select class="input" id="selectBeforeAfterMode">
+                              <option value="slider_lr">Slider Geser Kiri-Kanan</option>
+                              <option value="split_tb">Split Atas-Bawah (50/50)</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="selectBeforeSrc">Video "Before" (opsional)</label>
+                            <select class="input" id="selectBeforeSrc">
+                              <option value="">(Gunakan Video Klip Babak Ini)</option>
+                            </select>
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="inputBeforeStartSec">Detik Mulai "Before"</label>
+                            <input class="input" type="text" id="inputBeforeStartSec" value="0" placeholder="mis. 0 atau 2.5">
+                          </div>
+                        </div>
+                        <div class="form-row">
+                          <div class="form-group">
+                            <label class="form-label" for="inputBeforeLabel">Label Kiri/Atas</label>
+                            <input class="input" type="text" id="inputBeforeLabel" value="BEFORE" placeholder="BEFORE">
+                          </div>
+                          <div class="form-group">
+                            <label class="form-label" for="inputAfterLabel">Label Kanan/Bawah</label>
+                            <input class="input" type="text" id="inputAfterLabel" value="AFTER" placeholder="AFTER">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Floating Social Proof Badge -->
+                    <div class="storyboard-card" style="border-left: 3px solid #34d399;">
+                      <div class="storyboard-header" style="margin-bottom: 8px;">
+                        <div class="storyboard-title-wrap">
+                          <span class="storyboard-num-badge">⭐ Trust</span>
+                          <h3 class="storyboard-title">Floating Social Proof Badge (Babak 3 &amp; 4)</h3>
+                        </div>
+                      </div>
+                      <div class="form-group" style="margin-bottom: 0;">
+                        <input class="input" type="text" id="inputSocialProofText"
+                          placeholder="Kosongkan jika tidak perlu, mis: ⭐ 4.9 • 10rb+ Terjual">
+                        <div class="bank-chips" id="socialProofChips" style="margin-top: 6px;">
+                          <button type="button" class="bank-chip" data-sp="⭐ 4.9 • 10rb+ Terjual">⭐ 4.9 • 10rb+ Terjual</button>
+                          <button type="button" class="bank-chip" data-sp="🔥 Terlaris #1 Kategori">🔥 Terlaris #1 Kategori</button>
+                          <button type="button" class="bank-chip" data-sp="✅ Garansi Resmi 100%">✅ Garansi Resmi 100%</button>
+                          <button type="button" class="bank-chip" data-sp="📦 Gratis Ongkir Hari Ini">📦 Gratis Ongkir Hari Ini</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1073,29 +1221,39 @@
                     style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                       <span class="pill emerald" style="font-size: 11px; padding: 2px 7px;">
-                        <svg class="ic" aria-hidden="true" style="margin-right: 3px;"><use href="#i-frame"></use></svg> 1080×1920
+                        <svg class="ic" aria-hidden="true" style="margin-right: 3px;">
+                          <use href="#i-frame"></use>
+                        </svg> 1080×1920
                       </span>
-                      <strong style="color: #fff; font-size: 13.5px;">Thumbnail &amp; Cover Video (Instagram Reels / TikTok)</strong>
+                      <strong style="color: #fff; font-size: 13.5px;">Thumbnail &amp; Cover Video (Instagram Reels /
+                        TikTok)</strong>
                     </div>
                     <div style="display: flex; gap: 6px;">
-                      <button class="btn small" id="btnPreviewCoverLive" type="button" title="Lihat pratinjau langsung di kanvas samping">
-                        <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Pratinjau Live
+                      <button class="btn small" id="btnPreviewCoverLive" type="button"
+                        title="Lihat pratinjau langsung di kanvas samping">
+                        <svg class="ic" aria-hidden="true">
+                          <use href="#i-eye"></use>
+                        </svg> Pratinjau Live
                       </button>
                       <button class="btn small primary" id="btnRenderCoverJpg" type="button"
                         style="background: #10b981; border-color: #10b981; color: #fff; font-weight: 600;"
                         title="Render cover thumbnail beresolusi tinggi 1080x1920 ke folder out/">
-                        <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Render Cover JPG
+                        <svg class="ic" aria-hidden="true">
+                          <use href="#i-sparkles"></use>
+                        </svg> Render Cover JPG
                       </button>
                     </div>
                   </div>
 
                   <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
-                    Buat cover video resolusi tinggi yang selaras dengan hook produk, aman dari cropping grid IG (4:5 &amp; 1:1) dan anti-clutter TikTok.
+                    Buat cover video resolusi tinggi yang selaras dengan hook produk, aman dari cropping grid IG (4:5
+                    &amp; 1:1) dan anti-clutter TikTok.
                   </div>
 
                   <div class="form-row three-col" style="gap: 10px; margin-bottom: 10px;">
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="selectCoverTemplate" style="font-size: 11.5px;">Gaya Desain Cover</label>
+                      <label class="form-label" for="selectCoverTemplate" style="font-size: 11.5px;">Gaya Desain
+                        Cover</label>
                       <select class="input" id="selectCoverTemplate" style="font-size: 12px; height: 32px;">
                         <option value="hook_card">Sesuai Gaya Hook Video (Kartu / Stiker)</option>
                         <option value="bold_title">Bold Headline (Teks Kontras Tengah)</option>
@@ -1104,14 +1262,16 @@
                     </div>
 
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="selectCoverImage" style="font-size: 11.5px;">Foto Produk Utama</label>
+                      <label class="form-label" for="selectCoverImage" style="font-size: 11.5px;">Foto Produk
+                        Utama</label>
                       <select class="input" id="selectCoverImage" style="font-size: 12px; height: 32px;">
                         <option value="">(Gunakan Frame dari Video Mentah)</option>
                       </select>
                     </div>
 
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="selectCoverClipIndex" style="font-size: 11.5px;">Sumber Klip Background</label>
+                      <label class="form-label" for="selectCoverClipIndex" style="font-size: 11.5px;">Sumber Klip
+                        Background</label>
                       <select class="input" id="selectCoverClipIndex" style="font-size: 12px; height: 32px;">
                         <option value="0">Klip Pertama (Hook Awal)</option>
                         <option value="1">Klip 2 (Demo Bukti)</option>
@@ -1123,27 +1283,37 @@
 
                   <div class="form-row three-col" style="gap: 10px; margin-bottom: 10px;">
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="inputCoverBadge" style="font-size: 11.5px;">Badge / Stiker Atas</label>
-                      <input class="input" type="text" id="inputCoverBadge" placeholder="Misal: BUMIL WAJIB TAHU" style="font-size: 12px; height: 32px;">
+                      <label class="form-label" for="inputCoverBadge" style="font-size: 11.5px;">Badge / Stiker
+                        Atas</label>
+                      <input class="input" type="text" id="inputCoverBadge" placeholder="Misal: BUMIL WAJIB TAHU"
+                        style="font-size: 12px; height: 32px;">
                     </div>
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="inputCoverTitle" style="font-size: 11.5px;">Judul Utama Cover</label>
-                      <input class="input" type="text" id="inputCoverTitle" placeholder="Misal: TERNYATA RASA STRAWBERRY!" style="font-size: 12px; height: 32px;">
+                      <label class="form-label" for="inputCoverTitle" style="font-size: 11.5px;">Judul Utama
+                        Cover</label>
+                      <input class="input" type="text" id="inputCoverTitle"
+                        placeholder="Misal: TERNYATA RASA STRAWBERRY!" style="font-size: 12px; height: 32px;">
                     </div>
                     <div class="form-group" style="margin: 0;">
-                      <label class="form-label" for="inputCoverSubtitle" style="font-size: 11.5px;">Subteks / Solusi</label>
-                      <input class="input" type="text" id="inputCoverSubtitle" placeholder="Misal: Solusi mual bumil praktis" style="font-size: 12px; height: 32px;">
+                      <label class="form-label" for="inputCoverSubtitle" style="font-size: 11.5px;">Subteks /
+                        Solusi</label>
+                      <input class="input" type="text" id="inputCoverSubtitle"
+                        placeholder="Misal: Solusi mual bumil praktis" style="font-size: 12px; height: 32px;">
                     </div>
                   </div>
 
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap;">
+                  <div
+                    style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                      <label class="form-label" for="inputCoverFrameSec" style="margin: 0; font-size: 11.5px; color: var(--text-muted);">
+                      <label class="form-label" for="inputCoverFrameSec"
+                        style="margin: 0; font-size: 11.5px; color: var(--text-muted);">
                         Detik Frame Video (Opsional):
                       </label>
-                      <input class="input" type="number" id="inputCoverFrameSec" min="0" step="0.5" placeholder="Detik ke..." style="width: 90px; height: 28px; font-size: 11.5px;">
+                      <input class="input" type="number" id="inputCoverFrameSec" min="0" step="0.5"
+                        placeholder="Detik ke..." style="width: 90px; height: 28px; font-size: 11.5px;">
                     </div>
-                    <label style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #fff; cursor: pointer;">
+                    <label
+                      style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #fff; cursor: pointer;">
                       <input type="checkbox" id="chkCoverEmbed" style="accent-color: #10b981;">
                       <span>Sisipkan Cover di Frame Pertama Video (Otomatis Cover TikTok)</span>
                     </label>
@@ -1294,17 +1464,24 @@
                     <a class="btn small" id="btnOpenExternal" href="#" target="_blank" style="display: none;">
                       Buka Tab
                     </a>
-                    <button class="btn small btn-action-cover" id="btnViewCoverPlayer" type="button" style="display: none;"
-                      title="Lihat cover JPG langsung tanpa perlu download">
-                      <svg class="ic" aria-hidden="true"><use href="#i-eye"></use></svg> Lihat Cover
+                    <button class="btn small btn-action-cover" id="btnViewCoverPlayer" type="button"
+                      style="display: none;" title="Lihat cover JPG langsung tanpa perlu download">
+                      <svg class="ic" aria-hidden="true">
+                        <use href="#i-eye"></use>
+                      </svg> Lihat Cover
                     </button>
-                    <button class="btn small" id="btnRenderCoverPlayer" type="button" style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);"
+                    <button class="btn small" id="btnRenderCoverPlayer" type="button"
+                      style="display: none; background: rgba(16, 185, 129, 0.12); color: #34d399; border-color: rgba(16, 185, 129, 0.3);"
                       title="Render Cover JPG untuk video ini">
-                      <svg class="ic" aria-hidden="true"><use href="#i-sparkles"></use></svg> Render Cover
+                      <svg class="ic" aria-hidden="true">
+                        <use href="#i-sparkles"></use>
+                      </svg> Render Cover
                     </button>
                     <a class="btn small" id="btnDownloadCover" href="#" download style="display: none;"
                       title="Unduh gambar cover JPG (1080x1920) untuk Instagram Reels / TikTok">
-                      <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh Cover
+                      <svg class="ic" aria-hidden="true">
+                        <use href="#i-download"></use>
+                      </svg> Unduh Cover
                     </a>
                     <a class="btn small primary" id="btnDownloadVideo" href="#" download style="display: none;">
                       Unduh MP4
@@ -1987,7 +2164,9 @@
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <h3 style="margin: 0; font-size: 15px; display: flex; align-items: center; gap: 6px;">
-            <svg class="ic" aria-hidden="true" style="color: #34d399;"><use href="#i-eye"></use></svg> Pratinjau Cover Thumbnail
+            <svg class="ic" aria-hidden="true" style="color: #34d399;">
+              <use href="#i-eye"></use>
+            </svg> Pratinjau Cover Thumbnail
           </h3>
           <span class="pill emerald" style="font-size: 11px;">1080×1920</span>
         </div>
@@ -2002,20 +2181,29 @@
           <img id="coverImagePreview" src="" alt="Pratinjau Cover"
             style="max-height: 510px; width: auto; object-fit: contain; border-radius: 6px;">
         </div>
-        <div style="margin-top: 10px; width: 100%; text-align: left; background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
-          <div style="font-size: 12px; font-weight: 600; color: #fff; word-break: break-all;" id="coverImageTitle">-</div>
-          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="coverImageMeta">Resolusi: 1080 × 1920 (9:16 Vertical)</div>
+        <div
+          style="margin-top: 10px; width: 100%; text-align: left; background: var(--bg-ground); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 8px 10px;">
+          <div style="font-size: 12px; font-weight: 600; color: #fff; word-break: break-all;" id="coverImageTitle">-
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;" id="coverImageMeta">Resolusi: 1080 ×
+            1920 (9:16 Vertical)</div>
         </div>
       </div>
       <div class="modal-footer" style="justify-content: space-between;">
         <button class="btn small" id="btnCloseCoverModal2" type="button">Tutup</button>
         <div style="display: flex; gap: 8px;">
           <button class="btn small" id="btnCoverModalRerender" type="button" title="Render ulang cover thumbnail ini">
-            <svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Render Ulang
+            <svg class="ic" aria-hidden="true">
+              <use href="#i-repeat"></use>
+            </svg> Render Ulang
           </button>
-          <a class="btn small" id="btnCoverModalOpenTab" href="#" target="_blank" title="Buka gambar di tab baru">Buka Tab</a>
-          <a class="btn small primary" id="btnCoverModalDownload" href="#" download title="Unduh berkas gambar Cover JPG">
-            <svg class="ic" aria-hidden="true"><use href="#i-download"></use></svg> Unduh JPG
+          <a class="btn small" id="btnCoverModalOpenTab" href="#" target="_blank" title="Buka gambar di tab baru">Buka
+            Tab</a>
+          <a class="btn small primary" id="btnCoverModalDownload" href="#" download
+            title="Unduh berkas gambar Cover JPG">
+            <svg class="ic" aria-hidden="true">
+              <use href="#i-download"></use>
+            </svg> Unduh JPG
           </a>
         </div>
       </div>
@@ -2263,7 +2451,8 @@
         <div
           style="background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-subtle); border-radius: var(--radius-control); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
           <span style="font-size: 11px; color: var(--text-muted); flex-shrink: 0;">Target Platform CTA:</span>
-          <select class="input" id="renderModalPlatform" style="height: 30px; font-size: 11px; width: auto; max-width: 280px;">
+          <select class="input" id="renderModalPlatform"
+            style="height: 30px; font-size: 11px; width: auto; max-width: 280px;">
             <option value="both" selected>👥 Dual Platform (TikTok &amp; Reels Sekaligus — 2 Video)</option>
             <option value="universal">🌐 1 Video Multi-Platform (Cek Keranjang ↙)</option>
             <option value="tiktok">🎵 Khusus TikTok Saja (Keranjang ↙)</option>
@@ -2276,10 +2465,11 @@
           style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-control); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;">
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 7px; margin-bottom: 2px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2" style="flex-shrink:0;">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2"
+                style="flex-shrink:0;">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
               </svg>
               <strong style="font-size: 12px; color: #fff;">Render Cover Thumbnail Sekaligus</strong>
               <span class="pill emerald" style="font-size: 10px; padding: 1px 7px;">1080×1920 JPG</span>

@@ -125,6 +125,17 @@
     inputCtaLabel: $('inputCtaLabel'),
     inputUrgencyTag: $('inputUrgencyTag'),
     inputVoiceOverDelay: $('inputVoiceOverDelay'),
+    btnCleanupTemp: $('btnCleanupTemp'),
+    chkBeforeAfter: $('chkBeforeAfter'),
+    beforeAfterControls: $('beforeAfterControls'),
+    selectBeforeAfterClip: $('selectBeforeAfterClip'),
+    selectBeforeAfterMode: $('selectBeforeAfterMode'),
+    selectBeforeSrc: $('selectBeforeSrc'),
+    inputBeforeStartSec: $('inputBeforeStartSec'),
+    inputBeforeLabel: $('inputBeforeLabel'),
+    inputAfterLabel: $('inputAfterLabel'),
+    inputSocialProofText: $('inputSocialProofText'),
+    socialProofChips: $('socialProofChips'),
     storyboardContainer: $('storyboardContainer'),
     clipsTableBody: $('clipsTableBody'),
 
@@ -443,6 +454,20 @@
         const chosenSrc = val || activeClips[idx]?.src;
         populateClipVideoSelect(sel, chosenSrc);
       });
+
+      // Update dropdown Video "Before" (Before vs After Split-Screen)
+      if (el.selectBeforeSrc) {
+        const curBeforeSrc = el.selectBeforeSrc.value || state.currentProduct?.variants?.[state.activeVariantKey]?.beforeAfter?.beforeSrc || '';
+        el.selectBeforeSrc.innerHTML = '<option value="">(Gunakan Video Klip Babak Ini)</option>';
+        data.videos.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.name;
+          const durText = v.durationSec ? ` [${v.durationSec}s]` : '';
+          opt.textContent = `${v.displayName || v.name}${durText}`;
+          el.selectBeforeSrc.appendChild(opt);
+        });
+        el.selectBeforeSrc.value = curBeforeSrc;
+      }
 
       // Update Voiceover selector
       el.selectVoiceOver.innerHTML = '';
@@ -764,6 +789,20 @@
     if (el.inputTiktokCaption) el.inputTiktokCaption.value = v.tiktokCaption || '';
     if (el.inputReferenceScript) el.inputReferenceScript.value = v.voiceOverScript || '';
 
+    // Mode Before vs After Split-Screen
+    const ba = v.beforeAfter || {};
+    if (el.chkBeforeAfter) el.chkBeforeAfter.checked = Boolean(ba.enabled);
+    if (el.beforeAfterControls) el.beforeAfterControls.style.display = ba.enabled ? 'flex' : 'none';
+    if (el.selectBeforeAfterClip) el.selectBeforeAfterClip.value = String(ba.targetClipIndex ?? 1);
+    if (el.selectBeforeAfterMode) el.selectBeforeAfterMode.value = ba.mode || 'slider_lr';
+    if (el.selectBeforeSrc) el.selectBeforeSrc.value = ba.beforeSrc || '';
+    if (el.inputBeforeStartSec) el.inputBeforeStartSec.value = (ba.beforeStartSec !== undefined && ba.beforeStartSec !== null) ? String(ba.beforeStartSec) : '0';
+    if (el.inputBeforeLabel) el.inputBeforeLabel.value = ba.beforeLabel || 'BEFORE';
+    if (el.inputAfterLabel) el.inputAfterLabel.value = ba.afterLabel || 'AFTER';
+
+    // Floating Social Proof Badge
+    if (el.inputSocialProofText) el.inputSocialProofText.value = v.socialProofText || '';
+
     // Cover / Thumbnail settings
     if (el.selectCoverTemplate) el.selectCoverTemplate.value = v.coverTemplate || 'hook_card';
     if (el.selectCoverClipIndex) el.selectCoverClipIndex.value = String(v.coverClipIndex ?? 0);
@@ -863,6 +902,13 @@
           if (volLabel) volLabel.textContent = '80%';
         }
       }
+
+      const unmuteStartInp = document.querySelector(`.clip-unmute-start[data-clip="${i}"]`);
+      const unmuteEndInp = document.querySelector(`.clip-unmute-end[data-clip="${i}"]`);
+      const autoDuckChk = document.querySelector(`.clip-auto-duck[data-clip="${i}"]`);
+      if (unmuteStartInp) unmuteStartInp.value = (c.unmuteStartSec !== undefined && c.unmuteStartSec !== null) ? String(c.unmuteStartSec) : '';
+      if (unmuteEndInp) unmuteEndInp.value = (c.unmuteEndSec !== undefined && c.unmuteEndSec !== null) ? String(c.unmuteEndSec) : '';
+      if (autoDuckChk) autoDuckChk.checked = (c.autoDucking !== false);
     }
 
     // Update timeline strip widths
@@ -2387,6 +2433,24 @@
     setOptional('transitionVariant', el.selectTransitionVariant?.value);
     setOptional('ctaLabel', el.inputCtaLabel?.value);
     setOptional('urgencyTag', el.inputUrgencyTag?.value);
+    setOptional('socialProofText', el.inputSocialProofText?.value);
+
+    if (el.chkBeforeAfter?.checked) {
+      const startParsed = parseFloat(el.inputBeforeStartSec?.value || '0');
+      v.beforeAfter = {
+        enabled: true,
+        targetClipIndex: parseInt(el.selectBeforeAfterClip?.value || '1', 10),
+        mode: el.selectBeforeAfterMode?.value || 'slider_lr',
+        beforeStartSec: isNaN(startParsed) ? 0 : startParsed,
+        beforeLabel: (el.inputBeforeLabel?.value || 'BEFORE').trim(),
+        afterLabel: (el.inputAfterLabel?.value || 'AFTER').trim(),
+      };
+      if (el.selectBeforeSrc?.value) {
+        v.beforeAfter.beforeSrc = el.selectBeforeSrc.value;
+      }
+    } else {
+      delete v.beforeAfter;
+    }
     setOptional('tiktokCaption', el.inputTiktokCaption?.value);
     setOptional('coverTemplate', el.selectCoverTemplate?.value);
     setOptional('coverImage', el.selectCoverImage?.value);
@@ -2461,13 +2525,81 @@
           const slider = document.querySelector(`.clip-vol-slider[data-clip="${idx}"]`);
           const volVal = slider ? parseInt(slider.value, 10) / 100 : 0.8;
           v.clips[idx].volume = volVal;
+          const uStartInp = document.querySelector(`.clip-unmute-start[data-clip="${idx}"]`);
+          const uEndInp = document.querySelector(`.clip-unmute-end[data-clip="${idx}"]`);
+          const duckChk = document.querySelector(`.clip-auto-duck[data-clip="${idx}"]`);
+          const uStart = uStartInp && uStartInp.value.trim() !== '' ? parseTimeInput(uStartInp.value) : NaN;
+          const uEnd = uEndInp && uEndInp.value.trim() !== '' ? parseTimeInput(uEndInp.value) : NaN;
+          if (!isNaN(uStart)) v.clips[idx].unmuteStartSec = uStart;
+          else delete v.clips[idx].unmuteStartSec;
+          if (!isNaN(uEnd)) v.clips[idx].unmuteEndSec = uEnd;
+          else delete v.clips[idx].unmuteEndSec;
+          if (duckChk && !duckChk.checked) v.clips[idx].autoDucking = false;
+          else delete v.clips[idx].autoDucking;
         } else {
           delete v.clips[idx].muted;
           delete v.clips[idx].volume;
+          delete v.clips[idx].unmuteStartSec;
+          delete v.clips[idx].unmuteEndSec;
+          delete v.clips[idx].autoDucking;
         }
       }
     });
   }
+
+  // Listeners for Before/After, Social Proof, Sub-Segment Unmute, and Temp Cleanup
+  el.chkBeforeAfter?.addEventListener('change', () => {
+    if (el.beforeAfterControls) {
+      el.beforeAfterControls.style.display = el.chkBeforeAfter.checked ? 'flex' : 'none';
+    }
+    triggerAutoSave();
+  });
+  [
+    el.selectBeforeAfterClip,
+    el.selectBeforeAfterMode,
+    el.selectBeforeSrc,
+    el.inputBeforeStartSec,
+    el.inputBeforeLabel,
+    el.inputAfterLabel,
+    el.inputSocialProofText
+  ].forEach(ctrl => {
+    if (!ctrl) return;
+    ctrl.addEventListener('input', () => triggerAutoSave());
+    ctrl.addEventListener('change', () => triggerAutoSave());
+  });
+  el.socialProofChips?.addEventListener('click', e => {
+    const chip = e.target.closest('.bank-chip[data-sp]');
+    if (!chip || !el.inputSocialProofText) return;
+    el.inputSocialProofText.value = chip.dataset.sp || '';
+    triggerAutoSave();
+  });
+  document.addEventListener('change', e => {
+    if (e.target.matches('.clip-unmute-start, .clip-unmute-end, .clip-auto-duck')) {
+      triggerAutoSave();
+    }
+  });
+  el.btnCleanupTemp?.addEventListener('click', async () => {
+    const btn = el.btnCleanupTemp;
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/cleanup-temp', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast({
+          type: 'success',
+          title: 'Cache Temp Dibersihkan',
+          message: `Menghapus ${data.removedCount || 0} folder temp (~${data.freedMB || 0} MB).`,
+          duration: 3500
+        });
+      } else {
+        throw new Error(data.error || 'Gagal membersihkan temp');
+      }
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal Cleanup Temp', message: err.message, duration: 4000 });
+    } finally {
+      btn.disabled = false;
+    }
+  });
 
   // Debounced Auto-save: Menyimpan perubahan otomatis ke JSON produk agar saat refresh data tidak hilang
   let autoSaveTimeout = null;
@@ -4574,7 +4706,10 @@
       const res = await fetch('/api/gdrive-upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoName: nextVideo })
+        body: JSON.stringify({
+          videoName: nextVideo,
+          caption: el.inputTiktokCaption?.value || ''
+        })
       });
       const data = await res.json();
 
@@ -7057,6 +7192,8 @@
     const clipSeg = $('scrubberClipSeg');
     const btnSetStart = $('scrubberSetStart');
     const btnSetEnd = $('scrubberSetEnd');
+    const btnSetUnmuteStart = $('scrubberSetUnmuteStart');
+    const btnSetUnmuteEnd = $('scrubberSetUnmuteEnd');
     const btnJump = $('scrubberJump');
 
     if (!video || !range) return;
@@ -7198,6 +7335,40 @@
       }
     });
 
+    btnSetUnmuteStart?.addEventListener('click', () => {
+      const cur = parseFloat(video.currentTime.toFixed(1)) || 0;
+      const uStartInp = document.querySelector(`.clip-unmute-start[data-clip="${targetClipIdx}"]`);
+      const audioToggle = document.querySelector(`.clip-audio-toggle[data-clip="${targetClipIdx}"]`);
+      if (audioToggle && audioToggle.dataset.muted !== 'false') {
+        audioToggle.click(); // otomatis aktifkan suara asli babak ini
+      }
+      if (uStartInp) {
+        uStartInp.value = cur.toFixed(1);
+        uStartInp.dispatchEvent(new Event('change', { bubbles: true }));
+        showToast({
+          type: 'success',
+          title: `Babak ${targetClipIdx + 1} Unmute Mulai`,
+          message: `Suara asli aktif mulai detik ${cur.toFixed(1)}s`,
+          duration: 2500
+        });
+      }
+    });
+
+    btnSetUnmuteEnd?.addEventListener('click', () => {
+      const cur = parseFloat(video.currentTime.toFixed(1)) || 0;
+      const uEndInp = document.querySelector(`.clip-unmute-end[data-clip="${targetClipIdx}"]`);
+      if (uEndInp) {
+        uEndInp.value = cur.toFixed(1);
+        uEndInp.dispatchEvent(new Event('change', { bubbles: true }));
+        showToast({
+          type: 'success',
+          title: `Babak ${targetClipIdx + 1} Unmute Selesai`,
+          message: `Suara asli selesai di detik ${cur.toFixed(1)}s`,
+          duration: 2500
+        });
+      }
+    });
+
     btnJump?.addEventListener('click', () => {
       const v = state.currentProduct?.variants?.[state.activeVariantKey];
       const clip = v?.clips?.[targetClipIdx];
@@ -7292,6 +7463,19 @@
     await loadVideos();
     await loadPublicBrowser();
     await loadGDriveLink();
+    try {
+      const histRes = await fetch('/api/upload-history');
+      if (histRes.ok) {
+        const hist = await histRes.json();
+        if (hist && typeof hist === 'object') {
+          Object.entries(hist).forEach(([fname, info]) => {
+            gdriveUploadedMap.set(fname, info?.url || true);
+          });
+          updateAllQueueUI();
+          renderPublicBrowser?.();
+        }
+      }
+    } catch (_) { }
     initSSE();
     initAllCustomSelects();
 

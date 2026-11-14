@@ -68,6 +68,9 @@ export const clipItemSchema = z.object({
     endSec: z.number(),
     muted: z.boolean().optional(),
     volume: z.number().optional(),
+    unmuteStartSec: z.number().optional(),
+    unmuteEndSec: z.number().optional(),
+    autoDucking: z.boolean().optional(),
     objectPosition: z.string().optional(),
     isPlaceholder: z.boolean().optional(),
 });
@@ -150,6 +153,18 @@ export const affiliateSchema = z.object({
     ctaPlatform: z.enum(['universal', 'tiktok', 'instagram']).optional(),
     fps: z.number().optional(),
     clips: z.array(clipItemSchema),
+    // Mode Before vs After Split-Screen / Slider
+    beforeAfter: z.object({
+        enabled: z.boolean().optional(),
+        targetClipIndex: z.number().optional(),
+        mode: z.enum(['slider_lr', 'split_tb']).optional(),
+        beforeSrc: z.string().optional(),
+        beforeStartSec: z.number().optional(),
+        beforeLabel: z.string().optional(),
+        afterLabel: z.string().optional(),
+    }).optional(),
+    // Floating Social Proof Badge (mis. "⭐ 4.9 • 10rb+ Terjual") di Babak 3 & 4
+    socialProofText: z.string().optional(),
 
     // ---- COVER / THUMBNAIL (TikTok & Instagram Reels) ----
     // 'video' = render video biasa. 'cover' = komposisi menggambar cover diam (dipakai renderStill frame 0).
@@ -666,6 +681,16 @@ function computeKeywordPunchScale(
     return 1.0;
 }
 
+type BeforeAfterConfig = {
+    enabled?: boolean;
+    targetClipIndex?: number;
+    mode?: 'slider_lr' | 'split_tb';
+    beforeSrc?: string;
+    beforeStartSec?: number;
+    beforeLabel?: string;
+    afterLabel?: string;
+};
+
 const FootageClip: React.FC<{
     clip: ClipItem;
     durationInFrames: number;
@@ -680,6 +705,7 @@ const FootageClip: React.FC<{
     clipStartFrame?: number;
     voStartFrame?: number;
     captions?: Caption[];
+    beforeAfter?: BeforeAfterConfig;
 }> = ({
     clip,
     durationInFrames,
@@ -692,6 +718,7 @@ const FootageClip: React.FC<{
     clipStartFrame = 0,
     voStartFrame = 0,
     captions,
+    beforeAfter,
 }) => {
         const frame = useCurrentFrame();
         const { fps } = useVideoConfig();
@@ -758,7 +785,69 @@ const FootageClip: React.FC<{
             }
         );
 
-        const effectiveVolume = isMuted ? 0 : clipVolume * audioFade;
+        // Sub-segment unmute window (dalam detik absolut video sumber)
+        let subSegmentMultiplier = 1;
+        if (!isMuted && (clip.unmuteStartSec !== undefined || clip.unmuteEndSec !== undefined)) {
+            const currentSourceSec = clip.startSec + frame / fps;
+            const winStart = clip.unmuteStartSec ?? clip.startSec;
+            const winEnd = clip.unmuteEndSec ?? clip.endSec;
+            const fadeSec = 0.15;
+            if (winEnd > winStart) {
+                if (currentSourceSec < winStart || currentSourceSec > winEnd) {
+                    subSegmentMultiplier = 0;
+                } else {
+                    const fadeIn = Math.min(1, (currentSourceSec - winStart) / fadeSec);
+                    const fadeOut = Math.min(1, (winEnd - currentSourceSec) / fadeSec);
+                    subSegmentMultiplier = Math.max(0, Math.min(fadeIn, fadeOut));
+                }
+            }
+        }
+
+        // Auto-ducking cerdas: kecilkan suara video asli (0.45x) saat VoiceOver aktif berbicara
+        let duckMultiplier = 1;
+        if (!isMuted && clip.autoDucking !== false && captions && captions.length > 0) {
+            const globalFrame = clipStartFrame + frame;
+            const voTimeMs = ((globalFrame - voStartFrame) / fps) * 1000;
+            const isVoSpeaking = captions.some(
+                (c) => voTimeMs >= c.startMs - 100 && voTimeMs <= c.endMs + 100
+            );
+            if (isVoSpeaking) {
+                duckMultiplier = 0.45;
+            }
+        }
+
+        const effectiveVolume = isMuted ? 0 : clipVolume * audioFade * subSegmentMultiplier * duckMultiplier;
+
+        const hasBeforeAfter = Boolean(
+            beforeAfter?.enabled &&
+            !clip.isPlaceholder &&
+            clip.src &&
+            (beforeAfter.beforeSrc || beforeAfter.beforeStartSec !== undefined)
+        );
+        const beforeSrc = beforeAfter?.beforeSrc || clip.src;
+        const beforeStartSec = beforeAfter?.beforeStartSec ?? 0;
+        const clipSpanSec = Math.max(0.5, clip.endSec - clip.startSec);
+        const beforeEndSec = beforeStartSec + clipSpanSec;
+        const baMode = beforeAfter?.mode || 'slider_lr';
+        const beforeLabel = (beforeAfter?.beforeLabel || 'BEFORE').trim();
+        const afterLabel = (beforeAfter?.afterLabel || 'AFTER').trim();
+        const sliderPct = 50 - 28 * Math.cos((frame / Math.max(1, durationInFrames)) * Math.PI * 1.5);
+
+        const baLabelStyle: React.CSSProperties = {
+            position: 'absolute',
+            zIndex: 6,
+            padding: '7px 16px',
+            borderRadius: 6,
+            backgroundColor: 'rgba(19, 19, 18, 0.85)',
+            border: '1px solid rgba(236, 232, 222, 0.25)',
+            color: '#ece8de',
+            fontFamily: theme.fonts.display,
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+        };
 
         return (
             <AbsoluteFill
@@ -799,6 +888,72 @@ const FootageClip: React.FC<{
                             {clip.src ? `File '${clip.src}' belum diunggah` : 'Placeholder Klip'}
                         </div>
                     </div>
+                ) : hasBeforeAfter && baMode === 'split_tb' ? (
+                    <AbsoluteFill>
+                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '50%', overflow: 'hidden' }}>
+                            <OffthreadVideo
+                                src={staticFile(beforeSrc)}
+                                startFrom={Math.round(beforeStartSec * fps)}
+                                endAt={Math.round(beforeEndSec * fps)}
+                                muted
+                                volume={0}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
+                            />
+                        </div>
+                        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '50%', overflow: 'hidden' }}>
+                            <OffthreadVideo
+                                src={staticFile(clip.src)}
+                                startFrom={Math.round(clip.startSec * fps)}
+                                endAt={Math.round(clip.endSec * fps)}
+                                muted={isMuted}
+                                volume={effectiveVolume}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
+                            />
+                        </div>
+                        <div style={{
+                            position: 'absolute', top: '50%', left: 0, width: '100%', height: 4,
+                            backgroundColor: '#f2a93b', boxShadow: '0 0 18px rgba(242, 169, 59, 0.8)', zIndex: 5,
+                        }} />
+                        <div style={{ ...baLabelStyle, top: 130, right: 44 }}>{beforeLabel}</div>
+                        <div style={{ ...baLabelStyle, top: 985, right: 44, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
+                    </AbsoluteFill>
+                ) : hasBeforeAfter ? (
+                    <AbsoluteFill>
+                        <OffthreadVideo
+                            src={staticFile(beforeSrc)}
+                            startFrom={Math.round(beforeStartSec * fps)}
+                            endAt={Math.round(beforeEndSec * fps)}
+                            muted
+                            volume={0}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
+                        />
+                        <AbsoluteFill style={{ clipPath: `inset(0 0 0 ${sliderPct}%)` }}>
+                            <OffthreadVideo
+                                src={staticFile(clip.src)}
+                                startFrom={Math.round(clip.startSec * fps)}
+                                endAt={Math.round(clip.endSec * fps)}
+                                muted={isMuted}
+                                volume={effectiveVolume}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition }}
+                            />
+                        </AbsoluteFill>
+                        <div style={{
+                            position: 'absolute', top: 0, bottom: 0, left: `${sliderPct}%`, width: 4,
+                            transform: 'translateX(-2px)',
+                            backgroundColor: '#f2a93b', boxShadow: '0 0 20px rgba(242, 169, 59, 0.85)', zIndex: 5,
+                        }}>
+                            <div style={{
+                                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                                width: 38, height: 38, borderRadius: '50%', backgroundColor: '#131312',
+                                border: '3px solid #f2a93b', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#f2a93b', fontSize: 16, fontWeight: 900,
+                            }}>
+                                ↔
+                            </div>
+                        </div>
+                        <div style={{ ...baLabelStyle, top: 672, left: 44 }}>{beforeLabel}</div>
+                        <div style={{ ...baLabelStyle, top: 672, right: 44, borderColor: '#f2a93b', color: '#f2a93b' }}>{afterLabel}</div>
+                    </AbsoluteFill>
                 ) : (
                     <OffthreadVideo
                         src={staticFile(clip.src)}
@@ -2146,6 +2301,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     urgencyTag,
     ctaPlatform = 'universal',
     clips,
+    beforeAfter,
+    socialProofText,
     renderMode,
     coverTemplate,
     coverTitle,
@@ -2389,6 +2546,11 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             clipStartFrame={fromFrame}
                             voStartFrame={voStartFrame}
                             captions={voiceOverCaptions as Caption[] | undefined}
+                            beforeAfter={
+                                beforeAfter?.enabled && idx === (beforeAfter.targetClipIndex ?? 1)
+                                    ? beforeAfter
+                                    : undefined
+                            }
                         />
                     </Sequence>
                 );
@@ -2699,6 +2861,39 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     platform={ctaPlatform}
                 />
             </Sequence>
+
+            {/* L3.2: FLOATING SOCIAL PROOF BADGE (Babak 3 Spec & Babak 4 CTA, bebas tabrakan) */}
+            {socialProofText && socialProofText.trim() && (
+                <Sequence
+                    from={hookDuration + demoDuration}
+                    durationInFrames={Math.max(1, specDuration + ctaDuration)}
+                >
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 672,
+                            left: 56,
+                            zIndex: 35,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '10px 22px',
+                            borderRadius: 999,
+                            backgroundColor: 'rgba(19, 19, 18, 0.88)',
+                            border: '1.5px solid rgba(242, 169, 59, 0.55)',
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+                            color: '#ece8de',
+                            fontFamily: theme.fonts.display,
+                            fontSize: 24,
+                            fontWeight: 700,
+                            letterSpacing: '0.01em',
+                            backdropFilter: 'blur(8px)',
+                        }}
+                    >
+                        {socialProofText.trim()}
+                    </div>
+                </Sequence>
+            )}
 
             {/* L3.5: VOICE OVER CAPTIONS (Subtitle Karaoke Sinkron untuk Voice Over Produk) */}
             {voiceOverCaptions && voiceOverCaptions.length > 0 && (

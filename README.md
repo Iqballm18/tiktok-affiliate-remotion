@@ -118,6 +118,17 @@ Setiap varian video dapat dibuatkan thumbnail mandiri (1080x1920) dengan kualita
 Floating watermark (`@handle` TikTok dan Instagram) dirancang khusus dengan koridor gerak steril:
 * **Area Headline Card (Atas):** `y: 190 - 650` *(steril)*
 * **Area Subtitle Karaoke & CTA (Bawah):** `y > 1050` *(steril)*
+
+---
+
+## ✨ Fitur Produksi & Otomasi Terbaru
+
+* **Sub-Segment Unmute & Auto-Ducking Cerdas:** Aktifkan suara asli video hanya pada jendela detik aksi tertentu (`unmuteStartSec` – `unmuteEndSec`) tanpa pustaka SFX buatan, serta pengecilan volume otomatis (`autoDucking`) saat VoiceOver berbicara.
+* **Mode Before vs After Split-Screen:** Perbandingan visual `slider_lr` (geser kiri-kanan) atau `split_tb` (atas-bawah) pada babak pilihan langsung dari Storyboard.
+* **Floating Social Proof Badge:** Pill badge kepercayaan (`socialProofText`, mis. `⭐ 4.9 • 10rb+ Terjual`) di Babak 3 & 4 pada zona aman tanpa menabrak headline maupun watermark.
+* **Visual Video Trimmer:** Set detik Mulai, Selesai, serta Unmute Mulai/Selesai langsung dari playhead video di Web Studio.
+* **Auto-Cleanup Temp Remotion:** Pembersihan otomatis folder temp `remotion-webpack-bundle-*` saat startup, rebuild bundle, maupun tombol **Bersihkan Temp** di header.
+* **Sinkronisasi Caption & Riwayat Upload Drive:** Setiap upload ke Google Drive otomatis menyertakan file pendamping `-caption.txt` dan menyimpan status upload permanen di `config/upload-history.json`.
 * **Koridor Watermark:** Bergantian secara dinamis di rentang **`y: 760 s/d 920`**.
 * Dilengkapi ikon vektor resmi TikTok dan Instagram dengan efek floating/drifting halus.
 

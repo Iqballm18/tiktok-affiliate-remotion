@@ -17,7 +17,8 @@ import {
   validateProduct,
   getVideoDurationSec,
 } from './scripts/product-helper.mjs';
-import { renderProductVariant, renderProductStill, renderProductCover, syncPublicToBundle, getOrBuildBundle, makeCancelSignal } from './render.mjs';
+import os from 'os';
+import { renderProductVariant, renderProductStill, renderProductCover, syncPublicToBundle, getOrBuildBundle, makeCancelSignal, cleanupRemotionTemp } from './render.mjs';
 import { alignWhisperWithScript } from './scripts/align-captions.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +32,68 @@ const liveCache = new Map();
 let liveChain = Promise.resolve();
 const PORT = parseInt(process.env.PORT || config.webPort || '3100', 10);
 const PUBLIC_DIR = path.join(__dirname, 'public');
+const UPLOAD_HISTORY_PATH = path.join(__dirname, 'config', 'upload-history.json');
+
+function loadUploadHistory() {
+  try {
+    if (!fs.existsSync(UPLOAD_HISTORY_PATH)) return {};
+    const raw = fs.readFileSync(UPLOAD_HISTORY_PATH, 'utf-8');
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveUploadHistoryEntry(filename, entry) {
+  if (!filename) return;
+  try {
+    const dir = path.dirname(UPLOAD_HISTORY_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    const history = loadUploadHistory();
+    history[filename] = {
+      ...(history[filename] || {}),
+      ...entry,
+      uploadedAt: entry.uploadedAt || new Date().toISOString()
+    };
+    fs.writeFileSync(UPLOAD_HISTORY_PATH, JSON.stringify(history, null, 2), 'utf-8');
+  } catch (err) {
+    console.warn('[UPLOAD HISTORY] Gagal menyimpan riwayat:', err.message);
+  }
+}
+
+function resolveCaptionForVideo(videoName, explicitCaption) {
+  if (typeof explicitCaption === 'string' && explicitCaption.trim()) {
+    return explicitCaption.trim();
+  }
+  try {
+    const productsDir = path.join(__dirname, 'products');
+    if (!fs.existsSync(productsDir)) return '';
+    const cleanName = path.basename(videoName, path.extname(videoName));
+    const files = fs.readdirSync(productsDir).filter(f => f.endsWith('.json'));
+    // Match longest product slug/id prefix first
+    const candidates = [];
+    for (const file of files) {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(productsDir, file), 'utf-8'));
+        const id = data.id || path.basename(file, '.json');
+        if (cleanName === id || cleanName.startsWith(`${id}-`) || cleanName.startsWith(`${id}_`)) {
+          candidates.push({ id, data });
+        }
+      } catch {}
+    }
+    candidates.sort((a, b) => b.id.length - a.id.length);
+    if (candidates.length === 0) return '';
+    const { id, data } = candidates[0];
+    // Try matching variant key from remainder (e.g. product-v1-tiktok -> v1)
+    const rest = cleanName.slice(id.length + 1);
+    const variantKey = rest ? rest.split(/[-_]/)[0] : '';
+    const variantCaption = variantKey && data.variants && data.variants[variantKey]?.tiktokCaption;
+    return (variantCaption || data.tiktokCaption || '').trim();
+  } catch {
+    return '';
+  }
+}
 
 function syncBundlePublic() {
   getOrBuildBundle().then(b => syncPublicToBundle(b)).catch(() => { });
@@ -1382,23 +1445,23 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // Helper: Upload companion cover image to Google Drive
-  async function uploadCompanionCoverToDrive({ coverFilename, coverFullPath, webhookUrl, cfg, appendLog }) {
-    const stat = fs.statSync(coverFullPath);
-    const coverKB = (stat.size / 1024).toFixed(0);
-    appendLog(`[GDRIVE COVER] Memulai upload cover thumbnail ${coverFilename} (${coverKB} KB)...`);
+  // Helper: Upload companion file (cover image / caption txt) to Google Drive
+  async function uploadCompanionFileToDrive({ filename, fullPath, mimeType = 'image/jpeg', label = 'COVER', webhookUrl, cfg, appendLog }) {
+    const stat = fs.statSync(fullPath);
+    const sizeKB = Math.max(1, Math.round(stat.size / 1024));
+    appendLog(`[GDRIVE ${label}] Memulai upload ${filename} (${sizeKB} KB)...`);
 
     // 1. Coba Resumable Session lebih dulu
-    let coverSessionUrl = null;
+    let sessionUrl = null;
     try {
       const initRes = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'createSession',
-          filename: coverFilename,
+          filename,
           fileSize: stat.size,
-          mimeType: 'image/jpeg',
+          mimeType,
           folderId: '1PfohGzGpodBfZNutWbgZXSlryqu3Xw2D'
         })
       });
@@ -1406,27 +1469,27 @@ const server = http.createServer(async (req, res) => {
       try {
         const initData = JSON.parse(initText);
         if (initData.success && initData.sessionUrl) {
-          coverSessionUrl = initData.sessionUrl;
+          sessionUrl = initData.sessionUrl;
         }
       } catch (_) { }
     } catch (_) { }
 
-    if (coverSessionUrl) {
-      appendLog(`[GDRIVE COVER] Mengunggah cover via Resumable API direct...`);
-      const driveFile = await streamFileToGoogleDrive(coverSessionUrl, coverFullPath, 'image/jpeg');
+    if (sessionUrl) {
+      appendLog(`[GDRIVE ${label}] Mengunggah via Resumable API direct...`);
+      const driveFile = await streamFileToGoogleDrive(sessionUrl, fullPath, mimeType);
       const finalFileId = driveFile.id;
       const finalUrl = finalFileId ? `https://drive.google.com/file/d/${finalFileId}/view` : cfg.gdriveFolderUrl;
-      appendLog(`[GDRIVE COVER SUKSES] Cover thumbnail ${coverFilename} tersimpan! Link: ${finalUrl}`);
+      appendLog(`[GDRIVE ${label} SUKSES] ${filename} tersimpan! Link: ${finalUrl}`);
       return { success: true, url: finalUrl };
     }
 
-    // 2. Fallback Base64 (JPG berukuran kecil ~200KB sangat cepat & aman)
-    appendLog(`[GDRIVE COVER] Mengunggah cover via streaming payload...`);
-    const fileBuf = fs.readFileSync(coverFullPath);
+    // 2. Fallback Base64
+    appendLog(`[GDRIVE ${label}] Mengunggah via streaming payload...`);
+    const fileBuf = fs.readFileSync(fullPath);
     const params = new URLSearchParams();
     params.append('data', fileBuf.toString('base64'));
-    params.append('filename', coverFilename);
-    params.append('mimetype', 'image/jpeg');
+    params.append('filename', filename);
+    params.append('mimetype', mimeType);
 
     const res = await fetch(webhookUrl, {
       method: 'POST',
@@ -1439,11 +1502,119 @@ const server = http.createServer(async (req, res) => {
 
     if (data.success || data.status === 'success' || data.url) {
       const finalUrl = data.url || data.fileUrl || cfg.gdriveFolderUrl;
-      appendLog(`[GDRIVE COVER SUKSES] Cover thumbnail ${coverFilename} tersimpan! Link: ${finalUrl}`);
+      appendLog(`[GDRIVE ${label} SUKSES] ${filename} tersimpan! Link: ${finalUrl}`);
       return { success: true, url: finalUrl };
     } else {
-      throw new Error(data.error || data.message || 'Gagal mengunggah cover thumbnail');
+      throw new Error(data.error || data.message || `Gagal mengunggah ${filename}`);
     }
+  }
+
+  async function finalizeGDriveUpload({
+    targetFilename,
+    finalUrl,
+    hasCover,
+    candidateCover,
+    coverFullPath,
+    resolvedCaption,
+    webhookUrl,
+    cfg,
+    appendLog,
+    defaultDoneMsg
+  }) {
+    let coverResult = null;
+    if (hasCover) {
+      broadcast('gdrive_upload_progress', {
+        filename: targetFilename,
+        step: 'uploading_cover',
+        percent: 94,
+        message: `Video terunggah. Mengunggah companion cover thumbnail (${candidateCover})...`
+      });
+      try {
+        coverResult = await uploadCompanionFileToDrive({
+          filename: candidateCover,
+          fullPath: coverFullPath,
+          mimeType: 'image/jpeg',
+          label: 'COVER',
+          webhookUrl,
+          cfg,
+          appendLog
+        });
+      } catch (coverErr) {
+        appendLog(`[GDRIVE WARN] Gagal mengunggah cover ${candidateCover}: ${coverErr.message}`);
+      }
+    }
+
+    let captionResult = null;
+    const captionFilename = `${path.basename(targetFilename, path.extname(targetFilename))}-caption.txt`;
+    if (resolvedCaption) {
+      const tempCaptionPath = path.join(os.tmpdir(), `gdrive_cap_${Date.now()}_${Math.random().toString(36).slice(2)}.txt`);
+      try {
+        fs.writeFileSync(tempCaptionPath, resolvedCaption, 'utf-8');
+        broadcast('gdrive_upload_progress', {
+          filename: targetFilename,
+          step: 'uploading_caption',
+          percent: 97,
+          message: `Mengunggah caption pendamping (${captionFilename})...`
+        });
+        captionResult = await uploadCompanionFileToDrive({
+          filename: captionFilename,
+          fullPath: tempCaptionPath,
+          mimeType: 'text/plain',
+          label: 'CAPTION',
+          webhookUrl,
+          cfg,
+          appendLog
+        });
+      } catch (capErr) {
+        appendLog(`[GDRIVE WARN] Gagal mengunggah caption ${captionFilename}: ${capErr.message}`);
+      } finally {
+        try { if (fs.existsSync(tempCaptionPath)) fs.unlinkSync(tempCaptionPath); } catch (_) { }
+      }
+    }
+
+    const coverUploaded = Boolean(coverResult?.success);
+    const captionUploaded = Boolean(captionResult?.success);
+    const extras = [];
+    if (coverUploaded) extras.push('Cover');
+    if (captionUploaded) extras.push('Caption');
+    const doneMsg = extras.length > 0
+      ? `Selesai! Video & ${extras.join(' + ')} berhasil disimpan di Google Drive.`
+      : defaultDoneMsg;
+
+    saveUploadHistoryEntry(targetFilename, {
+      url: finalUrl,
+      coverUrl: coverResult?.url || null,
+      coverUploaded,
+      captionUrl: captionResult?.url || null,
+      captionUploaded,
+      folderUrl: cfg.gdriveFolderUrl
+    });
+
+    broadcast('gdrive_upload_progress', {
+      filename: targetFilename,
+      step: 'done',
+      percent: 100,
+      message: doneMsg,
+      url: finalUrl,
+      coverUrl: coverResult?.url || null,
+      coverFilename: hasCover ? candidateCover : null,
+      coverUploaded,
+      captionUrl: captionResult?.url || null,
+      captionFilename: captionUploaded ? captionFilename : null,
+      captionUploaded,
+      folderUrl: cfg.gdriveFolderUrl
+    });
+
+    return {
+      success: true,
+      filename: targetFilename,
+      url: finalUrl,
+      coverUrl: coverResult?.url || null,
+      coverUploaded,
+      captionUrl: captionResult?.url || null,
+      captionUploaded,
+      folderUrl: cfg.gdriveFolderUrl
+    };
   }
 
   // 9j. API: Direct Upload Video to Google Drive via Apps Script Webhook
@@ -1452,7 +1623,7 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => { body += chunk; });
     req.on('end', async () => {
       try {
-        const { videoName } = JSON.parse(body || '{}');
+        const { videoName, caption: reqCaption } = JSON.parse(body || '{}');
         const targetFilename = path.basename(videoName || '');
         if (!targetFilename) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -1562,53 +1733,25 @@ const server = http.createServer(async (req, res) => {
 
           appendLog(`[GDRIVE SUKSES] File asli 100% (${originalMB} MB) berhasil diunggah tanpa kompresi! Link: ${finalUrl}`);
 
-          let coverResult = null;
-          if (hasCover) {
-            broadcast('gdrive_upload_progress', {
-              filename: targetFilename,
-              step: 'uploading_cover',
-              percent: 94,
-              message: `Video terunggah. Mengunggah companion cover thumbnail (${candidateCover})...`
-            });
-            try {
-              coverResult = await uploadCompanionCoverToDrive({
-                coverFilename: candidateCover,
-                coverFullPath,
-                webhookUrl,
-                cfg,
-                appendLog
-              });
-            } catch (coverErr) {
-              appendLog(`[GDRIVE WARN] Gagal mengunggah cover ${candidateCover}: ${coverErr.message}`);
-            }
-          }
-
-          const doneMsg = (coverResult && coverResult.success)
-            ? `Selesai! Video & Cover Thumbnail berhasil disimpan di Google Drive.`
-            : `Selesai! File asli 100% (${originalMB} MB) tersimpan di Google Drive tanpa kompresi.`;
-
-          broadcast('gdrive_upload_progress', {
-            filename: targetFilename,
-            step: 'done',
-            percent: 100,
-            message: doneMsg,
-            url: finalUrl,
-            coverUrl: coverResult?.url || null,
-            coverFilename: hasCover ? candidateCover : null,
-            coverUploaded: Boolean(coverResult?.success),
-            folderUrl: cfg.gdriveFolderUrl
+          const resolvedCaption = resolveCaptionForVideo(targetFilename, reqCaption);
+          const payload = await finalizeGDriveUpload({
+            targetFilename,
+            finalUrl,
+            hasCover,
+            candidateCover,
+            coverFullPath,
+            resolvedCaption,
+            webhookUrl,
+            cfg,
+            appendLog,
+            defaultDoneMsg: `Selesai! File asli 100% (${originalMB} MB) tersimpan di Google Drive tanpa kompresi.`
           });
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
-            success: true,
-            filename: targetFilename,
+            ...payload,
             uncompressed: true,
-            sizeMB: originalMB,
-            url: finalUrl,
-            coverUrl: coverResult?.url || null,
-            coverUploaded: Boolean(coverResult?.success),
-            folderUrl: cfg.gdriveFolderUrl
+            sizeMB: originalMB
           }));
           return;
         }
@@ -1704,52 +1847,22 @@ const server = http.createServer(async (req, res) => {
           const finalUrl = uploadData.url || uploadData.fileUrl || cfg.gdriveFolderUrl;
           appendLog(`[GDRIVE SUKSES] Video ${targetFilename} berhasil diunggah! Link: ${finalUrl}`);
 
-          let coverResult = null;
-          if (hasCover) {
-            broadcast('gdrive_upload_progress', {
-              filename: targetFilename,
-              step: 'uploading_cover',
-              percent: 94,
-              message: `Video terunggah. Mengunggah companion cover thumbnail (${candidateCover})...`
-            });
-            try {
-              coverResult = await uploadCompanionCoverToDrive({
-                coverFilename: candidateCover,
-                coverFullPath,
-                webhookUrl,
-                cfg,
-                appendLog
-              });
-            } catch (coverErr) {
-              appendLog(`[GDRIVE WARN] Gagal mengunggah cover ${candidateCover}: ${coverErr.message}`);
-            }
-          }
-
-          const doneMsg = (coverResult && coverResult.success)
-            ? `Selesai! Video & Cover Thumbnail berhasil disimpan di Google Drive.`
-            : `Selesai! Video berhasil disimpan di Google Drive.`;
-
-          broadcast('gdrive_upload_progress', {
-            filename: targetFilename,
-            step: 'done',
-            percent: 100,
-            message: doneMsg,
-            url: finalUrl,
-            coverUrl: coverResult?.url || null,
-            coverFilename: hasCover ? candidateCover : null,
-            coverUploaded: Boolean(coverResult?.success),
-            folderUrl: cfg.gdriveFolderUrl
+          const resolvedCaption = resolveCaptionForVideo(targetFilename, reqCaption);
+          const payload = await finalizeGDriveUpload({
+            targetFilename,
+            finalUrl,
+            hasCover,
+            candidateCover,
+            coverFullPath,
+            resolvedCaption,
+            webhookUrl,
+            cfg,
+            appendLog,
+            defaultDoneMsg: `Selesai! Video berhasil disimpan di Google Drive.`
           });
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({
-            success: true,
-            filename: targetFilename,
-            url: finalUrl,
-            coverUrl: coverResult?.url || null,
-            coverUploaded: Boolean(coverResult?.success),
-            folderUrl: cfg.gdriveFolderUrl
-          }));
+          res.end(JSON.stringify(payload));
         } else {
           throw new Error(uploadData.error || uploadData.message || 'Gagal mengunggah ke Google Drive');
         }
@@ -2451,6 +2564,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/upload-history' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(loadUploadHistory()));
+    return;
+  }
+
+  if (pathname === '/api/cleanup-temp' && req.method === 'POST') {
+    const result = cleanupRemotionTemp({
+      maxAgeMs: 0, // hapus semua temp remotion yang sudah tidak dipakai
+      onLog: (msg) => appendLog(msg)
+    });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, ...result }));
+    return;
+  }
+
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('404 Not Found');
 });
@@ -2471,4 +2600,10 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`🌐 Server berjalan di: http://localhost:${PORT}`);
   console.log(`   (Port 3000 bebas untuk Remotion Studio: npm run dev)`);
   console.log(`======================================================\n`);
+  setTimeout(() => {
+    cleanupRemotionTemp({
+      maxAgeMs: 2 * 60 * 60 * 1000, // bersihkan temp > 2 jam saat startup
+      onLog: (msg) => console.log(msg)
+    });
+  }, 4000);
 });

@@ -81,12 +81,84 @@ export function invalidateBundle() {
   lastBundleBuiltTime = 0;
 }
 
+function getDirSizeBytes(dirPath) {
+  let total = 0;
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    for (const e of entries) {
+      const p = path.join(dirPath, e.name);
+      if (e.isDirectory()) total += getDirSizeBytes(p);
+      else total += fs.statSync(p).size;
+    }
+  } catch (_) { }
+  return total;
+}
+
+/**
+ * Membersihkan folder sementara Remotion (remotion-webpack-bundle-* & remotion_previews lama)
+ * di direktori temp OS agar penyimpanan C: tidak penuh.
+ */
+export function cleanupRemotionTemp({ maxAgeMs = 1000 * 60 * 60 * 2, onLog = () => {} } = {}) {
+  const tmpDir = os.tmpdir();
+  const now = Date.now();
+  let deletedCount = 0;
+  let freedBytes = 0;
+
+  try {
+    const entries = fs.readdirSync(tmpDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(tmpDir, entry.name);
+      if (cachedBundleLocation && path.resolve(fullPath) === path.resolve(cachedBundleLocation)) {
+        continue;
+      }
+
+      if (entry.isDirectory() && entry.name.startsWith('remotion-webpack-bundle-')) {
+        try {
+          const st = fs.statSync(fullPath);
+          if (now - st.mtimeMs >= maxAgeMs) {
+            const sz = getDirSizeBytes(fullPath);
+            fs.rmSync(fullPath, { recursive: true, force: true });
+            deletedCount++;
+            freedBytes += sz;
+          }
+        } catch (_) { }
+      }
+    }
+
+    // Bersihkan pratinjau still yang lebih tua dari maxAgeMs (atau minimal > 15 menit)
+    const previewDir = path.join(tmpDir, 'remotion_previews');
+    if (fs.existsSync(previewDir)) {
+      const pEntries = fs.readdirSync(previewDir, { withFileTypes: true });
+      const previewMaxAge = Math.min(maxAgeMs, 1000 * 60 * 30);
+      for (const pe of pEntries) {
+        if (!pe.isFile()) continue;
+        const pPath = path.join(previewDir, pe.name);
+        try {
+          const st = fs.statSync(pPath);
+          if (now - st.mtimeMs >= previewMaxAge) {
+            freedBytes += st.size;
+            fs.unlinkSync(pPath);
+            deletedCount++;
+          }
+        } catch (_) { }
+      }
+    }
+  } catch (_) { }
+
+  const freedMB = +(freedBytes / (1024 * 1024)).toFixed(1);
+  if (deletedCount > 0) {
+    onLog(`[CLEANUP] Membersihkan ${deletedCount} cache temp Remotion (${freedMB} MB dibebaskan).`);
+  }
+  return { deletedCount, freedBytes, freedMB };
+}
+
 export async function getOrBuildBundle(onLog = console.log, forceRebuild = false) {
   const needsRebuild = forceRebuild || !cachedBundleLocation || !fs.existsSync(cachedBundleLocation) || hasSrcFilesChanged(lastBundleBuiltTime);
   if (!needsRebuild) {
     syncPublicToBundle(cachedBundleLocation, onLog);
     return cachedBundleLocation;
   }
+  const prevBundle = cachedBundleLocation;
   onLog('[BUNDLER] Mempersiapkan bundle Remotion (Webpack/Rspack)...');
   const bundleLocation = await bundle({
     entryPoint: ENTRY_POINT,
@@ -98,6 +170,10 @@ export async function getOrBuildBundle(onLog = console.log, forceRebuild = false
   });
   cachedBundleLocation = bundleLocation;
   lastBundleBuiltTime = Date.now();
+  if (prevBundle && prevBundle !== bundleLocation && fs.existsSync(prevBundle)) {
+    try { fs.rmSync(prevBundle, { recursive: true, force: true }); } catch (_) { }
+  }
+  cleanupRemotionTemp({ maxAgeMs: 1000 * 60 * 60 * 2, onLog });
   syncPublicToBundle(bundleLocation, onLog);
   onLog('[BUNDLER] Bundle berhasil dibuat.');
   return bundleLocation;
