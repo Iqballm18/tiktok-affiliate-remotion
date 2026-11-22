@@ -17,7 +17,7 @@ interface Waypoint {
 }
 
 interface WatermarkItem {
-    platform: 'tiktok' | 'instagram' | 'none';
+    platform: 'tiktok' | 'instagram' | 'shopee' | 'none';
     handle: string;
 }
 
@@ -57,20 +57,48 @@ export const InstagramIcon: React.FC<{ size?: number; color?: string }> = ({
     </svg>
 );
 
+export const ShopeeIcon: React.FC<{ size?: number; color?: string }> = ({
+    size = 20,
+    color = '#FFFFFF',
+}) => (
+    <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+    >
+        <path
+            d="M8.5 7V6a3.5 3.5 0 0 1 7 0v1"
+            stroke={color}
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <path
+            d="M4.2 7.5h15.6l-1.1 12.6a1.8 1.8 0 0 1-1.8 1.65H7.1a1.8 1.8 0 0 1-1.8-1.65L4.2 7.5z"
+            fill={color}
+        />
+        <path
+            d="M14.4 11.4c-.4-.4-1.15-.65-2.1-.65-1.3 0-2.15.62-2.15 1.6 0 1.02.85 1.4 2.15 1.72 1.15.28 1.65.54 1.65 1.12 0 .62-.62 1.02-1.58 1.02-.88 0-1.65-.32-2.18-.85l-.88 1.12c.68.68 1.72 1.08 2.98 1.08 1.85 0 3.02-.92 3.02-2.32 0-1.22-.85-1.78-2.42-2.18-1.08-.26-1.45-.48-1.45-.94 0-.44.42-.72 1.12-.72.68 0 1.25.2 1.72.58l.72-1.08z"
+            fill="#121018"
+        />
+    </svg>
+);
+
 export function parseWatermarkItems(rawText: string): WatermarkItem[] {
     const raw = (rawText || '').trim();
     if (!raw) {
         return [
-            { platform: 'tiktok', handle: 'inanikma_' },
-            { platform: 'instagram', handle: 'spillbyna_' },
+            { platform: 'tiktok', handle: 'spillbyna' },
+            { platform: 'shopee', handle: 'inanikmatul01' },
         ];
     }
 
     const parts = raw.split('|').map((p) => p.trim()).filter(Boolean);
     if (parts.length === 0) {
         return [
-            { platform: 'tiktok', handle: 'inanikma_' },
-            { platform: 'instagram', handle: 'spillbyna_' },
+            { platform: 'tiktok', handle: 'spillbyna' },
+            { platform: 'shopee', handle: 'inanikmatul01' },
         ];
     }
 
@@ -78,9 +106,9 @@ export function parseWatermarkItems(rawText: string): WatermarkItem[] {
         const clean = part.replace(/^@/, '').trim();
         const lower = clean.toLowerCase();
 
-        // 1. Akun TikTok (khusus @inanikma_ atau prefix tiktok/tt)
+        // 1. Akun TikTok (spillbyna atau prefix tt:/tiktok:)
         if (
-            lower.includes('inanikma') ||
+            lower.includes('spillbyna') ||
             lower.startsWith('tt:') ||
             lower.startsWith('tiktok:')
         ) {
@@ -91,9 +119,22 @@ export function parseWatermarkItems(rawText: string): WatermarkItem[] {
             return { platform: 'tiktok', handle };
         }
 
-        // 2. Akun Instagram (khusus @spillbyna_ atau prefix ig/instagram)
+        // 2. Akun Shopee (inanikmatul01 / inanikma atau prefix sp:/shopee:)
         if (
-            lower.includes('spillbyna') ||
+            lower.includes('inanikmat') ||
+            lower.includes('inanikma') ||
+            lower.startsWith('sp:') ||
+            lower.startsWith('shopee:')
+        ) {
+            const handle = clean
+                .replace(/^(sp|shopee):/i, '')
+                .replace(/^@/, '')
+                .trim();
+            return { platform: 'shopee', handle };
+        }
+
+        // 3. Akun Instagram (opsional via prefix ig:/instagram:)
+        if (
             lower.startsWith('ig:') ||
             lower.startsWith('instagram:')
         ) {
@@ -104,13 +145,13 @@ export function parseWatermarkItems(rawText: string): WatermarkItem[] {
             return { platform: 'instagram', handle };
         }
 
-        // 3. Fallback jika ada format lain
+        // 4. Fallback jika ada format lain
         return { platform: 'none', handle: part };
     });
 }
 
 export const FloatingWatermark: React.FC<FloatingWatermarkProps> = ({
-    text = '@inanikma_ | @spillbyna_',
+    text = '@spillbyna | @inanikmatul01',
     opacity = 0.7,
     position = 'floating',
 }) => {
@@ -239,6 +280,9 @@ function renderWatermarkBadge(
                     >
                         {item.platform === 'tiktok' && (
                             <TikTokIcon size={20} color="#FFFFFF" />
+                        )}
+                        {item.platform === 'shopee' && (
+                            <ShopeeIcon size={20} color="#FFFFFF" />
                         )}
                         {item.platform === 'instagram' && (
                             <InstagramIcon size={20} color="#FFFFFF" />

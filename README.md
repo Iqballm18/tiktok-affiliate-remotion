@@ -181,10 +181,11 @@ Setiap produk disimpan sebagai satu file JSON independen di folder `products/`:
 
 | Parameter | Pilihan Nilai | Keterangan |
 | :--- | :--- | :--- |
-| `cardStyle` / `hookStyle` | `sticky_note`, `receipt`, `chat_thread`, `type_stack`, `label_tape`, `quiet_serif` | Layout kartu hook & headline editorial |
+| `preset` | `beauty_skincare`, `flash_sale_viral`, `problem_solution`, `health_supplement`, `gadget_tech`, `fashion_lifestyle`, `food_kuliner`, `muslim_hampers`, `skincare`, `gadget`, `flash_sale`, `lifestyle`, `household`, `parenting`, `podcast_hook`, `luxury` | Paket preset terintegrasi (mendukung `v1`, `v2`, `v3`) |
+| `cardStyle` / `hookStyle` | Flat: `marker_highlight`, `stack_slam`, `struck_swap`, `tilt_card`, `mask_wipe`, `split_versus`, `floating_tag` · Klasik: `sticky_note`, `receipt`, `chat_thread`, `type_stack`, `label_tape`, `quiet_serif` | Layout kartu hook & headline Babak 1–3 |
 | `hookVariant` | `v1`, `v2`, `v3` | Varian gerak/animasi per kartu |
-| `captionStyle` / `subtitleStyle` | `highlighter_bar`, `pop_scale`, `pill_bounce`, `marker_sweep`, `minimal_clean`, `outline_pop` | Gaya animasi subtitle karaoke sinkron kata |
-| `palette` | `tech_blue`, `sale_yellow`, `beauty_rose`, `eco_green`, `editorial`, `luxury_dark`, dll. | Palet warna harmonis video |
+| `captionStyle` / `subtitleStyle` | Flat: `karaoke_block`, `pop_scale`, `highlighter_bar`, `fill_sweep`, `typewriter_band`, `sticker_label`, `glass_pill` · Klasik: `outline_pop`, `marker_sweep`, `reveal`, `plate` | Gaya animasi subtitle karaoke sinkron kata + highlight angka otomatis |
+| `palette` | `pastel_rose`, `fresh_mint`, `sale_yellow`, `tech_blue`, `ink_mono`, `warm_kuliner`, `sage_hampers`, `editorial`, `flash_sale`, `pastel`, `minimal` | Palet warna harmonis (hook, subtitle, progress bar, transisi, & CTA) |
 | `ctaPlatform` | `tiktok`, `instagram`, `both`, `universal` | Penyesuaian ikon, badge, dan teks CTA penunjuk keranjang |
 | `watermarkPosition` | `floating`, `top_left`, `top_right`, `mid_left`, `mid_right` | Mode posisi watermark akun media sosial |
 | `coverTemplate` | `hook_card`, `big_headline`, `promo_split` | Template visual untuk cover thumbnail 1080x1920 |

@@ -31,7 +31,8 @@ export type SubtitleStyleName =
   | 'highlighter_bar'
   | 'fill_sweep'
   | 'typewriter_band'
-  | 'sticker_label';
+  | 'sticker_label'
+  | 'glass_pill';
 
 export interface RawCaptionWord {
   text?: string;
@@ -107,7 +108,7 @@ const useSubtitleState = (words: SubWord[], maxWords: number) => {
   for (let i = 0; i < chunks.length; i++) {
     const c = chunks[i];
     const next = chunks[i + 1];
-    const hideAt = next ? Math.min(c.end + 0.35, next.start) : c.end + 0.35;
+    const hideAt = next ? Math.min(c.end + 0.65, next.start) : c.end + 0.65;
     if (t >= c.start - 0.04 && t < hideAt) {
       ci = i;
       break;
@@ -121,6 +122,20 @@ const useSubtitleState = (words: SubWord[], maxWords: number) => {
     if (t >= w.start) wordIndex = i;
   });
   return {chunk, wordIndex, t, frame, fps};
+};
+
+const chunkSpring = (s: NonNullable<ReturnType<typeof useSubtitleState>>) =>
+  spring({
+    frame: Math.max(0, Math.round((s.t - s.chunk.start) * s.fps)),
+    fps: s.fps,
+    config: {damping: 16, stiffness: 280, mass: 0.5},
+  });
+
+const isSpecToken = (text: string): boolean => {
+  const clean = text.replace(/[.,!?()"':;-]/g, '').trim();
+  if (!clean) return false;
+  if (/\d/.test(clean)) return true;
+  return /^(rp|gratis|diskon|promo|bpom|halal|ori|original|garansi|viral|terlaris|best)$/i.test(clean);
 };
 
 type State = NonNullable<ReturnType<typeof useSubtitleState>>;
@@ -177,33 +192,45 @@ export const KaraokeBlockSubtitle: React.FC<SubtitleProps> = ({
 }) => {
   const s = useSubtitleState(words, maxWords);
   if (!s) return null;
+  const cIn = chunkSpring(s);
   return (
     <Layer bottom={bottom}>
-      <Row>
-        {s.chunk.words.map((w, i) => {
-          const active = i === s.wordIndex;
-          const p = active ? Math.min(1.15, wordSpring(s, w)) : 0;
-          return (
-            <span
-              key={i}
-              style={{
-                fontSize,
-                fontWeight: 900,
-                lineHeight: 1.15,
-                textTransform: uppercase ? 'uppercase' : 'none',
-                padding: '2px 12px',
-                borderRadius: 10,
-                color: active ? palette.accentInk : palette.paper,
-                background: active ? palette.accent : 'transparent',
-                transform: active ? `scale(${1 + 0.08 * p}) rotate(${-2 * p}deg)` : 'none',
-                ...(active ? {} : outline(fontSize * 0.11, palette.ink)),
-              }}
-            >
-              {w.text}
-            </span>
-          );
-        })}
-      </Row>
+      <div
+        style={{
+          transform: `translateY(${(1 - cIn) * 10}px) scale(${0.96 + 0.04 * cIn})`,
+          opacity: Math.min(1, cIn * 1.35),
+        }}
+      >
+        <Row>
+          {s.chunk.words.map((w, i) => {
+            const active = i === s.wordIndex;
+            const spec = !active && isSpecToken(w.text);
+            const p = active ? Math.min(1.15, wordSpring(s, w)) : 0;
+            return (
+              <span
+                key={i}
+                style={{
+                  fontSize,
+                  fontWeight: 900,
+                  lineHeight: 1.15,
+                  textTransform: uppercase ? 'uppercase' : 'none',
+                  padding: '2px 12px',
+                  borderRadius: 10,
+                  color: active ? palette.accentInk : spec ? palette.accent : palette.paper,
+                  background: active ? palette.accent : 'transparent',
+                  textDecoration: spec ? 'underline' : 'none',
+                  textDecorationThickness: spec ? '3px' : undefined,
+                  textUnderlineOffset: spec ? '5px' : undefined,
+                  transform: active ? `scale(${1 + 0.08 * p}) rotate(${-2 * p}deg)` : 'none',
+                  ...(active ? {} : outline(fontSize * 0.11, palette.ink)),
+                }}
+              >
+                {w.text}
+              </span>
+            );
+          })}
+        </Row>
+      </div>
     </Layer>
   );
 };
@@ -263,6 +290,7 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
 }) => {
   const s = useSubtitleState(words, maxWords);
   if (!s) return null;
+  const cIn = chunkSpring(s);
   return (
     <Layer bottom={bottom}>
       <div
@@ -271,15 +299,18 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
           borderRadius: 16,
           padding: '14px 22px',
           maxWidth: '100%',
+          transform: `translateY(${(1 - cIn) * 10}px) scale(${0.96 + 0.04 * cIn})`,
+          opacity: Math.min(1, cIn * 1.35),
         }}
       >
         <Row gap="4px 10px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
+            const spec = !active && isSpecToken(w.text);
             const p = active ? Math.min(1, wordSpring(s, w, 16, 240)) : i < s.wordIndex ? 1 : 0;
             const wordBaseStyle: React.CSSProperties = {
               fontSize,
-              fontWeight: 800,
+              fontWeight: spec || active ? 900 : 800,
               lineHeight: 1.2,
               textTransform: uppercase ? 'uppercase' : 'none',
               padding: '2px 8px',
@@ -295,7 +326,16 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
                   opacity: i > s.wordIndex ? 0.6 : 1,
                 }}
               >
-                <span style={{...wordBaseStyle, color: palette.paper, display: 'inline-block'}}>
+                <span
+                  style={{
+                    ...wordBaseStyle,
+                    color: spec ? palette.accent : palette.paper,
+                    textDecoration: spec ? 'underline' : 'none',
+                    textDecorationThickness: spec ? '3px' : undefined,
+                    textUnderlineOffset: spec ? '4px' : undefined,
+                    display: 'inline-block',
+                  }}
+                >
                   {w.text}
                 </span>
                 {active && (
@@ -340,6 +380,7 @@ export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
 }) => {
   const s = useSubtitleState(words, maxWords);
   if (!s) return null;
+  const cIn = chunkSpring(s);
   const base: React.CSSProperties = {
     fontSize,
     fontWeight: 900,
@@ -350,32 +391,39 @@ export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
   };
   return (
     <Layer bottom={bottom}>
-      <Row gap="6px 18px">
-        {s.chunk.words.map((w, i) => {
-          const dur = Math.max(w.end - w.start, 0.14);
-          const progress = interpolate((s.t - w.start) / dur, [0, 1], [0, 1], {
-            extrapolateLeft: 'clamp',
-            extrapolateRight: 'clamp',
-          });
-          return (
-            <span key={i} style={{position: 'relative', display: 'inline-block'}}>
-              <span style={{...base, color: palette.paper}}>{w.text}</span>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  width: `${progress * 100}%`,
-                  overflow: 'hidden',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span style={{...base, color: palette.accent}}>{w.text}</span>
+      <div
+        style={{
+          transform: `translateY(${(1 - cIn) * 10}px) scale(${0.96 + 0.04 * cIn})`,
+          opacity: Math.min(1, cIn * 1.35),
+        }}
+      >
+        <Row gap="6px 18px">
+          {s.chunk.words.map((w, i) => {
+            const dur = Math.max(w.end - w.start, 0.14);
+            const progress = interpolate((s.t - w.start) / dur, [0, 1], [0, 1], {
+              extrapolateLeft: 'clamp',
+              extrapolateRight: 'clamp',
+            });
+            return (
+              <span key={i} style={{position: 'relative', display: 'inline-block'}}>
+                <span style={{...base, color: palette.paper}}>{w.text}</span>
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: `${progress * 100}%`,
+                    overflow: 'hidden',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  <span style={{...base, color: palette.accent}}>{w.text}</span>
+                </span>
               </span>
-            </span>
-          );
-        })}
-      </Row>
+            );
+          })}
+        </Row>
+      </div>
     </Layer>
   );
 };
@@ -486,6 +534,7 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
         <Row gap="2px 10px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
+            const spec = !active && isSpecToken(w.text);
             return (
               <span
                 key={i}
@@ -496,6 +545,9 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
                   textTransform: uppercase ? 'uppercase' : 'none',
                   color: active ? palette.accentInk : palette.ink,
                   background: active ? palette.accent : 'transparent',
+                  textDecoration: spec ? 'underline' : 'none',
+                  textDecorationThickness: spec ? '3px' : undefined,
+                  textUnderlineOffset: spec ? '4px' : undefined,
                   borderRadius: 6,
                   padding: '2px 8px',
                 }}
@@ -512,6 +564,83 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
 
 /* ------------------------------------------------------------------ */
 
+/* ============================================================================
+ * 7. GLASS PILL — kapsul kaca buram (frosted glass) + active word pill
+ *    Cocok untuk: kuliner, hampers, lifestyle estetik, ASMR.
+ * ==========================================================================*/
+export const GlassPillSubtitle: React.FC<SubtitleProps> = ({
+  words,
+  palette,
+  bottom = SAFE.bottom,
+  fontSize = 44,
+  maxWords = 4,
+  uppercase = false,
+}) => {
+  const s = useSubtitleState(words, maxWords);
+  if (!s) return null;
+  const cIn = chunkSpring(s);
+
+  return (
+    <Layer bottom={bottom}>
+      <div
+        style={{
+          display: 'inline-flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '8px 10px',
+          maxWidth: '100%',
+          padding: '14px 24px',
+          borderRadius: 999,
+          backgroundColor: 'rgba(16, 14, 12, 0.68)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(255, 255, 255, 0.22)',
+          boxShadow: '0 14px 34px rgba(0, 0, 0, 0.32)',
+          transform: `translateY(${(1 - cIn) * 12}px) scale(${0.95 + 0.05 * cIn})`,
+          opacity: Math.min(1, cIn * 1.35),
+        }}
+      >
+        {s.chunk.words.map((w, i) => {
+          const active = i === s.wordIndex;
+          const passed = i < s.wordIndex;
+          const spec = !active && isSpecToken(w.text);
+          const p = active ? Math.min(1.12, wordSpring(s, w)) : 0;
+          return (
+            <span
+              key={i}
+              style={{
+                fontFamily: FONT.display,
+                fontSize,
+                fontWeight: active || spec ? 900 : 700,
+                lineHeight: 1.15,
+                textTransform: uppercase ? 'uppercase' : 'none',
+                padding: active ? '4px 16px' : '2px 6px',
+                borderRadius: 999,
+                color: active
+                  ? palette.accentInk
+                  : spec
+                  ? palette.accent
+                  : passed
+                  ? 'rgba(255,255,255,0.95)'
+                  : 'rgba(255,255,255,0.72)',
+                background: active ? palette.accent : 'transparent',
+                boxShadow: active ? '0 4px 14px rgba(0,0,0,0.22)' : 'none',
+                textDecoration: spec ? 'underline' : 'none',
+                textDecorationThickness: spec ? '3px' : undefined,
+                textUnderlineOffset: spec ? '4px' : undefined,
+                transform: active ? `scale(${1 + 0.06 * p})` : 'none',
+              }}
+            >
+              {w.text}
+            </span>
+          );
+        })}
+      </div>
+    </Layer>
+  );
+};
+
 export const SubtitleStyles: Record<SubtitleStyleName, React.FC<SubtitleProps>> = {
   karaoke_block: KaraokeBlockSubtitle,
   pop_scale: PopScaleSubtitle,
@@ -519,6 +648,7 @@ export const SubtitleStyles: Record<SubtitleStyleName, React.FC<SubtitleProps>> 
   fill_sweep: FillSweepSubtitle,
   typewriter_band: TypewriterBandSubtitle,
   sticker_label: StickerLabelSubtitle,
+  glass_pill: GlassPillSubtitle,
 };
 
 export const AffiliateSubtitles: React.FC<SubtitleProps & {variant: SubtitleStyleName}> = ({

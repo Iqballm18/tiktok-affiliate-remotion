@@ -15,7 +15,9 @@ export type PresetId =
     | 'household'
     | 'parenting'
     | 'podcast_hook'
-    | 'luxury';
+    | 'luxury'
+    | 'food_kuliner'
+    | 'muslim_hampers';
 
 export type VariantVersion = 'v1' | 'v2' | 'v3';
 
@@ -41,6 +43,9 @@ export interface PresetVersionConfig {
     hookTransition: string;
     clipTransition: string;
     transitionVariant: VariantVersion;
+    palette?: string;
+    hookStyle?: string;
+    subtitleStyle?: string;
     sfxPreset?: 'viral' | 'beauty' | 'tech' | 'minimal';
 }
 
@@ -57,6 +62,9 @@ export interface DesignPreset {
     hookTransition: string;
     clipTransition: string;
     transitionVariant: VariantVersion;
+    palette?: string;
+    hookStyle?: string;
+    subtitleStyle?: string;
     versions: Record<VariantVersion, PresetVersionConfig>;
 }
 
@@ -508,29 +516,188 @@ export const PRESETS: Record<PresetId, DesignPreset> = {
             },
         },
     },
+    food_kuliner: {
+        id: 'food_kuliner',
+        name: 'Food, Snack & Kuliner',
+        description: 'Nuansa hangat menggugah selera dengan Floating Tag e-commerce dan subtitle Glass Pill transparan.',
+        themeStyle: 'viral',
+        cardStyle: 'FloatingTag',
+        hookVariant: 'v1',
+        badgeStyle: 'pill',
+        captionStyle: 'glass_pill',
+        captionVariant: 'v1',
+        hookTransition: 'whip_pan',
+        clipTransition: 'blur_zoom',
+        transitionVariant: 'v1',
+        palette: 'warm_kuliner',
+        hookStyle: 'floating_tag',
+        subtitleStyle: 'glass_pill',
+        versions: {
+            v1: {
+                label: 'v1 — Warm Appetite Tag & Glass Pill',
+                description: 'Kartu harga/ulasan melayang bernuansa saffron-terracotta dengan kapsul subtitle kaca buram.',
+                themeStyle: 'viral',
+                cardStyle: 'FloatingTag',
+                hookVariant: 'v1',
+                badgeStyle: 'pill',
+                captionStyle: 'glass_pill',
+                captionVariant: 'v1',
+                hookTransition: 'whip_pan',
+                clipTransition: 'blur_zoom',
+                transitionVariant: 'v1',
+                palette: 'warm_kuliner',
+                hookStyle: 'floating_tag',
+                subtitleStyle: 'glass_pill',
+            },
+            v2: {
+                label: 'v2 — Tilt Review Card & Karaoke Block',
+                description: 'Kartu review jujur miring dengan sorotan kata aktif tegas untuk video mukbang/review cepat.',
+                themeStyle: 'viral',
+                cardStyle: 'TiltCard',
+                hookVariant: 'v2',
+                badgeStyle: 'marker',
+                captionStyle: 'karaoke_block',
+                captionVariant: 'v2',
+                hookTransition: 'flash_zoom',
+                clipTransition: 'whip_pan',
+                transitionVariant: 'v2',
+                palette: 'warm_kuliner',
+                hookStyle: 'tilt_card',
+                subtitleStyle: 'karaoke_block',
+            },
+            v3: {
+                label: 'v3 — Promo Slam & Pop Scale',
+                description: 'Gaya promo kuliner/bundling hemat dengan energi tinggi.',
+                themeStyle: 'viral',
+                cardStyle: 'StackSlam',
+                hookVariant: 'v3',
+                badgeStyle: 'stamp',
+                captionStyle: 'pop_scale',
+                captionVariant: 'v3',
+                hookTransition: 'flash_zoom',
+                clipTransition: 'flash_zoom',
+                transitionVariant: 'v3',
+                palette: 'warm_kuliner',
+                hookStyle: 'stack_slam',
+                subtitleStyle: 'pop_scale',
+            },
+        },
+    },
+    muslim_hampers: {
+        id: 'muslim_hampers',
+        name: 'Muslim Fashion & Hampers',
+        description: 'Palet hijau sage & emas hangat dengan tipografi bersih untuk fashion muslim, mukena, dan hampers.',
+        themeStyle: 'pastel',
+        cardStyle: 'FloatingTag',
+        hookVariant: 'v1',
+        badgeStyle: 'glass',
+        captionStyle: 'glass_pill',
+        captionVariant: 'v1',
+        hookTransition: 'light_leak',
+        clipTransition: 'blur_zoom',
+        transitionVariant: 'v1',
+        palette: 'sage_hampers',
+        hookStyle: 'floating_tag',
+        subtitleStyle: 'glass_pill',
+        versions: {
+            v1: {
+                label: 'v1 — Sage Boutique Tag & Glass Pill',
+                description: 'Label butik mengambang dengan aksen emas hangat dan subtitle kapsul kaca lembut.',
+                themeStyle: 'pastel',
+                cardStyle: 'FloatingTag',
+                hookVariant: 'v1',
+                badgeStyle: 'glass',
+                captionStyle: 'glass_pill',
+                captionVariant: 'v1',
+                hookTransition: 'light_leak',
+                clipTransition: 'blur_zoom',
+                transitionVariant: 'v1',
+                palette: 'sage_hampers',
+                hookStyle: 'floating_tag',
+                subtitleStyle: 'glass_pill',
+            },
+            v2: {
+                label: 'v2 — Editorial Mask Wipe & Highlighter',
+                description: 'Tirai editorial membuka headline dengan sorotan stabilo lembut.',
+                themeStyle: 'pastel',
+                cardStyle: 'MaskWipe',
+                hookVariant: 'v2',
+                badgeStyle: 'marker',
+                captionStyle: 'highlighter_bar',
+                captionVariant: 'v2',
+                hookTransition: 'split_wipe',
+                clipTransition: 'light_leak',
+                transitionVariant: 'v2',
+                palette: 'sage_hampers',
+                hookStyle: 'mask_wipe',
+                subtitleStyle: 'highlighter_bar',
+            },
+            v3: {
+                label: 'v3 — Catalog Typewriter & Fill Sweep',
+                description: 'Tampilan katalog koleksi Lebaran/hampers dengan sapuan warna teks halus.',
+                themeStyle: 'minimal',
+                cardStyle: 'MarkerHighlight',
+                hookVariant: 'v3',
+                badgeStyle: 'outline',
+                captionStyle: 'fill_sweep',
+                captionVariant: 'v3',
+                hookTransition: 'shutter',
+                clipTransition: 'split_wipe',
+                transitionVariant: 'v3',
+                palette: 'sage_hampers',
+                hookStyle: 'marker_highlight',
+                subtitleStyle: 'fill_sweep',
+            },
+        },
+    },
+};
+
+const PRESET_DEFAULT_PALETTE: Record<PresetId, string> = {
+    skincare: 'pastel_rose',
+    gadget: 'tech_blue',
+    flash_sale: 'sale_yellow',
+    lifestyle: 'pastel_rose',
+    household: 'fresh_mint',
+    parenting: 'fresh_mint',
+    podcast_hook: 'ink_mono',
+    luxury: 'ink_mono',
+    food_kuliner: 'warm_kuliner',
+    muslim_hampers: 'sage_hampers',
 };
 
 const PRESET_ALIASES: Record<string, PresetId> = {
     skincare: 'skincare',
     beauty: 'skincare',
     clean_beauty: 'skincare',
+    beauty_skincare: 'skincare',
     aestheticminimal: 'luxury',
     aesthetic_minimal: 'luxury',
     luxury: 'luxury',
     gadget: 'gadget',
     tech: 'gadget',
+    gadget_tech: 'gadget',
     flash_sale: 'flash_sale',
     flashsale: 'flash_sale',
+    flash_sale_viral: 'flash_sale',
     highenergyaffiliate: 'flash_sale',
     high_energy_affiliate: 'flash_sale',
     lifestyle: 'lifestyle',
+    fashion_lifestyle: 'lifestyle',
     household: 'household',
     cleanbookreview: 'household',
     clean_book_review: 'household',
     parenting: 'parenting',
+    health_supplement: 'parenting',
     podcast_hook: 'podcast_hook',
+    problem_solution: 'podcast_hook',
     darkpodcasthook: 'podcast_hook',
     dark_podcast_hook: 'podcast_hook',
+    food_kuliner: 'food_kuliner',
+    kuliner: 'food_kuliner',
+    food: 'food_kuliner',
+    muslim_hampers: 'muslim_hampers',
+    hampers: 'muslim_hampers',
+    muslim: 'muslim_hampers',
 };
 
 /**
@@ -546,5 +713,11 @@ export const resolvePreset = (raw?: string, versionRaw?: string): PresetVersionC
     const base = PRESETS[presetId];
     if (!base) return undefined;
     const ver = resolveVariantVersion(versionRaw || inlineVer, 'v1');
-    return base.versions[ver] || base.versions.v1;
+    const chosen = base.versions[ver] || base.versions.v1;
+    return {
+        ...chosen,
+        palette: chosen.palette || base.palette || PRESET_DEFAULT_PALETTE[presetId],
+        hookStyle: chosen.hookStyle || base.hookStyle,
+        subtitleStyle: chosen.subtitleStyle || base.subtitleStyle,
+    };
 };

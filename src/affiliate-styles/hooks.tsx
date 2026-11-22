@@ -22,15 +22,19 @@ export type HookStyleName =
   | 'stack_slam'
   | 'struck_swap'
   | 'tilt_card'
-  | 'mask_wipe';
+  | 'mask_wipe'
+  | 'split_versus'
+  | 'floating_tag';
 
 const CLAMP = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
+
+const f30 = (framesAt30: number, fps: number) => Math.max(1, Math.round(framesAt30 * (fps / 30)));
 
 const useIn = (delay = 0, damping = 14, stiffness = 150) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   return spring({
-    frame: frame - delay,
+    frame: frame - (delay === 0 ? 0 : f30(delay, fps)),
     fps,
     config: { damping, stiffness, mass: 0.8 },
   });
@@ -38,19 +42,23 @@ const useIn = (delay = 0, damping = 14, stiffness = 150) => {
 
 const useExit = (durationInFrames: number, exitFrames = 8) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const ef = f30(exitFrames, fps);
   const t = interpolate(
     frame,
-    [durationInFrames - exitFrames, durationInFrames],
+    [durationInFrames - ef, durationInFrames],
     [0, 1],
     CLAMP,
   );
   return { opacity: 1 - t, y: -28 * t };
 };
 
-const shake = (frame: number, delay: number, amp = 9) => {
-  const f = frame - delay;
-  if (f < 0 || f > 7) return 0;
-  return Math.sin(f * 2.4) * amp * (1 - f / 7);
+const shake = (frame: number, delay: number, fps = 30, amp = 9) => {
+  const d = delay === 0 ? 0 : f30(delay, fps);
+  const span = f30(7, fps);
+  const f = frame - d;
+  if (f < 0 || f > span) return 0;
+  return Math.sin((f / (fps / 30)) * 2.4) * amp * (1 - f / span);
 };
 
 const Frame: React.FC<{
@@ -58,7 +66,10 @@ const Frame: React.FC<{
   align?: 'flex-start' | 'center';
   children: React.ReactNode;
 }> = ({ durationInFrames, align = 'flex-start', children }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const exit = useExit(durationInFrames);
+  const idleY = Math.sin(frame / (fps * 0.5)) * 2.5;
   return (
     <AbsoluteFill
       style={{
@@ -68,7 +79,7 @@ const Frame: React.FC<{
         padding: `${SAFE.top}px ${SAFE.right}px 0 ${SAFE.left}px`,
         alignItems: align,
         opacity: exit.opacity,
-        transform: `translateY(${exit.y}px)`,
+        transform: `translateY(${exit.y + idleY}px)`,
         fontFamily: FONT.display,
         pointerEvents: 'none',
       }}
@@ -91,9 +102,10 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
   durationInFrames = 90,
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const card = useIn(0);
   const hl = useIn(10);
-  const marker = interpolate(frame, [18, 38], [0, 1], {
+  const marker = interpolate(frame, [f30(18, fps), f30(38, fps)], [0, 1], {
     easing: Easing.out(Easing.cubic),
     ...CLAMP,
   });
@@ -159,12 +171,15 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
 export const StackSlamHook: React.FC<HookProps> = ({
   line1,
   highlight,
+  badge,
   palette,
   durationInFrames = 90,
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const a = useIn(0, 10, 230);
   const b = useIn(9, 10, 230);
+  const badgeIn = useIn(14, 12, 200);
 
   const slam = (p: number, dx: number, rot: number) => ({
     opacity: Math.min(1, p * 3),
@@ -173,10 +188,30 @@ export const StackSlamHook: React.FC<HookProps> = ({
 
   return (
     <Frame durationInFrames={durationInFrames}>
+      {badge ? (
+        <div
+          style={{
+            background: palette.alert,
+            color: '#FFFFFF',
+            fontSize: 22,
+            fontWeight: 900,
+            letterSpacing: 1.2,
+            textTransform: 'uppercase',
+            padding: '6px 16px',
+            borderRadius: 8,
+            marginBottom: 8,
+            alignSelf: 'flex-start',
+            opacity: Math.min(1, badgeIn * 2),
+            transform: `scale(${0.8 + 0.2 * badgeIn}) rotate(-2deg)`,
+          }}
+        >
+          {badge}
+        </div>
+      ) : null}
       <div
         style={{
           boxSizing: 'border-box',
-          ...slam(a, shake(frame, 0), 0),
+          ...slam(a, shake(frame, 0, fps), 0),
           background: palette.ink,
           color: palette.paper,
           fontSize: 42,
@@ -194,7 +229,7 @@ export const StackSlamHook: React.FC<HookProps> = ({
       <div
         style={{
           boxSizing: 'border-box',
-          ...slam(b, shake(frame, 9), -1.5),
+          ...slam(b, shake(frame, 9, fps), -1.5),
           background: palette.accent,
           color: palette.accentInk,
           fontSize: 54,
@@ -222,20 +257,40 @@ export const StackSlamHook: React.FC<HookProps> = ({
 export const StruckSwapHook: React.FC<HookProps> = ({
   line1,
   highlight,
+  badge,
   palette,
   durationInFrames = 90,
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const first = useIn(0);
   const second = useIn(36, 11, 190);
-  const strike = interpolate(frame, [20, 32], [0, 1], {
+  const strike = interpolate(frame, [f30(20, fps), f30(32, fps)], [0, 1], {
     easing: Easing.inOut(Easing.cubic),
     ...CLAMP,
   });
-  const dim = interpolate(frame, [34, 46], [0, 1], CLAMP);
+  const dim = interpolate(frame, [f30(34, fps), f30(46, fps)], [0, 1], CLAMP);
 
   return (
     <Frame durationInFrames={durationInFrames}>
+      {badge ? (
+        <div
+          style={{
+            background: palette.ink,
+            color: palette.paper,
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            padding: '5px 14px',
+            borderRadius: 999,
+            marginBottom: 8,
+            opacity: Math.min(1, first * 2),
+          }}
+        >
+          {badge}
+        </div>
+      ) : null}
       <div
         style={{
           boxSizing: 'border-box',
@@ -244,7 +299,8 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           color: palette.ink,
           fontSize: 40,
           fontWeight: 700,
-          lineHeight: 1.2,
+          lineHeight: 1.24,
+          textAlign: 'left',
           wordBreak: 'break-word',
           padding: '16px 24px',
           borderRadius: 14,
@@ -254,21 +310,18 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           transformOrigin: 'left center',
         }}
       >
-        {line1}
-        <div
+        <span
           style={{
-            position: 'absolute',
-            left: 16,
-            right: 16,
-            top: '50%',
-            height: 6,
-            marginTop: -3,
-            background: palette.alert,
-            borderRadius: 4,
-            transformOrigin: 'left center',
-            transform: `scaleX(${strike}) rotate(-1deg)`,
+            backgroundImage: `linear-gradient(${palette.alert}, ${palette.alert})`,
+            backgroundSize: `${strike * 100}% 5px`,
+            backgroundPosition: 'left 56%',
+            backgroundRepeat: 'no-repeat',
+            boxDecorationBreak: 'clone',
+            WebkitBoxDecorationBreak: 'clone',
           }}
-        />
+        >
+          {line1}
+        </span>
       </div>
       <div
         style={{
@@ -279,6 +332,7 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           fontSize: 52,
           fontWeight: 900,
           lineHeight: 1.1,
+          textAlign: 'left',
           wordBreak: 'break-word',
           padding: '18px 28px',
           borderRadius: 16,
@@ -307,13 +361,14 @@ export const TiltCardHook: React.FC<HookProps> = ({
   durationInFrames = 90,
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const p = useIn(0, 18, 110);
   const sticker = useIn(14, 9, 200);
-  const underline = interpolate(frame, [22, 42], [0, 1], {
+  const underline = interpolate(frame, [f30(22, fps), f30(42, fps)], [0, 1], {
     easing: Easing.out(Easing.cubic),
     ...CLAMP,
   });
-  const push = 1 + frame * 0.0006;
+  const push = 1 + (frame / (fps / 30)) * 0.0006;
 
   return (
     <Frame durationInFrames={durationInFrames}>
@@ -397,19 +452,40 @@ export const TiltCardHook: React.FC<HookProps> = ({
 export const MaskWipeHook: React.FC<HookProps> = ({
   line1,
   highlight,
+  badge,
   palette,
   durationInFrames = 90,
 }) => {
   const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
   const rise1 = useIn(0, 20, 120);
   const rise2 = useIn(8, 20, 120);
-  const wipe = interpolate(frame, [12, 30], [0, 1], {
+  const wipe = interpolate(frame, [f30(12, fps), f30(30, fps)], [0, 1], {
     easing: Easing.out(Easing.cubic),
     ...CLAMP,
   });
 
   return (
     <Frame durationInFrames={durationInFrames}>
+      {badge ? (
+        <div
+          style={{
+            background: palette.paper,
+            color: palette.ink,
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: 1.2,
+            textTransform: 'uppercase',
+            padding: '5px 14px',
+            borderRadius: 6,
+            marginBottom: 8,
+            opacity: Math.min(1, rise1 * 2),
+            transform: `translateY(${(1 - rise1) * 18}px)`,
+          }}
+        >
+          {badge}
+        </div>
+      ) : null}
       <div style={{ boxSizing: 'border-box', overflow: 'hidden', borderRadius: 8, maxWidth: '100%' }}>
         <div
           style={{
@@ -450,6 +526,187 @@ export const MaskWipeHook: React.FC<HookProps> = ({
 };
 
 /* ------------------------------------------------------------------ */
+/* 6. SPLIT VERSUS                                                     */
+/* Komparasi dua blok kontras: Cara Biasa (❌) vs Solusi Produk (✅).  */
+/* Cocok: produk pembersih, alat praktis, problem-solver               */
+/* ------------------------------------------------------------------ */
+export const SplitVersusHook: React.FC<HookProps> = ({
+  line1,
+  highlight,
+  badge,
+  palette,
+  durationInFrames = 90,
+}) => {
+  const topIn = useIn(0, 14, 170);
+  const botIn = useIn(12, 12, 200);
+
+  return (
+    <Frame durationInFrames={durationInFrames}>
+      <div
+        style={{
+          boxSizing: 'border-box',
+          width: '100%',
+          borderRadius: 18,
+          overflow: 'hidden',
+          border: `3px solid ${palette.ink}`,
+        }}
+      >
+        {badge ? (
+          <div
+            style={{
+              background: palette.ink,
+              color: palette.paper,
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: 1.4,
+              textTransform: 'uppercase',
+              padding: '8px 20px',
+            }}
+          >
+            ⚡ {badge}
+          </div>
+        ) : null}
+        <div
+          style={{
+            background: palette.paper,
+            color: palette.ink,
+            padding: '16px 22px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            opacity: Math.min(1, topIn * 2),
+            transform: `translateX(${(1 - topIn) * -40}px)`,
+            borderBottom: `2px dashed ${palette.ink}`,
+          }}
+        >
+          <span
+            style={{
+              background: palette.alert,
+              color: '#FFFFFF',
+              fontSize: 22,
+              fontWeight: 900,
+              padding: '4px 10px',
+              borderRadius: 8,
+              flexShrink: 0,
+            }}
+          >
+            ✕
+          </span>
+          <span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}>
+            {line1}
+          </span>
+        </div>
+        <div
+          style={{
+            background: palette.accent,
+            color: palette.accentInk,
+            padding: '20px 22px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            opacity: Math.min(1, botIn * 2.5),
+            transform: `scale(${0.92 + 0.08 * botIn})`,
+          }}
+        >
+          <span
+            style={{
+              background: palette.ink,
+              color: palette.paper,
+              fontSize: 22,
+              fontWeight: 900,
+              padding: '4px 10px',
+              borderRadius: 8,
+              flexShrink: 0,
+            }}
+          >
+            ✓
+          </span>
+          <span style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.12, wordBreak: 'break-word' }}>
+            {highlight}
+          </span>
+        </div>
+      </div>
+    </Frame>
+  );
+};
+
+/* ------------------------------------------------------------------ */
+/* 7. FLOATING TAG                                                     */
+/* Kartu bersih dengan pita label gantung di sudut + pill highlight.   */
+/* Cocok: kuliner, hampers, fashion, produk rumah tangga estetik       */
+/* ------------------------------------------------------------------ */
+export const FloatingTagHook: React.FC<HookProps> = ({
+  line1,
+  highlight,
+  badge,
+  palette,
+  durationInFrames = 90,
+}) => {
+  const card = useIn(0, 14, 160);
+  const pill = useIn(10, 12, 200);
+  const tag = useIn(6, 10, 220);
+
+  return (
+    <Frame durationInFrames={durationInFrames}>
+      <div
+        style={{
+          position: 'relative',
+          boxSizing: 'border-box',
+          maxWidth: '100%',
+          background: palette.paper,
+          color: palette.ink,
+          border: `3px solid ${palette.ink}`,
+          borderRadius: 20,
+          padding: '28px 28px 24px',
+          opacity: Math.min(1, card * 2),
+          transform: `translateY(${(1 - card) * -36}px) scale(${0.94 + 0.06 * card})`,
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: -18,
+            right: 22,
+            background: palette.alert,
+            color: '#FFFFFF',
+            fontSize: 20,
+            fontWeight: 800,
+            letterSpacing: 1,
+            textTransform: 'uppercase',
+            padding: '5px 16px',
+            borderRadius: 999,
+            transform: `scale(${tag}) rotate(3deg)`,
+          }}
+        >
+          {badge || '★ REKOMENDASI'}
+        </div>
+        <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.22, wordBreak: 'break-word' }}>
+          {line1}
+        </div>
+        <div
+          style={{
+            marginTop: 12,
+            display: 'inline-block',
+            background: palette.accent,
+            color: palette.accentInk,
+            fontSize: 48,
+            fontWeight: 900,
+            lineHeight: 1.12,
+            padding: '10px 20px',
+            borderRadius: 12,
+            wordBreak: 'break-word',
+            transform: `scale(${0.88 + 0.12 * pill})`,
+            transformOrigin: 'left center',
+          }}
+        >
+          {highlight}
+        </div>
+      </div>
+    </Frame>
+  );
+};
+
+/* ------------------------------------------------------------------ */
 
 export const HookStyles: Record<HookStyleName, React.FC<HookProps>> = {
   marker_highlight: MarkerHighlightHook,
@@ -457,6 +714,8 @@ export const HookStyles: Record<HookStyleName, React.FC<HookProps>> = {
   struck_swap: StruckSwapHook,
   tilt_card: TiltCardHook,
   mask_wipe: MaskWipeHook,
+  split_versus: SplitVersusHook,
+  floating_tag: FloatingTagHook,
 };
 
 export const AffiliateHook: React.FC<HookProps & { variant: HookStyleName }> = ({

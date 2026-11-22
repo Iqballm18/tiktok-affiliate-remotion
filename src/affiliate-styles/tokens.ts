@@ -5,9 +5,9 @@
 export const SAFE = {
   top: 160, // area UI atas TikTok (search, following/for you)
   bottom: 440, // caption + tombol produk keranjang kuning
-  side: 120, // legacy simetris (tetap dipertahankan untuk kompatibilitas)
-  left: 64, // margin kiri bersih
-  right: 168, // margin kanan bebas sidebar like/komen/share TikTok & Reels
+  side: 120, // margin kiri-kanan simetris
+  left: 120, // margin kiri simetris agar hook & subtitle tepat di tengah
+  right: 120, // margin kanan simetris & tetap aman dari ikon sidebar TikTok/Reels
 } as const;
 
 export type PaletteName =
@@ -16,6 +16,8 @@ export type PaletteName =
   | 'sale_yellow'
   | 'tech_blue'
   | 'ink_mono'
+  | 'warm_kuliner'
+  | 'sage_hampers'
   | 'editorial'
   | 'pastel'
   | 'flash_sale'
@@ -92,6 +94,20 @@ export const PALETTES: Record<PaletteName, Palette> = {
     accent: '#E8E3D5',
     accentInk: '#1A1A1A',
     alert: '#C8372D',
+  },
+  warm_kuliner: {
+    ink: '#261710',
+    paper: '#FFF9F2',
+    accent: '#F97316',
+    accentInk: '#FFFFFF',
+    alert: '#DC2626',
+  },
+  sage_hampers: {
+    ink: '#1C2822',
+    paper: '#F7FAF7',
+    accent: '#C89D54',
+    accentInk: '#1C2822',
+    alert: '#B91C1C',
   },
 };
 

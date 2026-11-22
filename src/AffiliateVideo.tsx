@@ -183,6 +183,8 @@ export const affiliateSchema = z.object({
     // Klip sumber footage latar (index di clips, default 0 = hook) dan detik di video mentahnya.
     coverClipIndex: z.number().optional(),
     coverFrameSec: z.number().optional(),
+    // Mode auto-crop fokus produk pada cover: auto | center_close | lower_product | upper_face | full
+    coverFocus: z.string().optional(),
     // Sisipkan cover beberapa frame di akhir video agar bisa dipilih di cover picker TikTok HP.
     coverEmbed: z.boolean().optional(),
     coverEmbedSec: z.number().optional(),
@@ -197,7 +199,7 @@ export const defaultAffiliateProps: AffiliateProps = {
     showProgressBar: true,
     enableSfx: true,
     showSafeZoneGuide: false,
-    watermarkText: '@inanikma_ | @spillbyna_',
+    watermarkText: '@spillbyna | @inanikmatul01',
     showWatermark: true,
     watermarkOpacity: 0.70,
     unmuteHook: false,
@@ -266,8 +268,10 @@ const VideoProgressBar: React.FC<{
     theme: ThemeDefinition;
     durationInFrames: number;
     segmentDurations?: number[];
-}> = ({ theme, durationInFrames, segmentDurations }) => {
+    accentColor?: string;
+}> = ({ theme, durationInFrames, segmentDurations, accentColor }) => {
     const frame = useCurrentFrame();
+    const barColor = accentColor || theme.colors.indicatorColor;
 
     if (segmentDurations && segmentDurations.length > 1) {
         let acc = 0;
@@ -313,8 +317,8 @@ const VideoProgressBar: React.FC<{
                                 height: '100%',
                                 width: `${seg.fillPct}%`,
                                 borderRadius: 999,
-                                background: theme.colors.indicatorColor,
-                                boxShadow: `0 0 10px ${theme.colors.indicatorColor}`,
+                                background: barColor,
+                                boxShadow: `0 0 10px ${barColor}`,
                             }}
                         />
                     </div>
@@ -345,8 +349,8 @@ const VideoProgressBar: React.FC<{
                 style={{
                     height: '100%',
                     width: `${progress}%`,
-                    background: theme.colors.indicatorColor,
-                    boxShadow: `0 0 16px ${theme.colors.indicatorColor}`,
+                    background: barColor,
+                    boxShadow: `0 0 16px ${barColor}`,
                 }}
             />
         </div>
@@ -679,7 +683,8 @@ const composeFx = (
     durationInFrames: number,
     fps: number,
     theme: ThemeDefinition,
-    ver: VariantVersion = 'v1'
+    inVer: VariantVersion = 'v1',
+    outVer: VariantVersion = inVer
 ): TransitionFx => {
     const fx: TransitionFx = { scale: 1, x: 0, y: 0, rotate: 0, blur: 0, brightness: 1, hue: 0, contrast: 1, saturate: 1 };
     const merge = (p: Partial<TransitionFx>) => {
@@ -693,8 +698,8 @@ const composeFx = (
         if (p.contrast !== undefined) fx.contrast *= p.contrast;
         if (p.saturate !== undefined) fx.saturate *= p.saturate;
     };
-    if (outType && outType !== 'none') merge(computeOutFx(outType, frame, durationInFrames, fps, theme, ver));
-    if (inType) merge(computeInFx(inType, frame, fps, theme, ver));
+    if (outType && outType !== 'none') merge(computeOutFx(outType, frame, durationInFrames, fps, theme, outVer));
+    if (inType) merge(computeInFx(inType, frame, fps, theme, inVer));
     return fx;
 };
 
@@ -765,6 +770,8 @@ const FootageClip: React.FC<{
     // Transisi di akhir klip ini (ke klip berikutnya). undefined/'none' = tanpa efek keluar.
     outType?: TransitionType;
     transitionVariant?: VariantVersion;
+    inVersion?: VariantVersion;
+    outVersion?: VariantVersion;
     clipStartFrame?: number;
     voStartFrame?: number;
     captions?: Caption[];
@@ -780,6 +787,8 @@ const FootageClip: React.FC<{
     inType,
     outType,
     transitionVariant = 'v1',
+    inVersion,
+    outVersion,
     clipStartFrame = 0,
     voStartFrame = 0,
     captions,
@@ -818,7 +827,16 @@ const FootageClip: React.FC<{
             }
         );
 
-        const fx = composeFx(inType, outType, frame, durationInFrames, fps, theme, transitionVariant);
+        const fx = composeFx(
+            inType,
+            outType,
+            frame,
+            durationInFrames,
+            fps,
+            theme,
+            inVersion ?? transitionVariant,
+            outVersion ?? transitionVariant
+        );
 
         // Dynamic Keyword Punch-In Zoom saat kata kunci penting diucapkan oleh Voice Over
         const keywordPunch = computeKeywordPunchScale(
@@ -1088,11 +1106,14 @@ const TransitionOverlay: React.FC<{
     theme: ThemeDefinition;
     type: ActiveTransition;
     version?: VariantVersion;
-}> = ({ theme, type, version = 'v1' }) => {
+    accentColor?: string;
+}> = ({ theme, type, version = 'v1', accentColor }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
     const midPoint = transitionPeakFrames(fps);
     const totalFrames = transitionOverlayFrames(fps);
+    const accent = accentColor || theme.colors.accent;
+    const indicator = accentColor || theme.colors.indicatorColor;
 
     // Naik ke puncak di midPoint lalu turun: 0 -> 1 -> 0
     const pulse = interpolate(frame, [0, midPoint, totalFrames], [0, 1, 0], CLAMP);
@@ -1110,8 +1131,8 @@ const TransitionOverlay: React.FC<{
                         left: `${sweep}%`,
                         width: 90,
                         marginLeft: -45,
-                        background: `linear-gradient(90deg, transparent 0%, ${theme.colors.accent} 45%, #FFFFFF 50%, ${theme.colors.indicatorColor} 55%, transparent 100%)`,
-                        boxShadow: `0 0 32px 6px ${theme.colors.accent}`,
+                        background: `linear-gradient(90deg, transparent 0%, ${accent} 45%, #FFFFFF 50%, ${indicator} 55%, transparent 100%)`,
+                        boxShadow: `0 0 32px 6px ${accent}`,
                         transform: `rotate(${angle}deg)`,
                         opacity: Math.min(1, pulse * 1.5),
                     }}
@@ -1129,7 +1150,7 @@ const TransitionOverlay: React.FC<{
             <AbsoluteFill
                 style={{
                     pointerEvents: 'none',
-                    background: `radial-gradient(circle at 50% 50%, transparent ${radius}%, ${theme.colors.accent} ${radius + 2}%, rgba(9, 10, 15, 0.92) ${radius + 12}%)`,
+                    background: `radial-gradient(circle at 50% 50%, transparent ${radius}%, ${accent} ${radius + 2}%, rgba(9, 10, 15, 0.92) ${radius + 12}%)`,
                     opacity: pulse * 0.9,
                 }}
             />
@@ -1148,7 +1169,7 @@ const TransitionOverlay: React.FC<{
                         bottom: '-20%',
                         left: `${streakX}%`,
                         width: '75%',
-                        background: `linear-gradient(90deg, transparent 0%, ${theme.colors.accent} 45%, #FFFFFF 50%, transparent 100%)`,
+                        background: `linear-gradient(90deg, transparent 0%, ${accent} 45%, #FFFFFF 50%, transparent 100%)`,
                         opacity: pulse * 0.72,
                         filter: 'blur(18px)',
                         transform: `rotate(${14 * dir}deg)`,
@@ -1292,7 +1313,8 @@ const TransitionOverlay: React.FC<{
     }
 
     if (type === 'whip_pan') {
-        const streakX = interpolate(frame, [0, totalFrames], [-120, 120], {
+        const dir = version === 'v2' ? -1 : 1;
+        const streakX = interpolate(frame, [0, totalFrames], [-120 * dir, 120 * dir], {
             extrapolateLeft: 'clamp',
             extrapolateRight: 'clamp',
         });
@@ -1302,20 +1324,21 @@ const TransitionOverlay: React.FC<{
             [0, 0.75, 0],
             { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
         );
+        const tiltDeg = version === 'v3' ? -10 : 0;
 
         return (
             <AbsoluteFill style={{ pointerEvents: 'none', overflow: 'hidden' }}>
                 <div
                     style={{
                         position: 'absolute',
-                        top: 0,
-                        bottom: 0,
+                        top: '-10%',
+                        bottom: '-10%',
                         left: `${streakX}%`,
                         width: '70%',
-                        background: `linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 30%, ${theme.colors.indicatorColor} 50%, rgba(255, 255, 255, 0.45) 60%, transparent 100%)`,
+                        background: `linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 30%, ${indicator} 50%, rgba(255, 255, 255, 0.45) 60%, transparent 100%)`,
                         opacity: streakOpacity,
                         filter: 'blur(16px)',
-                        transform: 'skewX(-20deg)',
+                        transform: `skewX(${-20 * dir}deg) rotate(${tiltDeg}deg)`,
                     }}
                 />
             </AbsoluteFill>
@@ -1343,7 +1366,7 @@ const TransitionOverlay: React.FC<{
                         left: '-20%',
                         width: '140%',
                         height: '140%',
-                        background: `radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.95) 0%, ${theme.colors.accent} 35%, rgba(255, 200, 120, 0.4) 55%, transparent 75%)`,
+                        background: `radial-gradient(ellipse at 40% 40%, rgba(255, 255, 255, 0.95) 0%, ${accent} 35%, rgba(255, 200, 120, 0.4) 55%, transparent 75%)`,
                         opacity: leakOpacity,
                         transform: `scale(${leakScale})`,
                         filter: 'blur(32px)',
@@ -1889,16 +1912,6 @@ const EditorialHeadline: React.FC<{
         );
     };
 
-// Token tema web (disalin dari :root di web/app.css) untuk penunjuk keranjang di babak CTA.
-const WEB_THEME = {
-    ground: '#131312',
-    rule: '#3b3b36',
-    text: '#ece8de',
-    signal: '#f2a93b',
-    signalInk: '#1c1303',
-    radius: 6,
-};
-
 // ==========================================
 // EDITORIAL LOWER-THIRD CTA (Multi-Platform: TikTok & IG Reels Keranjang Belanja)
 // ==========================================
@@ -1920,12 +1933,6 @@ const EditorialCTA: React.FC<{
         config: theme.springs.snappy,
     });
 
-    const badgeEnter = spring({
-        fps,
-        frame: frame - Math.round(0.1 * fps),
-        config: theme.springs.pill,
-    });
-
     const exitStart = durationInFrames - Math.round(0.2 * fps);
     const exit = interpolate(frame, [exitStart, durationInFrames], [0, 1], {
         easing: theme.easings.inCubic,
@@ -1933,18 +1940,11 @@ const EditorialCTA: React.FC<{
         extrapolateRight: 'clamp',
     });
 
-    // Gerakan panah diagonal halus menunjuk Keranjang di kiri bawah
-    const arrowNudge = Math.sin(frame / (fps * 0.20)) * 9;
     const y = interpolate(enter, [0, 1], [45, 0]);
 
     const resolvedCard = resolveHookSelection(cardStyle)?.layout ?? cardStyle;
 
-    const defaultSubLabel =
-        platform === 'instagram'
-            ? 'KLIK LIHAT PRODUK DI KIRI BAWAH'
-            : platform === 'universal'
-                ? 'KLIK IKON DI KIRI BAWAH'
-                : 'KLIK IKON DI KIRI BAWAH';
+    const defaultSubLabel = 'KLIK IKON DI BAWAH';
 
     let ctaTitle = text;
     let ctaSub = label || defaultSubLabel;
@@ -1960,132 +1960,6 @@ const EditorialCTA: React.FC<{
     const ctaAccent = palette?.accent ?? theme.colors.accent;
     const ctaAccentText = palette?.accentInk ?? theme.colors.accentText;
     const ctaAlert = palette?.alert ?? (platform === 'instagram' ? '#DD2A7B' : '#DC2626');
-
-    // Panah Penunjuk Keranjang: memakai token tema web (ground gelap hangat + signal amber,
-    // radius kecil, label mono IBM Plex) agar TikTok & Reels tampil seragam dengan dashboard.
-    // Platform dibedakan lewat ikon (keranjang / tas), teks, dan tag mono, bukan lewat warna merek.
-    const renderPointer = () => {
-        const pointerCopy =
-            platform === 'instagram'
-                ? { tag: 'REELS', title: 'KERANJANG BELANJA DI SINI', icon: 'bag' as const }
-                : platform === 'tiktok'
-                    ? { tag: 'TIKTOK', title: 'KERANJANG KUNING DI SINI', icon: 'basket' as const }
-                    : { tag: 'TIKTOK · REELS', title: 'CEK KERANJANG DI SINI', icon: 'basket' as const };
-
-        // Gerak maju-mundur searah panah (diagonal kiri-bawah), bukan seluruh chip ikut bergoyang.
-        const arrowShift = arrowNudge * 0.55;
-
-        return (
-            <div
-                style={{
-                    marginTop: 18,
-                    marginLeft: 14,
-                    display: 'flex',
-                    transformOrigin: 'left center',
-                    transform: `scale(${badgeEnter})`,
-                }}
-            >
-                <div
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'stretch',
-                        backgroundColor: WEB_THEME.ground,
-                        border: `1.5px solid ${WEB_THEME.rule}`,
-                        borderRadius: WEB_THEME.radius,
-                        overflow: 'hidden',
-                        boxShadow: '0 14px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(242,169,59,0.10)',
-                    }}
-                >
-                    {/* Blok panah: signal amber, panah ↙ digambar sebagai SVG agar tajam dan tepat diagonal */}
-                    <div
-                        style={{
-                            width: 70,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: WEB_THEME.signal,
-                        }}
-                    >
-                        <svg
-                            width={38}
-                            height={38}
-                            viewBox="0 0 32 32"
-                            fill="none"
-                            stroke={WEB_THEME.signalInk}
-                            strokeWidth={3.6}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            style={{ transform: `translate(${-arrowShift}px, ${arrowShift}px)` }}
-                        >
-                            <path d="M25 7 L8 24" />
-                            <path d="M8 12 V24 H20" />
-                        </svg>
-                    </div>
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            gap: 4,
-                            padding: '10px 22px 11px 18px',
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 7,
-                                fontFamily: FONT.plex,
-                                fontSize: 15,
-                                fontWeight: 600,
-                                letterSpacing: 2,
-                                color: WEB_THEME.signal,
-                                lineHeight: 1,
-                            }}
-                        >
-                            <svg
-                                width={17}
-                                height={17}
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke={WEB_THEME.signal}
-                                strokeWidth={2.2}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                {pointerCopy.icon === 'bag' ? (
-                                    <>
-                                        <path d="M5 8h14l-1 12H6L5 8z" />
-                                        <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-                                    </>
-                                ) : (
-                                    <>
-                                        <path d="M3 10h18l-2 9H5l-2-9z" />
-                                        <path d="M8 10l3-5M16 10l-3-5" />
-                                    </>
-                                )}
-                            </svg>
-                            <span>{pointerCopy.tag}</span>
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: FONT.ui,
-                                fontSize: 27,
-                                fontWeight: 700,
-                                letterSpacing: 0.4,
-                                color: WEB_THEME.text,
-                                lineHeight: 1.05,
-                                whiteSpace: 'nowrap',
-                            }}
-                        >
-                            {pointerCopy.title}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    };
 
     let cardContent: React.ReactNode;
 
@@ -2324,7 +2198,6 @@ const EditorialCTA: React.FC<{
             }}
         >
             {cardContent}
-            {renderPointer()}
         </div>
     );
 };
@@ -2397,6 +2270,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     coverImage,
     coverClipIndex,
     coverFrameSec,
+    coverFocus,
     coverEmbed,
     coverEmbedSec,
 }) => {
@@ -2408,11 +2282,13 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const useNewHook = Boolean(
         (hookStyleProp && hookStyleProp in HookStyles) ||
         (cardStyleProp && cardStyleProp in HookStyles) ||
+        (preset?.hookStyle && preset.hookStyle in HookStyles && !cardStyleProp) ||
         (flatStylePreset && !cardStyleProp)
     );
     const finalHookStyle: HookStyleName = (
         (hookStyleProp && hookStyleProp in HookStyles ? (hookStyleProp as HookStyleName) : null) ||
         (cardStyleProp && cardStyleProp in HookStyles ? (cardStyleProp as HookStyleName) : null) ||
+        (preset?.hookStyle && preset.hookStyle in HookStyles ? (preset.hookStyle as HookStyleName) : null) ||
         flatStylePreset?.hookStyle ||
         DEFAULT_PRESET.hookStyle
     );
@@ -2420,11 +2296,13 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const useNewSubtitle = Boolean(
         (subtitleStyleProp && subtitleStyleProp in SubtitleStyles) ||
         (captionStyleProp && captionStyleProp in SubtitleStyles) ||
+        (preset?.subtitleStyle && preset.subtitleStyle in SubtitleStyles && !captionStyleProp) ||
         (flatStylePreset && !captionStyleProp)
     );
     const finalSubtitleStyle: SubtitleStyleName = (
         (subtitleStyleProp && subtitleStyleProp in SubtitleStyles ? (subtitleStyleProp as SubtitleStyleName) : null) ||
         (captionStyleProp && captionStyleProp in SubtitleStyles ? (captionStyleProp as SubtitleStyleName) : null) ||
+        (preset?.subtitleStyle && preset.subtitleStyle in SubtitleStyles ? (preset.subtitleStyle as SubtitleStyleName) : null) ||
         flatStylePreset?.subtitleStyle ||
         DEFAULT_PRESET.subtitleStyle
     );
@@ -2432,6 +2310,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const finalPaletteName: PaletteName = (
         (paletteProp && paletteProp in PALETTES ? (paletteProp as PaletteName) : null) ||
         (themeStyleProp && themeStyleProp in PALETTES ? (themeStyleProp as PaletteName) : null) ||
+        (preset?.palette && preset.palette in PALETTES ? (preset.palette as PaletteName) : null) ||
         flatStylePreset?.palette ||
         DEFAULT_PRESET.palette
     );
@@ -2510,12 +2389,18 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             : clipTransition;
     const boundaryType = (i: number): TransitionType =>
         i === 1 ? hookTransition : resolvedClipTransition;
-    const boundaries: { index: number; frame: number; type: TransitionType }[] = [];
+    const boundaryVersion = (i: number): VariantVersion => {
+        if (clipTransition === 'auto' && i >= 3) {
+            return transitionVariant === 'v1' ? 'v2' : transitionVariant === 'v2' ? 'v1' : 'v3';
+        }
+        return transitionVariant;
+    };
+    const boundaries: { index: number; frame: number; type: TransitionType; version: VariantVersion }[] = [];
     {
         let cursor = 0;
         for (let i = 1; i < clips.length; i++) {
             cursor += Math.max(1, Math.round((clips[i - 1].endSec - clips[i - 1].startSec) * fps));
-            boundaries.push({ index: i, frame: cursor, type: boundaryType(i) });
+            boundaries.push({ index: i, frame: cursor, type: boundaryType(i), version: boundaryVersion(i) });
         }
     }
 
@@ -2525,16 +2410,22 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const defaultCoverSec = targetClip
         ? targetClip.startSec + Math.min(1.5, Math.max(0, (targetClip.endSec - targetClip.startSec) * 0.35))
         : 0;
-    const resolvedCoverBg: CoverBackground = coverImage
-        ? { kind: 'image', src: coverImage }
-        : targetClip && targetClip.src && !targetClip.isPlaceholder
-            ? {
-                kind: 'video',
-                src: targetClip.src,
-                frameSec: coverFrameSec !== undefined ? coverFrameSec : defaultCoverSec,
-                objectPosition: targetClip.objectPosition,
-            }
-            : { kind: 'none' };
+    const resolvedTemplate = resolveCoverTemplate(coverTemplate);
+    const resolvedCoverBg: CoverBackground =
+        coverImage === '__none__'
+            ? { kind: 'none' }
+            : coverImage
+                ? { kind: 'image', src: coverImage }
+                : resolvedTemplate === 'studio_poster'
+                    ? { kind: 'none' }
+                    : targetClip && targetClip.src && !targetClip.isPlaceholder
+                        ? {
+                            kind: 'video',
+                            src: targetClip.src,
+                            frameSec: coverFrameSec !== undefined ? coverFrameSec : defaultCoverSec,
+                            objectPosition: targetClip.objectPosition,
+                        }
+                        : { kind: 'none' };
 
     const coverHookCard = useNewHook ? (
         <AffiliateHook
@@ -2562,7 +2453,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
 
     const coverElement = (
         <VideoCover
-            template={resolveCoverTemplate(coverTemplate)}
+            template={resolvedTemplate}
             theme={theme}
             palette={finalPalette}
             title={(coverTitle || hookHighlight || hookLine1 || '').trim()}
@@ -2570,9 +2461,10 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             badge={(coverBadge || badgeText || '').trim()}
             cta={(ctaText || 'Cek Keranjang Kuning').trim()}
             background={resolvedCoverBg}
+            focus={coverFocus}
             hookCard={coverHookCard}
             hookFreezeFrame={Math.min(Math.max(30, Math.round(1.2 * fps)), Math.max(30, hookDuration - 15))}
-            watermark={showWatermark !== false ? (watermarkText || '@inanikma_ | @spillbyna_') : undefined}
+            watermark={showWatermark !== false ? (watermarkText || '@spillbyna | @inanikmatul01') : undefined}
         />
     );
 
@@ -2629,6 +2521,8 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             }
                             outType={idx < clips.length - 1 ? boundaryType(idx + 1) : undefined}
                             transitionVariant={transitionVariant}
+                            inVersion={idx > 0 ? boundaryVersion(idx) : transitionVariant}
+                            outVersion={idx < clips.length - 1 ? boundaryVersion(idx + 1) : transitionVariant}
                             clipStartFrame={fromFrame}
                             voStartFrame={voStartFrame}
                             captions={voiceOverCaptions as Caption[] | undefined}
@@ -2653,7 +2547,12 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             from={Math.max(0, b.frame - transitionPeakFrames(fps))}
                             durationInFrames={transitionOverlayFrames(fps)}
                         >
-                            <TransitionOverlay theme={theme} type={b.type} version={transitionVariant} />
+                            <TransitionOverlay
+                                theme={theme}
+                                type={b.type}
+                                version={b.version}
+                                accentColor={finalPalette.accent}
+                            />
                         </Sequence>
                     )
             )}
@@ -2673,6 +2572,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     theme={theme}
                     durationInFrames={totalDurationInFrames}
                     segmentDurations={[hookDuration, demoDuration, specDuration, ctaDuration]}
+                    accentColor={finalPalette.accent}
                 />
             )}
 
@@ -2920,18 +2820,31 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     : demoDuration;
                 return (
                     <Sequence from={hookDuration} durationInFrames={demoHeadlineDur}>
-                        <EditorialHeadline
-                            badge={demoBadge}
-                            line1={demoLine1}
-                            highlightLine={demoHighlight}
-                            durationInFrames={demoHeadlineDur}
-                            variant="solution"
-                            theme={theme}
-                            cardStyle={cardStyle}
-                            hookVariant={hookVariant}
-                            badgeStyle={badgeStyle}
-                            urgencyTag={urgencyTag}
-                        />
+                        {useNewHook ? (
+                            (demoLine1 || demoHighlight) && (
+                                <AffiliateHook
+                                    variant={finalHookStyle}
+                                    line1={demoLine1}
+                                    highlight={demoHighlight}
+                                    badge={demoBadge}
+                                    palette={finalPalette}
+                                    durationInFrames={demoHeadlineDur}
+                                />
+                            )
+                        ) : (
+                            <EditorialHeadline
+                                badge={demoBadge}
+                                line1={demoLine1}
+                                highlightLine={demoHighlight}
+                                durationInFrames={demoHeadlineDur}
+                                variant="solution"
+                                theme={theme}
+                                cardStyle={cardStyle}
+                                hookVariant={hookVariant}
+                                badgeStyle={badgeStyle}
+                                urgencyTag={urgencyTag}
+                            />
+                        )}
                     </Sequence>
                 );
             })()}
@@ -2943,18 +2856,31 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                     : specDuration;
                 return (
                     <Sequence from={hookDuration + demoDuration} durationInFrames={specHeadlineDur}>
-                        <EditorialHeadline
-                            badge={specBadge}
-                            line1={specLine1}
-                            highlightLine={specHighlight}
-                            durationInFrames={specHeadlineDur}
-                            variant="solution"
-                            theme={theme}
-                            cardStyle={cardStyle}
-                            hookVariant={hookVariant}
-                            badgeStyle={badgeStyle}
-                            urgencyTag={urgencyTag}
-                        />
+                        {useNewHook ? (
+                            (specLine1 || specHighlight) && (
+                                <AffiliateHook
+                                    variant={finalHookStyle}
+                                    line1={specLine1}
+                                    highlight={specHighlight}
+                                    badge={specBadge}
+                                    palette={finalPalette}
+                                    durationInFrames={specHeadlineDur}
+                                />
+                            )
+                        ) : (
+                            <EditorialHeadline
+                                badge={specBadge}
+                                line1={specLine1}
+                                highlightLine={specHighlight}
+                                durationInFrames={specHeadlineDur}
+                                variant="solution"
+                                theme={theme}
+                                cardStyle={cardStyle}
+                                hookVariant={hookVariant}
+                                badgeStyle={badgeStyle}
+                                urgencyTag={urgencyTag}
+                            />
+                        )}
                     </Sequence>
                 );
             })()}
@@ -3049,7 +2975,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
             {/* FLOATING WATERMARK (BERPINDAH-PINDAH & OPACITY HALUS) */}
             {showWatermark !== false && (
                 <FloatingWatermark
-                    text={watermarkText || '@inanikma_ | @spillbyna_'}
+                    text={watermarkText || '@spillbyna | @inanikmatul01'}
                     opacity={watermarkOpacity ?? 0.70}
                     position={watermarkPosition}
                 />

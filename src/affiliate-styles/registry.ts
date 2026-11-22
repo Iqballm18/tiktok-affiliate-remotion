@@ -10,6 +10,8 @@ export const HOOK_STYLE_INFO: Record<HookStyleName, {label: string; bestFor: str
   struck_swap: {label: 'Struck Swap (coret lalu ganti)', bestFor: 'Problem-solution, sebelum/sesudah'},
   tilt_card: {label: 'Tilt Card', bestFor: 'Review jujur, vitamin, rekomendasi'},
   mask_wipe: {label: 'Mask Wipe', bestFor: 'Gadget, fashion, lifestyle'},
+  split_versus: {label: 'Split Versus (VS)', bestFor: 'Before/After, masalah vs solusi, komparasi'},
+  floating_tag: {label: 'Floating Tag (E-Commerce)', bestFor: 'Kuliner, hampers, fashion, produk estetik'},
 };
 
 export const SUBTITLE_STYLE_INFO: Record<SubtitleStyleName, {label: string; bestFor: string}> = {
@@ -19,6 +21,7 @@ export const SUBTITLE_STYLE_INFO: Record<SubtitleStyleName, {label: string; best
   fill_sweep: {label: 'Fill Sweep', bestFor: 'Narasi tenang, storytelling'},
   typewriter_band: {label: 'Typewriter Band', bestFor: 'Premium, fashion, parfum'},
   sticker_label: {label: 'Sticker Label', bestFor: 'Gadget, review santai'},
+  glass_pill: {label: 'Glass Pill (Kapsul Transparan)', bestFor: 'Kuliner, hampers, estetik, ASMR'},
 };
 
 export interface StylePreset {
@@ -35,6 +38,8 @@ export const PRESETS: Record<string, StylePreset> = {
   problem_solution: {palette: 'ink_mono', hookStyle: 'struck_swap', subtitleStyle: 'fill_sweep'},
   gadget_tech: {palette: 'tech_blue', hookStyle: 'mask_wipe', subtitleStyle: 'sticker_label'},
   fashion_lifestyle: {palette: 'pastel_rose', hookStyle: 'mask_wipe', subtitleStyle: 'typewriter_band'},
+  food_kuliner: {palette: 'warm_kuliner', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill'},
+  muslim_hampers: {palette: 'sage_hampers', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill'},
 };
 
 export const DEFAULT_PRESET: StylePreset = PRESETS.beauty_skincare;

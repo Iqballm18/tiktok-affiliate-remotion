@@ -52,7 +52,7 @@ export function loadConfig() {
     }
   }
   return {
-    defaultWatermark: '@inanikma_ | @spillbyna_',
+    defaultWatermark: '@spillbyna | @inanikmatul01',
     webPort: 3100,
     defaultFps: 60,
     defaultTheme: 'pastel',
@@ -193,7 +193,7 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
 
   // Merge default watermark if absent
   if (!props.watermarkText) {
-    props.watermarkText = config.defaultWatermark || '@inanikma_ | @spillbyna_';
+    props.watermarkText = config.defaultWatermark || '@spillbyna | @inanikmatul01';
   }
   if (!props.watermarkPosition) {
     props.watermarkPosition = variant.watermarkPosition || 'floating';
@@ -389,9 +389,6 @@ export function resolveVariantProps(product, variantKey = 'v1', options = {}) {
       }
     }
   }
-
-  // Target Platform CTA (universal | tiktok | instagram)
-  props.ctaPlatform = options.ctaPlatform || variant.ctaPlatform || config.defaultCtaPlatform || 'universal';
 
   // Resolve Cover Image if specified
   if (props.coverImage) {

@@ -60,6 +60,25 @@ function hasSrcFilesChanged(sinceTime) {
 export function syncPublicToBundle(bundleLocation, onLog = console.log) {
   if (!bundleLocation || !fs.existsSync(bundleLocation)) return;
   const bundlePublic = path.join(bundleLocation, 'public');
+
+  try {
+    if (fs.existsSync(bundlePublic)) {
+      const lstat = fs.lstatSync(bundlePublic);
+      if (lstat.isSymbolicLink()) {
+        // Sudah tertaut langsung ke PUBLIC_DIR via junction/symlink (0 ms)
+        return;
+      }
+    }
+  } catch (_) { }
+
+  // Gunakan directory junction agar 2.8+ GB media di public/ tidak disalin ulang ke drive C:
+  try {
+    if (!fs.existsSync(bundlePublic)) {
+      fs.symlinkSync(PUBLIC_DIR, bundlePublic, 'junction');
+      return;
+    }
+  } catch (_) { }
+
   if (!fs.existsSync(bundlePublic)) {
     fs.mkdirSync(bundlePublic, { recursive: true });
   }
@@ -70,7 +89,6 @@ export function syncPublicToBundle(bundleLocation, onLog = console.log) {
       force: true,
       dereference: true,
     });
-    // onLog('[SYNC] File media public/ terbaru disinkronkan ke bundle Remotion.');
   } catch (err) {
     onLog(`[WARN] Gagal menyinkronkan file public ke bundle: ${err.message}`);
   }
@@ -81,11 +99,42 @@ export function invalidateBundle() {
   lastBundleBuiltTime = 0;
 }
 
+/**
+ * Menyalin satu file dari public/ ke bundle Remotion yang sudah aktif di memori
+ * secara asinkron tanpa memicu rebuild bundle atau menyalin ulang seluruh folder public/.
+ */
+export async function syncSingleFileToCachedBundle(relPath) {
+  if (!relPath || !cachedBundleLocation || !fs.existsSync(cachedBundleLocation)) return;
+  const bundlePublic = path.join(cachedBundleLocation, 'public');
+  try {
+    if (fs.existsSync(bundlePublic) && fs.lstatSync(bundlePublic).isSymbolicLink()) {
+      return; // Sudah tertaut langsung ke PUBLIC_DIR
+    }
+  } catch (_) { }
+  const src = path.resolve(PUBLIC_DIR, relPath);
+  const dest = path.resolve(bundlePublic, relPath);
+  if (!src.startsWith(PUBLIC_DIR) || !fs.existsSync(src)) return;
+  try {
+    await fs.promises.mkdir(path.dirname(dest), { recursive: true });
+    await fs.promises.copyFile(src, dest);
+  } catch { }
+}
+
+function detachBundlePublicJunction(bundleDir) {
+  const pub = path.join(bundleDir, 'public');
+  try {
+    if (fs.lstatSync(pub).isSymbolicLink()) {
+      try { fs.rmdirSync(pub); } catch (_) { fs.unlinkSync(pub); }
+    }
+  } catch (_) { }
+}
+
 function getDirSizeBytes(dirPath) {
   let total = 0;
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true });
     for (const e of entries) {
+      if (e.isSymbolicLink()) continue;
       const p = path.join(dirPath, e.name);
       if (e.isDirectory()) total += getDirSizeBytes(p);
       else total += fs.statSync(p).size;
@@ -117,6 +166,7 @@ export function cleanupRemotionTemp({ maxAgeMs = 1000 * 60 * 60 * 2, onLog = () 
           const st = fs.statSync(fullPath);
           if (now - st.mtimeMs >= maxAgeMs) {
             const sz = getDirSizeBytes(fullPath);
+            detachBundlePublicJunction(fullPath);
             fs.rmSync(fullPath, { recursive: true, force: true });
             deletedCount++;
             freedBytes += sz;
@@ -162,6 +212,7 @@ export async function getOrBuildBundle(onLog = console.log, forceRebuild = false
   onLog('[BUNDLER] Mempersiapkan bundle Remotion (Webpack/Rspack)...');
   const bundleLocation = await bundle({
     entryPoint: ENTRY_POINT,
+    publicDir: null,
     onProgress: (p) => {
       if (p % 25 === 0 || p === 100) {
         onLog(`[BUNDLER] Progres bundling: ${p}%`);
@@ -171,7 +222,10 @@ export async function getOrBuildBundle(onLog = console.log, forceRebuild = false
   cachedBundleLocation = bundleLocation;
   lastBundleBuiltTime = Date.now();
   if (prevBundle && prevBundle !== bundleLocation && fs.existsSync(prevBundle)) {
-    try { fs.rmSync(prevBundle, { recursive: true, force: true }); } catch (_) { }
+    try {
+      detachBundlePublicJunction(prevBundle);
+      fs.rmSync(prevBundle, { recursive: true, force: true });
+    } catch (_) { }
   }
   cleanupRemotionTemp({ maxAgeMs: 1000 * 60 * 60 * 2, onLog });
   syncPublicToBundle(bundleLocation, onLog);
@@ -190,7 +244,6 @@ export async function renderProductVariant({
   useGpu,
   quality = 'balanced',
   autoRenderCover = true,
-  ctaPlatform,
   onProgress,
   onLog = console.log,
   cancelSignal,
@@ -222,7 +275,7 @@ export async function renderProductVariant({
   onLog(`==================================================`);
 
   // 1. Resolve props, auto-fit duration & captions
-  const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps, ctaPlatform });
+  const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps });
   onLog(`[PROPS] Durasi video: ${totalClipsSec.toFixed(1)}s (${durationInFrames} frames @ ${fps}fps)`);
 
   // 2. Build or reuse bundle & sinkronkan aset public/ terbaru
@@ -247,16 +300,7 @@ export async function renderProductVariant({
   const vRegex = new RegExp(`\\s+${variantKey}(?:\\s*\\([^)]+\\))?$`, 'i');
   cleanProductName = cleanProductName.replace(vRegex, '').trim();
 
-  let platformSuffix = '';
-  if (props.ctaPlatform === 'tiktok') {
-    platformSuffix = ' (TikTok)';
-  } else if (props.ctaPlatform === 'instagram') {
-    platformSuffix = ' (Reels)';
-  } else if (props.ctaPlatform === 'universal') {
-    platformSuffix = ' (Multi-Platform)';
-  }
-
-  const outFileName = `${cleanProductName} ${variantKey}${platformSuffix}.mp4`;
+  const outFileName = `${cleanProductName} ${variantKey}.mp4`;
   const outputLocation = path.join(OUT_DIR, outFileName);
 
   onLog(`[RENDER] Menyimpan video ke: out/${outFileName}`);
@@ -444,7 +488,6 @@ export async function renderProductStill({
   const enableGpu = config.enableGpuRender !== false;
   const resolveOpts = {};
   if (renderMode) resolveOpts.renderMode = renderMode;
-  if (ctaPlatform) resolveOpts.ctaPlatform = ctaPlatform;
   const { props } = resolveVariantProps(product, variantKey, resolveOpts);
   const targetFrame = renderMode === 'cover' ? 0 : parseInt(frame, 10);
 
@@ -515,8 +558,6 @@ Contoh:
   const quality = qualityArg ? qualityArg.split('=')[1] : 'balanced';
   const frameArg = args.find(a => a.startsWith('--frame='));
   const frame = frameArg ? parseInt(frameArg.split('=')[1], 10) : 60;
-  const platformArg = args.find(a => a.startsWith('--platform=') || a.startsWith('--cta-platform='));
-  const ctaPlatform = platformArg ? platformArg.split('=')[1] : null;
 
   try {
     if (isBatch) {
@@ -525,18 +566,12 @@ Contoh:
       for (const p of products) {
         console.log(`\n--- Memproses Produk: ${p.name} (${p.id}) ---`);
         for (const vk of p.variantKeys) {
-          const platformsToRender = (ctaPlatform === 'both' || ctaPlatform === 'dual')
-            ? ['tiktok', 'instagram']
-            : [ctaPlatform || 'universal'];
-          for (const plat of platformsToRender) {
-            await renderProductVariant({
-              productOrId: p.id,
-              variantKey: vk,
-              fpsOverride: fps,
-              quality,
-              ctaPlatform: plat,
-            });
-          }
+          await renderProductVariant({
+            productOrId: p.id,
+            variantKey: vk,
+            fpsOverride: fps,
+            quality,
+          });
         }
       }
       console.log('\n[BATCH] Semua produk selesai dirender!');
@@ -561,20 +596,13 @@ Contoh:
       ? Object.keys(product.variants || {})
       : (target === '1' ? ['v1'] : (target === '2' ? ['v2'] : [target]));
 
-    const platformsToRender = (ctaPlatform === 'both' || ctaPlatform === 'dual')
-      ? ['tiktok', 'instagram']
-      : [ctaPlatform || 'universal'];
-
     for (const vk of variantsToRender) {
-      for (const plat of platformsToRender) {
-        await renderProductVariant({
-          productOrId: product,
-          variantKey: vk,
-          fpsOverride: fps,
-          quality,
-          ctaPlatform: plat,
-        });
-      }
+      await renderProductVariant({
+        productOrId: product,
+        variantKey: vk,
+        fpsOverride: fps,
+        quality,
+      });
     }
 
     console.log('\n🎉 Render selesai sempurna!');

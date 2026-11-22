@@ -71,6 +71,7 @@
 
     // Tiktok Caption, Cover & Batch Render Queue
     selectCoverTemplate: $('selectCoverTemplate'),
+    selectCoverFocus: $('selectCoverFocus'),
     selectCoverClipIndex: $('selectCoverClipIndex'),
     inputCoverFrameSec: $('inputCoverFrameSec'),
     selectCoverImage: $('selectCoverImage'),
@@ -121,7 +122,6 @@
     designReasonBox: $('designReasonBox'),
     designReasonText: $('designReasonText'),
     selectBadgeStyle: $('selectBadgeStyle'),
-    selectCtaPlatform: $('selectCtaPlatform'),
     inputCtaLabel: $('inputCtaLabel'),
     inputUrgencyTag: $('inputUrgencyTag'),
     inputVoiceOverDelay: $('inputVoiceOverDelay'),
@@ -312,7 +312,6 @@
     renderModalOutputName: $('renderModalOutputName'),
     renderModalFps: $('renderModalFps'),
     renderModalQuality: $('renderModalQuality'),
-    renderModalPlatform: $('renderModalPlatform'),
     renderModalV1Title: $('renderModalV1Title'),
     renderModalV2Title: $('renderModalV2Title'),
     chkGpuRender: $('chkGpuRender'),
@@ -521,7 +520,9 @@
 
       // Update Cover Image selector
       if (el.selectCoverImage) {
-        el.selectCoverImage.innerHTML = '<option value="">(Gunakan Frame dari Video Mentah)</option>';
+        el.selectCoverImage.innerHTML =
+          '<option value="">(Gunakan Frame dari Video Mentah)</option>' +
+          '<option value="__none__">Tanpa Video (Latar Grafis Studio)</option>';
         if (Array.isArray(data.images)) {
           data.images.forEach(img => {
             const opt = document.createElement('option');
@@ -784,7 +785,6 @@
     el.inputSpecLine1.value = v.specLine1 || '';
     el.inputSpecHighlight.value = v.specHighlight || '';
     el.inputCtaText.value = v.ctaText || 'Cek Promo di Keranjang Kuning';
-    if (el.selectCtaPlatform) el.selectCtaPlatform.value = v.ctaPlatform || 'universal';
     if (el.inputCtaLabel) el.inputCtaLabel.value = v.ctaLabel || '';
     if (el.inputUrgencyTag) el.inputUrgencyTag.value = v.urgencyTag || '';
     if (el.inputTiktokCaption) el.inputTiktokCaption.value = v.tiktokCaption || '';
@@ -806,7 +806,12 @@
     if (el.selectProductHeadlineDur) el.selectProductHeadlineDur.value = String(v.productHeadlineMaxSec || 0);
 
     // Cover / Thumbnail settings
-    if (el.selectCoverTemplate) el.selectCoverTemplate.value = v.coverTemplate || 'hook_card';
+    const rawCoverTpl = v.coverTemplate || 'hook_card';
+    const mappedCoverTpl = rawCoverTpl === 'bold_title'
+      ? 'big_headline'
+      : (rawCoverTpl === 'clean_minimal' ? 'studio_poster' : rawCoverTpl);
+    if (el.selectCoverTemplate) el.selectCoverTemplate.value = mappedCoverTpl;
+    if (el.selectCoverFocus) el.selectCoverFocus.value = v.coverFocus || 'auto';
     if (el.selectCoverClipIndex) el.selectCoverClipIndex.value = String(v.coverClipIndex ?? 0);
     if (el.inputCoverFrameSec) {
       el.inputCoverFrameSec.value = (v.coverFrameSec !== undefined && v.coverFrameSec !== null) ? v.coverFrameSec : '';
@@ -824,6 +829,9 @@
     checkDurationMatch(v);
     document.dispatchEvent(new CustomEvent('clipsUpdated'));
     updateThemeVisualPreview();
+    if (typeof renderCoverLiveCanvas === 'function') {
+      renderCoverLiveCanvas();
+    }
   }
 
   function populateClipVideoSelect(sel, currentClipSrc) {
@@ -1045,6 +1053,24 @@
         v1: { palette: 'pastel_rose', hookStyle: 'mask_wipe', subtitleStyle: 'typewriter_band', themeStyle: 'pastel_rose', cardStyle: 'mask_wipe', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'typewriter_band', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'light_leak', transitionVariant: 'v1' },
         v2: { palette: 'ink_mono', hookStyle: 'tilt_card', subtitleStyle: 'typewriter_band', themeStyle: 'minimal', cardStyle: 'tilt_card', hookVariant: 'v2', badgeStyle: 'glass', captionStyle: 'typewriter_band', captionVariant: 'v2', hookTransition: 'blur_zoom', clipTransition: 'shutter', transitionVariant: 'v2' },
         v3: { palette: 'pastel_rose', hookStyle: 'marker_highlight', subtitleStyle: 'fill_sweep', themeStyle: 'pastel_rose', cardStyle: 'marker_highlight', hookVariant: 'v3', badgeStyle: 'marker', captionStyle: 'fill_sweep', captionVariant: 'v3', hookTransition: 'light_leak', clipTransition: 'push_up', transitionVariant: 'v3' }
+      }
+    },
+    food_kuliner: {
+      palette: 'warm_kuliner', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill',
+      themeStyle: 'warm_kuliner', cardStyle: 'floating_tag', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'glass_pill', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'blur_zoom', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'warm_kuliner', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill', themeStyle: 'warm_kuliner', cardStyle: 'floating_tag', hookVariant: 'v1', badgeStyle: 'sticker', captionStyle: 'glass_pill', captionVariant: 'v1', hookTransition: 'whip_pan', clipTransition: 'blur_zoom', transitionVariant: 'v1' },
+        v2: { palette: 'warm_kuliner', hookStyle: 'tilt_card', subtitleStyle: 'karaoke_block', themeStyle: 'warm_kuliner', cardStyle: 'tilt_card', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'karaoke_block', captionVariant: 'v2', hookTransition: 'zoom_flash', clipTransition: 'whip_pan', transitionVariant: 'v2' },
+        v3: { palette: 'warm_kuliner', hookStyle: 'stack_slam', subtitleStyle: 'pop_scale', themeStyle: 'warm_kuliner', cardStyle: 'stack_slam', hookVariant: 'v3', badgeStyle: 'alert', captionStyle: 'pop_scale', captionVariant: 'v3', hookTransition: 'zoom_flash', clipTransition: 'zoom_flash', transitionVariant: 'v3' }
+      }
+    },
+    muslim_hampers: {
+      palette: 'sage_hampers', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill',
+      themeStyle: 'sage_hampers', cardStyle: 'floating_tag', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'glass_pill', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1',
+      versions: {
+        v1: { palette: 'sage_hampers', hookStyle: 'floating_tag', subtitleStyle: 'glass_pill', themeStyle: 'sage_hampers', cardStyle: 'floating_tag', hookVariant: 'v1', badgeStyle: 'glass', captionStyle: 'glass_pill', captionVariant: 'v1', hookTransition: 'light_leak', clipTransition: 'blur_zoom', transitionVariant: 'v1' },
+        v2: { palette: 'sage_hampers', hookStyle: 'mask_wipe', subtitleStyle: 'highlighter_bar', themeStyle: 'sage_hampers', cardStyle: 'mask_wipe', hookVariant: 'v2', badgeStyle: 'marker', captionStyle: 'highlighter_bar', captionVariant: 'v2', hookTransition: 'split_wipe', clipTransition: 'light_leak', transitionVariant: 'v2' },
+        v3: { palette: 'sage_hampers', hookStyle: 'marker_highlight', subtitleStyle: 'fill_sweep', themeStyle: 'sage_hampers', cardStyle: 'marker_highlight', hookVariant: 'v3', badgeStyle: 'glass', captionStyle: 'fill_sweep', captionVariant: 'v3', hookTransition: 'shutter', clipTransition: 'split_wipe', transitionVariant: 'v3' }
       }
     }
   };
@@ -1308,7 +1334,9 @@
     fresh_mint: '#8FD6B5',
     sale_yellow: '#FFD23F',
     tech_blue: '#3D6DF2',
-    ink_mono: '#E8E3D5'
+    ink_mono: '#E8E3D5',
+    warm_kuliner: '#E86A17',
+    sage_hampers: '#B07D3A'
   };
 
   const CC_PRESETS_META = [
@@ -1318,6 +1346,8 @@
     { id: 'health_supplement', title: 'Flat: Review & Vitamin', sub: 'Tilt Card 3D • Karaoke Block • Fresh Mint' },
     { id: 'gadget_tech', title: 'Flat: Gadget & Tech', sub: 'Mask Wipe • Sticker Label • Tech Blue' },
     { id: 'fashion_lifestyle', title: 'Flat: Fashion Editorial', sub: 'Mask Wipe • Typewriter Band • Pastel Rose' },
+    { id: 'food_kuliner', title: 'Flat: Food & Kuliner', sub: 'Floating Tag • Glass Pill • Warm Kuliner' },
+    { id: 'muslim_hampers', title: 'Flat: Muslim & Hampers', sub: 'Floating Tag • Glass Pill • Sage Hampers' },
     { id: 'skincare', title: 'Skincare & Clean', sub: 'Quiet Serif • Paper Pocket • Kinetic Pill' },
     { id: 'gadget', title: 'Gadget & Tech', sub: 'Label Tape • Cyber Spec • Strike Box' },
     { id: 'flash_sale', title: 'Flash Sale Promo', sub: 'Thermal Struk • Kupon • White Catalog' },
@@ -1334,6 +1364,8 @@
     { style: 'struck_swap', ver: 'v1', title: 'Struck Swap · Flat', sub: 'Masalah dicoret ➔ solusi menggantikan' },
     { style: 'tilt_card', ver: 'v1', title: 'Tilt Card · Flat', sub: 'Kartu blur-in dengan tilt 3D + badge stiker' },
     { style: 'mask_wipe', ver: 'v1', title: 'Mask Wipe · Flat', sub: 'Teks naik dari garis potong + plat menyapu' },
+    { style: 'split_versus', ver: 'v1', title: 'Split Versus (VS) · Flat', sub: 'Komparasi masalah vs solusi + koin VS di tengah' },
+    { style: 'floating_tag', ver: 'v1', title: 'Floating Tag · Flat', sub: 'Kartu tag e-commerce + titik pin produk (kuliner/hampers)' },
     { style: 'sticky_note', ver: 'v1', title: 'Sticky Note · v1', sub: 'Post-It kuning klasik dengan selotip atas' },
     { style: 'sticky_note', ver: 'v2', title: 'Grid Memo Pin · v2', sub: 'Kertas kotak + paku pin 3D + sapuan stabilo' },
     { style: 'sticky_note', ver: 'v3', title: 'Dual Layered Note · v3', sub: 'Dua kartu catatan bertumpuk kontras' },
@@ -1355,12 +1387,13 @@
   ];
 
   const CC_CAPTIONS_CATALOG = [
-    { style: 'karaoke_block', ver: 'v1', title: 'Karaoke Block · Flat', sub: 'Kata aktif jadi blok warna solid' },
+    { style: 'karaoke_block', ver: 'v1', title: 'Karaoke Block · Flat', sub: 'Kata aktif jadi blok warna solid + highlight angka' },
     { style: 'pop_scale', ver: 'v1', title: 'Pop Scale · Flat', sub: 'Satu kata besar memantul ritme cepat' },
     { style: 'highlighter_bar', ver: 'v1', title: 'Highlighter Bar · Flat', sub: 'Plat gelap + stabilo menyapu kata aktif' },
     { style: 'fill_sweep', ver: 'v1', title: 'Fill Sweep · Flat', sub: 'Warna mengisi kata sesuai durasi suara' },
     { style: 'typewriter_band', ver: 'v1', title: 'Typewriter Band · Flat', sub: 'Pita tipis + serif miring editorial' },
     { style: 'sticker_label', ver: 'v1', title: 'Sticker Label · Flat', sub: 'Label kertas bergaris miring bergantian' },
+    { style: 'glass_pill', ver: 'v1', title: 'Glass Pill · Flat', sub: 'Kapsul kaca buram + pil kata aktif (kuliner/hampers)' },
     { style: 'outline_pop', ver: 'v1', title: 'Outline Pop · v1', sub: 'Kontur hitam tegas & lompatan klasik FYP' },
     { style: 'outline_pop', ver: 'v2', title: 'Kinetic Bounce 3D · v2', sub: 'Kata aktif melompat miring + bayangan blok' },
     { style: 'outline_pop', ver: 'v3', title: 'Dot Indicator · v3', sub: 'Bar indikator menyala di atas kata aktif' },
@@ -1440,6 +1473,19 @@
         <div style="font-size:7px;color:#94A3B8;letter-spacing:0.5px;">${escapeHtml(copy.badge.toUpperCase())}</div>
         <div style="font-size:7.5px;color:#CBD5E1;margin:1px 0;">${escapeHtml(copy.line1)}</div>
         <div class="cc-mask-text">${escapeHtml(copy.highlight.toUpperCase())}</div>
+      </div>`;
+    }
+    if (style === 'split_versus') {
+      return `<div class="cc-anim-struck-swap">
+        <div style="font-size:7px;background:#111;color:#aaa;padding:2px 5px;border-radius:3px;">✗ ${escapeHtml(copy.line1)}</div>
+        <div style="font-size:7.5px;font-weight:800;background:var(--cc-accent);color:#111;padding:2px 5px;border-radius:3px;margin-top:2px;">✓ ${escapeHtml(copy.highlight)}</div>
+      </div>`;
+    }
+    if (style === 'floating_tag') {
+      return `<div class="cc-anim-tilt-card">
+        <span class="cc-tilt-badge">● ${escapeHtml(copy.badge.toUpperCase())}</span>
+        <div style="font-size:7.5px;color:#444;margin:2px 0;">${escapeHtml(copy.line1)}</div>
+        <div style="font-size:8px;font-weight:800;color:#111;background:var(--cc-accent);padding:1px 5px;border-radius:4px;display:inline-block;">${escapeHtml(copy.highlight)}</div>
       </div>`;
     }
     const key = `${style}-${ver}`;
@@ -1575,6 +1621,9 @@
     }
     if (style === 'sticker_label') {
       return `<div class="cc-sub-sticker-label"><div class="cc-sub-row"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div></div>`;
+    }
+    if (style === 'glass_pill') {
+      return `<div style="background:rgba(16,14,12,0.72);border:1px solid rgba(255,255,255,0.25);border-radius:999px;padding:3px 8px;"><div class="cc-sub-row cc-sub-karaoke-block"><span class="cc-sub-word">Kulit</span><span class="cc-sub-word">langsung</span><span class="cc-sub-word">lembap!</span></div></div>`;
     }
     const clsMap = {
       'outline_pop-v1': 'cc-sub-outline-v1',
@@ -1720,13 +1769,14 @@
         `;
       }).join('');
     } else if (ccState.tab === 'hooks') {
+      const flatHooks = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe', 'split_versus', 'floating_tag'];
       const items = CC_HOOKS_CATALOG.filter(item => {
-        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(item.style);
+        const isFlat = flatHooks.includes(item.style);
         if (isFlat) return true;
         return ccState.verFilter === 'all' || item.ver === ccState.verFilter;
       });
       grid.innerHTML = items.map(item => {
-        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(item.style);
+        const isFlat = flatHooks.includes(item.style);
         const isSelected = isFlat
           ? (activeFlatHook === item.style)
           : (!activeFlatHook && activeCard === item.style && activeHookVer === item.ver);
@@ -1744,13 +1794,14 @@
         `;
       }).join('');
     } else if (ccState.tab === 'captions') {
+      const flatCaps = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label', 'glass_pill'];
       const items = CC_CAPTIONS_CATALOG.filter(item => {
-        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(item.style);
+        const isFlat = flatCaps.includes(item.style);
         if (isFlat) return true;
         return ccState.verFilter === 'all' || item.ver === ccState.verFilter;
       });
       grid.innerHTML = items.map(item => {
-        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(item.style);
+        const isFlat = flatCaps.includes(item.style);
         const isSelected = isFlat
           ? (activeFlatSub === item.style)
           : (!activeFlatSub && (activeCap || 'outline_pop') === item.style && activeCapVer === item.ver);
@@ -1895,7 +1946,7 @@
         applySelectedPresetToFields();
       } else if (action === 'pick-hook') {
         syncSelectEl(el.selectPreset, '');
-        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe'].includes(card.dataset.style);
+        const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe', 'split_versus', 'floating_tag'].includes(card.dataset.style);
         if (isFlat) {
           syncSelectEl(el.selectHookStyle, card.dataset.style);
           if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
@@ -1906,7 +1957,7 @@
         }
       } else if (action === 'pick-caption') {
         syncSelectEl(el.selectPreset, '');
-        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label'].includes(card.dataset.style);
+        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label', 'glass_pill'].includes(card.dataset.style);
         if (isFlat) {
           syncSelectEl(el.selectSubtitleStyle, card.dataset.style);
           if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
@@ -1935,6 +1986,7 @@
   function updateThemeVisualPreview() {
     renderCapcutPicker();
     scheduleLivePreview();
+    if (typeof renderCoverLiveCanvas === 'function') renderCoverLiveCanvas();
   }
 
   function initLivePreview() {
@@ -2460,6 +2512,7 @@
     }
     setOptional('tiktokCaption', el.inputTiktokCaption?.value);
     setOptional('coverTemplate', el.selectCoverTemplate?.value);
+    setOptional('coverFocus', el.selectCoverFocus?.value);
     setOptional('coverImage', el.selectCoverImage?.value);
     setOptional('coverBadge', el.inputCoverBadge?.value);
     setOptional('coverSubtitle', el.inputCoverSubtitle?.value);
@@ -2492,7 +2545,6 @@
     v.specLine1 = el.inputSpecLine1.value.trim();
     v.specHighlight = el.inputSpecHighlight.value.trim();
     v.ctaText = el.inputCtaText.value.trim();
-    if (el.selectCtaPlatform) v.ctaPlatform = el.selectCtaPlatform.value;
     if (el.inputReferenceScript && el.inputReferenceScript.value.trim()) {
       v.voiceOverScript = el.inputReferenceScript.value.trim();
     }
@@ -3064,10 +3116,6 @@
     el.inputCtaText,
     el.inputCtaLabel,
     el.inputUrgencyTag,
-    el.inputCoverFrameSec,
-    el.inputCoverBadge,
-    el.inputCoverSubtitle,
-    el.inputCoverTitle,
   ];
 
   autoSyncInputs.forEach(inp => {
@@ -3075,39 +3123,1001 @@
       inp.addEventListener('input', () => {
         syncFormToVariant();
         updateThemeVisualPreview();
+        if (typeof renderCoverLiveCanvas === 'function') renderCoverLiveCanvas();
         triggerAutoSave();
       });
     }
   });
 
-  [el.selectCoverTemplate, el.selectCoverClipIndex, el.selectCoverImage, el.chkCoverEmbed].forEach(ctrl => {
-    if (ctrl) {
-      ctrl.addEventListener('change', () => {
-        live.armed = true;
+  // ===========================================================================
+  // KANVAS PRATINJAU THUMBNAIL / COVER TERPISAH (INSTAN 0ms, 1080x1920)
+  // Berjalan mandiri di dalam panel Cover Studio tanpa mengganggu Live Frame video.
+  // ===========================================================================
+  const COVER_PALETTES = {
+    editorial: { ink: '#0F172A', paper: '#FFFFFF', accent: '#E2FF32', accentInk: '#090A0F', alert: '#E5484D' },
+    pastel: { ink: '#2D2A32', paper: '#FFF8F5', accent: '#FF4D6D', accentInk: '#FFFFFF', alert: '#E11D48' },
+    flash_sale: { ink: '#141414', paper: '#FFFDF9', accent: '#FF2E54', accentInk: '#FFFFFF', alert: '#FFD23F' },
+    minimal: { ink: '#18181B', paper: '#FAFAFA', accent: '#E4E4E7', accentInk: '#09090B', alert: '#EF4444' },
+    pastel_rose: { ink: '#1F1A1C', paper: '#FFFDF9', accent: '#F2A7BD', accentInk: '#1F1A1C', alert: '#D94F70' },
+    fresh_mint: { ink: '#14261F', paper: '#F7FBF9', accent: '#8FD6B5', accentInk: '#14261F', alert: '#E05A47' },
+    sale_yellow: { ink: '#141414', paper: '#FFFDF7', accent: '#FFD23F', accentInk: '#141414', alert: '#E5484D' },
+    tech_blue: { ink: '#0F1B2D', paper: '#F3F6FA', accent: '#3D6DF2', accentInk: '#FFFFFF', alert: '#E5484D' },
+    ink_mono: { ink: '#1A1A1A', paper: '#F6F6F4', accent: '#E8E3D5', accentInk: '#1A1A1A', alert: '#C8372D' },
+    warm_kuliner: { ink: '#261710', paper: '#FFF9F2', accent: '#F97316', accentInk: '#FFFFFF', alert: '#DC2626' },
+    sage_hampers: { ink: '#1C2822', paper: '#F7FAF7', accent: '#C89D54', accentInk: '#1C2822', alert: '#B91C1C' },
+  };
+
+  const coverPreviewState = {
+    showGrid: false,
+    imageCache: new Map(),
+    focusCache: new Map(),
+    videoLoadedSrc: '',
+    videoTargetSec: -1,
+    seeking: false,
+    saliencyCanvas: null,
+  };
+
+  /**
+   * Deteksi otomatis titik fokus produk (Auto-Crop Saliency) dari frame video atau foto.
+   * Memindai gradien ketajaman tepi (Sobel edge) + kontras warna terhadap tepi latar pada grid 64x64
+   * untuk menemukan pusat objek produk (fx, fy) dan tingkat zoom optimal agar fokus ke produk.
+   */
+  function detectSmartProductFocus(source, sw, sh, cacheKey) {
+    if (cacheKey && coverPreviewState.focusCache.has(cacheKey)) {
+      return coverPreviewState.focusCache.get(cacheKey);
+    }
+    const fallback = { fx: 0.5, fy: 0.54, zoom: 1.28 };
+    if (!source || !sw || !sh) return fallback;
+
+    try {
+      if (!coverPreviewState.saliencyCanvas) {
+        coverPreviewState.saliencyCanvas = document.createElement('canvas');
+        coverPreviewState.saliencyCanvas.width = 64;
+        coverPreviewState.saliencyCanvas.height = 64;
+      }
+      const sc = coverPreviewState.saliencyCanvas;
+      const sctx = sc.getContext('2d', { willReadFrequently: true });
+      if (!sctx) return fallback;
+
+      sctx.drawImage(source, 0, 0, 64, 64);
+      const data = sctx.getImageData(0, 0, 64, 64).data;
+
+      // Hitung rata-rata warna pinggir (border) sebagai estimasi warna latar/dinding
+      let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
+      for (let i = 0; i < 64; i++) {
+        const topIdx = i * 4;
+        const botIdx = ((63 * 64) + i) * 4;
+        bgR += data[topIdx] + data[botIdx];
+        bgG += data[topIdx + 1] + data[botIdx + 1];
+        bgB += data[topIdx + 2] + data[botIdx + 2];
+        bgCount += 2;
+      }
+      bgR /= bgCount; bgG /= bgCount; bgB /= bgCount;
+
+      let sumW = 0, sumX = 0, sumY = 0;
+      let minX = 64, maxX = 0, minY = 64, maxY = 0;
+      const weights = new Float32Array(64 * 64);
+      let maxW = 0;
+
+      for (let y = 8; y < 56; y++) {
+        for (let x = 8; x < 56; x++) {
+          const idx = (y * 64 + x) * 4;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+
+          // Perbedaan ketajaman tepi horizontal & vertikal
+          const rRight = data[idx + 4], gRight = data[idx + 5], bRight = data[idx + 6];
+          const rDown = data[idx + 256], gDown = data[idx + 257], bDown = data[idx + 258];
+          const edge = Math.abs(r - rRight) + Math.abs(g - gRight) + Math.abs(b - bRight) +
+                       Math.abs(r - rDown) + Math.abs(g - gDown) + Math.abs(b - bDown);
+
+          // Kontras warna terhadap latar pinggir
+          const colorDiff = Math.abs(r - bgR) + Math.abs(g - bgG) + Math.abs(b - bgB);
+
+          // Bobot tengah (produk biasanya di koridor tengah x: 20%..80%, y: 22%..82%)
+          const nx = x / 63;
+          const ny = y / 63;
+          const centerBias = Math.max(0.2, 1 - (Math.pow((nx - 0.5) * 1.4, 2) + Math.pow((ny - 0.54) * 1.3, 2)));
+
+          const w = (edge * 1.35 + colorDiff * 0.65) * centerBias;
+          weights[y * 64 + x] = w;
+          if (w > maxW) maxW = w;
+        }
+      }
+
+      const threshold = maxW * 0.42;
+      for (let y = 8; y < 56; y++) {
+        for (let x = 8; x < 56; x++) {
+          const w = weights[y * 64 + x];
+          if (w >= threshold) {
+            const p = w * w;
+            sumW += p;
+            sumX += x * p;
+            sumY += y * p;
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+          }
+        }
+      }
+
+      if (sumW > 0) {
+        const fx = Math.max(0.28, Math.min(0.72, (sumX / sumW) / 63));
+        const fy = Math.max(0.26, Math.min(0.76, (sumY / sumW) / 63));
+        const spanX = Math.max(0.25, (maxX - minX) / 63);
+        const spanY = Math.max(0.25, (maxY - minY) / 63);
+        const spread = Math.max(spanX, spanY);
+        // Jika objek produk berukuran kecil di frame, perbesar zoom otomatis (antara 1.22x s/d 1.44x)
+        const autoZoom = Math.max(1.22, Math.min(1.44, 0.92 / Math.max(0.5, spread)));
+        const result = { fx, fy, zoom: autoZoom };
+        if (cacheKey) {
+          coverPreviewState.focusCache.set(cacheKey, result);
+          if (coverPreviewState.focusCache.size > 40) {
+            const firstK = coverPreviewState.focusCache.keys().next().value;
+            coverPreviewState.focusCache.delete(firstK);
+          }
+        }
+        return result;
+      }
+    } catch (_) { }
+    return fallback;
+  }
+
+  function resolveCanvasFocusParams(focusMode, source, sw, sh, cacheKey, isSplitWindow) {
+    const mode = focusMode || 'auto';
+    if (mode === 'full') {
+      return { fx: 0.5, fy: 0.5, zoom: 1.02 };
+    }
+    if (mode === 'center_close') {
+      return { fx: 0.5, fy: 0.52, zoom: isSplitWindow ? 1.38 : 1.26 };
+    }
+    if (mode === 'lower_product') {
+      return { fx: 0.5, fy: 0.70, zoom: isSplitWindow ? 1.34 : 1.22 };
+    }
+    if (mode === 'upper_face') {
+      return { fx: 0.5, fy: 0.32, zoom: isSplitWindow ? 1.28 : 1.18 };
+    }
+    // Mode 'auto': deteksi titik fokus produk secara cerdas
+    const detected = detectSmartProductFocus(source, sw, sh, cacheKey);
+    return {
+      fx: detected.fx,
+      fy: detected.fy,
+      zoom: isSplitWindow ? detected.zoom : Math.max(1.08, detected.zoom * 0.9),
+    };
+  }
+
+  function setCoverCanvasStatus(text) {
+    const st = $('coverLiveStatus');
+    if (!st) return;
+    if (!text) {
+      st.style.display = 'none';
+      st.textContent = '';
+    } else {
+      st.style.display = 'block';
+      st.textContent = text;
+    }
+  }
+
+  function drawRoundedRect(ctx, x, y, w, h, r) {
+    const rad = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rad, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rad);
+    ctx.arcTo(x + w, y + h, x, y + h, rad);
+    ctx.arcTo(x, y + h, x, y, rad);
+    ctx.arcTo(x, y, x + w, y, rad);
+    ctx.closePath();
+  }
+
+  function wrapCanvasLines(ctx, text, maxWidth) {
+    const words = String(text || '').trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return [];
+    const lines = [];
+    let current = words[0];
+    for (let i = 1; i < words.length; i++) {
+      const test = current + ' ' + words[i];
+      if (ctx.measureText(test).width <= maxWidth) {
+        current = test;
+      } else {
+        lines.push(current);
+        current = words[i];
+      }
+    }
+    lines.push(current);
+    return lines;
+  }
+
+  function drawCoverMediaFit(ctx, source, sw, sh, dx, dy, dw, dh, zoom = 1.02, focusX = 0.5, focusY = 0.5) {
+    if (!sw || !sh) return;
+    const scale = Math.max(dw / sw, dh / sh) * zoom;
+    const rw = sw * scale;
+    const rh = sh * scale;
+    // Geser gambar agar titik fokus produk (focusX, focusY) berada tepat di tengah jendela (dx + dw/2, dy + dh/2),
+    // namun tetap dijaga (clamp) agar tidak ada tepi kosong di dalam jendela.
+    const desiredX = (dx + dw / 2) - (focusX * rw);
+    const desiredY = (dy + dh / 2) - (focusY * rh);
+    const minX = dx + dw - rw;
+    const minY = dy + dh - rh;
+    const rx = Math.max(minX, Math.min(dx, desiredX));
+    const ry = Math.max(minY, Math.min(dy, desiredY));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(dx, dy, dw, dh);
+    ctx.clip();
+    ctx.drawImage(source, rx, ry, rw, rh);
+    ctx.restore();
+  }
+
+  function resolveCoverPalette(v) {
+    const key = el.selectPalette?.value || v?.palette || el.selectThemeStyle?.value || v?.themeStyle || 'pastel_rose';
+    return COVER_PALETTES[key] || COVER_PALETTES.pastel_rose;
+  }
+
+  function renderCoverLiveCanvas() {
+    const canvas = $('coverLiveCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const v = state.currentProduct?.variants?.[state.activeVariantKey] || {};
+    const pal = resolveCoverPalette(v);
+    const rawTpl = el.selectCoverTemplate?.value || v.coverTemplate || 'promo_split';
+    const tpl = rawTpl === 'bold_title' ? 'big_headline' : (rawTpl === 'clean_minimal' ? 'studio_poster' : rawTpl);
+    const focusMode = el.selectCoverFocus?.value || v.coverFocus || 'auto';
+
+    const badge = (el.inputCoverBadge?.value.trim() || v.coverBadge || el.inputBadgeText?.value.trim() || v.badgeText || 'REKOMENDASI').trim();
+    const title = (el.inputCoverTitle?.value.trim() || v.coverTitle || el.inputHookHighlight?.value.trim() || v.hookHighlight || state.currentProduct?.name || 'Solusi Praktis Terbaik').trim();
+    const subtitle = (el.inputCoverSubtitle?.value.trim() || v.coverSubtitle || el.inputHookLine1?.value.trim() || v.hookLine1 || '').trim();
+    const cta = (el.inputCtaText?.value.trim() || v.ctaText || 'Cek Keranjang Sekarang').trim();
+    const watermark = (el.inputWatermark?.value.trim() || state.currentProduct?.watermarkText || '@spillbyna | @inanikmatul01').trim();
+
+    const coverImgVal = el.selectCoverImage ? el.selectCoverImage.value : (v.coverImage || '');
+    const clipIdx = Math.max(0, Math.min(3, parseInt(el.selectCoverClipIndex?.value ?? v.coverClipIndex ?? '0', 10) || 0));
+    const clips = Array.isArray(v.clips) ? v.clips : [];
+    const targetClip = clips[clipIdx] || clips[0] || { startSec: 0, endSec: 5 };
+    const mainVideo = targetClip.src || el.selectProductVideo?.value || state.currentProduct?.videoSource || '';
+    const explicitSec = el.inputCoverFrameSec && el.inputCoverFrameSec.value !== ''
+      ? parseFloat(el.inputCoverFrameSec.value)
+      : (v.coverFrameSec !== undefined && v.coverFrameSec !== null ? Number(v.coverFrameSec) : NaN);
+    const frameSec = !isNaN(explicitSec) && explicitSec >= 0
+      ? explicitSec
+      : ((targetClip.startSec || 0) + Math.min(1.5, Math.max(0, ((targetClip.endSec || 5) - (targetClip.startSec || 0)) * 0.35)));
+
+    let bgKind = 'none';
+    if (coverImgVal === '__none__') {
+      bgKind = 'none';
+    } else if (coverImgVal) {
+      bgKind = 'image';
+    } else if (tpl === 'studio_poster') {
+      bgKind = 'none';
+    } else if (mainVideo) {
+      bgKind = 'video';
+    }
+
+    const metaEl = $('coverLiveMeta');
+    if (metaEl) {
+      const tplNames = {
+        studio_poster: 'Studio Poster',
+        promo_split: 'Promo Split',
+        top_banner_hero: 'Top Banner Hero',
+        magazine_box: 'Magazine Box',
+        diagonal_split: 'Diagonal Split',
+        polaroid_review: 'Polaroid Review',
+        big_headline: 'Big Headline',
+        hook_card: 'Hook Card',
+      };
+      const tplLabel = tplNames[tpl] || 'Cover';
+      metaEl.textContent = bgKind === 'video' ? `${tplLabel} · ${frameSec.toFixed(1)}s` : tplLabel;
+    }
+
+    // Prepare background media if needed
+    let bgMedia = null;
+    let bgW = 0;
+    let bgH = 0;
+
+    if (bgKind === 'image') {
+      const imgUrl = `/public/${encodeURI(coverImgVal)}`;
+      if (coverPreviewState.imageCache.has(imgUrl)) {
+        const cached = coverPreviewState.imageCache.get(imgUrl);
+        if (cached.complete && cached.naturalWidth > 0) {
+          bgMedia = cached;
+          bgW = cached.naturalWidth;
+          bgH = cached.naturalHeight;
+          setCoverCanvasStatus('');
+        }
+      } else {
+        const img = new Image();
+        setCoverCanvasStatus('Memuat foto cover...');
+        img.onload = () => {
+          setCoverCanvasStatus('');
+          renderCoverLiveCanvas();
+        };
+        img.onerror = () => {
+          setCoverCanvasStatus('Foto cover gagal dimuat');
+        };
+        img.src = imgUrl;
+        coverPreviewState.imageCache.set(imgUrl, img);
+      }
+    } else if (bgKind === 'video' && mainVideo) {
+      const vid = $('coverSourceVideo');
+      if (vid) {
+        const vidUrl = `/public/${encodeURI(mainVideo)}`;
+        if (coverPreviewState.videoLoadedSrc !== vidUrl) {
+          coverPreviewState.videoLoadedSrc = vidUrl;
+          coverPreviewState.videoTargetSec = frameSec;
+          setCoverCanvasStatus('Memuat frame video...');
+          vid.src = vidUrl;
+          vid.load();
+        } else if (vid.readyState >= 2) {
+          if (Math.abs((vid.currentTime || 0) - frameSec) > 0.08 && !coverPreviewState.seeking) {
+            coverPreviewState.seeking = true;
+            coverPreviewState.videoTargetSec = frameSec;
+            setCoverCanvasStatus(`Menuju detik ${frameSec.toFixed(1)}s...`);
+            try {
+              vid.currentTime = Math.min(vid.duration || frameSec, Math.max(0, frameSec));
+            } catch (_) {
+              coverPreviewState.seeking = false;
+            }
+          }
+          if (vid.videoWidth > 0) {
+            bgMedia = vid;
+            bgW = vid.videoWidth;
+            bgH = vid.videoHeight;
+            if (!coverPreviewState.seeking) setCoverCanvasStatus('');
+          }
+        }
+      }
+    } else {
+      setCoverCanvasStatus('');
+    }
+
+    // Clear 1080x1920 canvas
+    ctx.clearRect(0, 0, 1080, 1920);
+
+    const focusCacheKey = bgKind === 'image'
+      ? `img:${coverImgVal}`
+      : (bgKind === 'video' ? `vid:${mainVideo}:${frameSec.toFixed(1)}` : '');
+
+    // Helper: draw background layer into any target box (0,0,1080,1920 or a split window) with smart product focus
+    const drawFocusedBgBox = (bx, by, bw, bh, isSplitWindow = false) => {
+      if (bgMedia && bgW > 0) {
+        const fp = resolveCanvasFocusParams(focusMode, bgMedia, bgW, bgH, focusCacheKey, isSplitWindow);
+        drawCoverMediaFit(ctx, bgMedia, bgW, bgH, bx, by, bw, bh, fp.zoom, fp.fx, fp.fy);
+      } else {
+        ctx.fillStyle = pal.ink;
+        ctx.fillRect(bx, by, bw, bh);
+        const rad = ctx.createRadialGradient(bx + bw / 2, by + bh * 0.4, 40, bx + bw / 2, by + bh * 0.4, Math.max(bw, bh));
+        rad.addColorStop(0, 'rgba(255,255,255,0.12)');
+        rad.addColorStop(1, 'rgba(0,0,0,0.55)');
+        ctx.fillStyle = rad;
+        ctx.fillRect(bx, by, bw, bh);
+      }
+    };
+
+    const drawFullBg = () => drawFocusedBgBox(0, 0, 1080, 1920, false);
+
+    // Helper: draw badge pill
+    const drawBadgePill = (textStr, x, y, inverted = false) => {
+      if (!textStr) return 0;
+      ctx.save();
+      ctx.font = '800 36px "Poppins", "Plus Jakarta Sans", sans-serif';
+      const up = textStr.toUpperCase();
+      const tw = ctx.measureText(up).width;
+      const pw = Math.min(912, tw + 52);
+      const ph = 68;
+      ctx.fillStyle = inverted ? pal.ink : pal.accent;
+      drawRoundedRect(ctx, x, y, pw, ph, 999);
+      ctx.fill();
+      ctx.fillStyle = inverted ? pal.paper : pal.accentInk;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(up, x + 26, y + ph / 2 + 2, pw - 52);
+      ctx.restore();
+      return ph;
+    };
+
+    // 1. TEMPLATE: STUDIO POSTER
+    if (tpl === 'studio_poster') {
+      ctx.fillStyle = pal.ink;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Subtle grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.045)';
+      ctx.lineWidth = 1;
+      for (let gx = 0; gx < 1080; gx += 54) {
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, 1920); ctx.stroke();
+      }
+      for (let gy = 0; gy < 1920; gy += 54) {
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(1080, gy); ctx.stroke();
+      }
+
+      // Soft corner accent circles
+      ctx.save();
+      ctx.globalAlpha = 0.15;
+      ctx.fillStyle = pal.accent;
+      ctx.beginPath(); ctx.arc(960, 120, 260, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 0.10;
+      ctx.beginPath(); ctx.arc(120, 1780, 280, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+
+      const hasPhoto = bgKind === 'image' && bgMedia && bgW > 0;
+      let curY = hasPhoto ? 340 : 480;
+
+      if (badge) {
+        curY += drawBadgePill(badge, 84, curY, false) + 28;
+      }
+
+      if (hasPhoto) {
+        ctx.save();
+        drawRoundedRect(ctx, 84, curY, 912, 460, 28);
+        ctx.clip();
+        drawFocusedBgBox(84, curY, 912, 460, true);
+        ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = pal.accent;
+        ctx.lineWidth = 6;
+        drawRoundedRect(ctx, 84, curY, 912, 460, 28);
+        ctx.stroke();
+        ctx.restore();
+        curY += 488;
+      }
+
+      // Main paper card
+      const titleFontSize = hasPhoto ? 68 : (title.length > 26 ? 76 : 92);
+      ctx.font = `900 ${titleFontSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      const titleLines = wrapCanvasLines(ctx, title, 824).slice(0, 4);
+      const titleLineH = Math.round(titleFontSize * 1.14);
+
+      ctx.font = `600 ${hasPhoto ? 34 : 38}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      const subLines = subtitle ? wrapCanvasLines(ctx, subtitle, 824).slice(0, 2) : [];
+      const subLineH = hasPhoto ? 44 : 48;
+
+      const cardH = 96 + (titleLines.length * titleLineH) + (subLines.length ? 20 + subLines.length * subLineH : 0) + (cta ? 98 : 0);
+      ctx.save();
+      ctx.fillStyle = pal.paper;
+      drawRoundedRect(ctx, 84, curY, 912, cardH, 32);
+      ctx.fill();
+      // Top accent border bar
+      ctx.fillStyle = pal.accent;
+      drawRoundedRect(ctx, 84, curY, 912, 16, 8);
+      ctx.fill();
+
+      let innerY = curY + 50;
+      ctx.fillStyle = pal.ink;
+      ctx.font = `900 ${titleFontSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      titleLines.forEach(line => {
+        ctx.fillText(line, 128, innerY);
+        innerY += titleLineH;
+      });
+
+      if (subLines.length > 0) {
+        innerY += 14;
+        ctx.save();
+        ctx.globalAlpha = 0.78;
+        ctx.font = `600 ${hasPhoto ? 34 : 38}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+        subLines.forEach(line => {
+          ctx.fillText(line, 128, innerY);
+          innerY += subLineH;
+        });
+        ctx.restore();
+      }
+
+      if (cta) {
+        innerY += 22;
+        ctx.font = '800 32px "Poppins", "Plus Jakarta Sans", sans-serif';
+        const ctaText = `${cta}`;
+        const cw = Math.min(824, ctx.measureText(ctaText).width + 56);
+        ctx.fillStyle = pal.accent;
+        drawRoundedRect(ctx, 128, innerY, cw, 64, 14);
+        ctx.fill();
+        ctx.fillStyle = pal.accentInk;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ctaText, 156, innerY + 33, cw - 56);
+      }
+      ctx.restore();
+    }
+    // 2. TEMPLATE: PROMO SPLIT (Auto-Crop Fokus Produk di jendela atas 0..1050)
+    else if (tpl === 'promo_split') {
+      const panelTop = 1010;
+      ctx.fillStyle = pal.paper;
+      ctx.fillRect(0, 0, 1080, 1920);
+      drawFocusedBgBox(0, 0, 1080, panelTop + 40, true);
+      if (badge) {
+        drawBadgePill(badge, 80, 320, false);
+      }
+      ctx.save();
+      ctx.fillStyle = pal.paper;
+      drawRoundedRect(ctx, 0, panelTop, 1080, 950, 44);
+      ctx.fill();
+
+      let innerY = panelTop + 64;
+      if (subtitle) {
+        ctx.save();
+        ctx.fillStyle = pal.ink;
+        ctx.globalAlpha = 0.78;
+        ctx.font = '600 42px "Poppins", "Plus Jakarta Sans", sans-serif';
+        ctx.textBaseline = 'top';
+        const sLines = wrapCanvasLines(ctx, subtitle, 920).slice(0, 2);
+        sLines.forEach(l => {
+          ctx.fillText(l, 80, innerY);
+          innerY += 52;
+        });
+        ctx.restore();
+        innerY += 14;
+      }
+
+      const tSize = title.length > 24 ? 72 : 88;
+      ctx.fillStyle = pal.ink;
+      ctx.font = `800 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      const tLines = wrapCanvasLines(ctx, title, 920).slice(0, 3);
+      tLines.forEach(l => {
+        ctx.fillText(l, 80, innerY);
+        innerY += Math.round(tSize * 1.12);
+      });
+
+      if (cta) {
+        innerY += 20;
+        ctx.font = '800 36px "Poppins", "Plus Jakarta Sans", sans-serif';
+        const cw = Math.min(920, ctx.measureText(cta).width + 60);
+        ctx.fillStyle = pal.accent;
+        drawRoundedRect(ctx, 80, innerY, cw, 68, 14);
+        ctx.fill();
+        ctx.fillStyle = pal.accentInk;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cta, 110, innerY + 35, cw - 60);
+      }
+      ctx.restore();
+    }
+    // 2B. TEMPLATE: TOP BANNER HERO (Panel Judul Atas + Visual Fokus Produk Bawah)
+    else if (tpl === 'top_banner_hero') {
+      const headerBottom = 860;
+      ctx.fillStyle = pal.paper;
+      ctx.fillRect(0, 0, 1080, 1920);
+      drawFocusedBgBox(0, headerBottom - 36, 1080, 1920 - (headerBottom - 36), true);
+
+      ctx.save();
+      ctx.fillStyle = pal.paper;
+      drawRoundedRect(ctx, 0, -40, 1080, headerBottom + 40, 44);
+      ctx.fill();
+      ctx.fillStyle = pal.accent;
+      ctx.fillRect(0, headerBottom - 12, 1080, 12);
+
+      let iy = 316;
+      if (badge) {
+        iy += drawBadgePill(badge, 80, iy, false) + 22;
+      }
+      const tSize = title.length > 24 ? 70 : 84;
+      ctx.fillStyle = pal.ink;
+      ctx.font = `900 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      const tLines = wrapCanvasLines(ctx, title, 920).slice(0, 3);
+      tLines.forEach(l => {
+        ctx.fillText(l, 80, iy);
+        iy += Math.round(tSize * 1.1);
+      });
+      if (subtitle) {
+        iy += 10;
+        ctx.globalAlpha = 0.78;
+        ctx.font = '600 38px "Poppins", "Plus Jakarta Sans", sans-serif';
+        wrapCanvasLines(ctx, subtitle, 920).slice(0, 2).forEach(l => {
+          ctx.fillText(l, 80, iy);
+          iy += 46;
+        });
+      }
+      ctx.restore();
+    }
+    // 2C. TEMPLATE: MAGAZINE BOX (Bingkai Katalog Editorial + Auto-Crop Fokus Produk)
+    else if (tpl === 'magazine_box') {
+      ctx.fillStyle = pal.paper;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Masthead header
+      ctx.save();
+      ctx.fillStyle = pal.ink;
+      ctx.font = '900 28px "Poppins", "Plus Jakarta Sans", sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText((badge || 'PILIHAN UTAMA').toUpperCase(), 84, 314);
+      ctx.fillRect(84, 358, 912, 4);
+
+      // Framed product focus box
+      const boxX = 84, boxY = 386, boxW = 912, boxH = 670;
+      ctx.save();
+      drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 28);
+      ctx.clip();
+      drawFocusedBgBox(boxX, boxY, boxW, boxH, true);
+      ctx.restore();
+
+      ctx.strokeStyle = pal.ink;
+      ctx.lineWidth = 5;
+      drawRoundedRect(ctx, boxX, boxY, boxW, boxH, 28);
+      ctx.stroke();
+
+      if (cta) {
+        ctx.font = '900 28px "Poppins", "Plus Jakarta Sans", sans-serif';
+        const cw = Math.min(520, ctx.measureText(cta).width + 48);
+        const cx = boxX + boxW - cw - 24;
+        const cy = boxY + boxH - 80;
+        ctx.fillStyle = pal.accent;
+        drawRoundedRect(ctx, cx, cy, cw, 56, 999);
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = pal.ink;
+        ctx.stroke();
+        ctx.fillStyle = pal.accentInk;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cta, cx + 24, cy + 29, cw - 48);
+      }
+
+      let ty = 1090;
+      const tSize = title.length > 24 ? 68 : 82;
+      ctx.fillStyle = pal.ink;
+      ctx.font = `900 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      wrapCanvasLines(ctx, title, 912).slice(0, 3).forEach(l => {
+        ctx.fillText(l, 84, ty);
+        ty += Math.round(tSize * 1.1);
+      });
+
+      if (subtitle) {
+        ty += 12;
+        ctx.globalAlpha = 0.78;
+        ctx.font = '600 38px "Poppins", "Plus Jakarta Sans", sans-serif';
+        wrapCanvasLines(ctx, subtitle, 912).slice(0, 2).forEach(l => {
+          ctx.fillText(l, 84, ty);
+          ty += 46;
+        });
+      }
+      ctx.restore();
+    }
+    // 2D. TEMPLATE: DIAGONAL SPLIT (Potongan Miring + Auto-Crop Fokus Produk)
+    else if (tpl === 'diagonal_split') {
+      ctx.fillStyle = pal.ink;
+      ctx.fillRect(0, 0, 1080, 1920);
+      drawFocusedBgBox(0, 0, 1080, 1140, true);
+
+      if (badge) {
+        drawBadgePill(badge, 80, 320, false);
+      }
+
+      ctx.save();
+      ctx.translate(540, 1040);
+      ctx.rotate((-5 * Math.PI) / 180);
+      ctx.fillStyle = pal.ink;
+      ctx.fillRect(-700, 0, 1400, 1000);
+      ctx.fillStyle = pal.accent;
+      ctx.fillRect(-700, -10, 1400, 18);
+      ctx.restore();
+
+      let iy = 1065;
+      ctx.save();
+      if (subtitle) {
+        ctx.fillStyle = pal.accent;
+        ctx.font = '700 40px "Poppins", "Plus Jakarta Sans", sans-serif';
+        ctx.textBaseline = 'top';
+        wrapCanvasLines(ctx, subtitle, 912).slice(0, 2).forEach(l => {
+          ctx.fillText(l, 84, iy);
+          iy += 48;
+        });
+        iy += 12;
+      }
+      const tSize = title.length > 24 ? 72 : 86;
+      ctx.fillStyle = pal.paper;
+      ctx.font = `900 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      wrapCanvasLines(ctx, title, 912).slice(0, 3).forEach(l => {
+        ctx.fillText(l, 84, iy);
+        iy += Math.round(tSize * 1.1);
+      });
+      if (cta) {
+        iy += 16;
+        ctx.font = '800 34px "Poppins", "Plus Jakarta Sans", sans-serif';
+        const cw = Math.min(912, ctx.measureText(cta).width + 56);
+        ctx.fillStyle = pal.accent;
+        drawRoundedRect(ctx, 84, iy, cw, 64, 12);
+        ctx.fill();
+        ctx.fillStyle = pal.accentInk;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(cta, 112, iy + 33, cw - 56);
+      }
+      ctx.restore();
+    }
+    // 2E. TEMPLATE: POLAROID REVIEW (Kartu Polaroid Miring + Auto-Crop Fokus Produk)
+    else if (tpl === 'polaroid_review') {
+      ctx.fillStyle = pal.ink;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      ctx.save();
+      ctx.translate(540, 700);
+      ctx.rotate((-2 * Math.PI) / 180);
+      ctx.fillStyle = pal.paper;
+      drawRoundedRect(ctx, -430, -370, 860, 740, 24);
+      ctx.fill();
+
+      ctx.save();
+      drawRoundedRect(ctx, -402, -342, 804, 616, 14);
+      ctx.clip();
+      drawFocusedBgBox(-402, -342, 804, 616, true);
+      ctx.restore();
+
+      ctx.fillStyle = pal.ink;
+      ctx.font = '800 28px "Poppins", "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((badge || 'REVIEW JUJUR PRODUK').toUpperCase(), 0, 318);
+      ctx.restore();
+
+      // Highlight title below polaroid
+      let iy = 1130;
+      const tSize = title.length > 22 ? 66 : 78;
+      ctx.save();
+      ctx.font = `900 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      const tLines = wrapCanvasLines(ctx, title, 840).slice(0, 3);
+      const tBoxH = tLines.length * Math.round(tSize * 1.14) + 32;
+      ctx.fillStyle = pal.accent;
+      drawRoundedRect(ctx, 84, iy, 912, tBoxH, 20);
+      ctx.fill();
+
+      ctx.fillStyle = pal.accentInk;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      let ty = iy + 18;
+      tLines.forEach(l => {
+        ctx.fillText(l, 540, ty);
+        ty += Math.round(tSize * 1.14);
+      });
+      iy += tBoxH + 22;
+
+      if (subtitle) {
+        ctx.fillStyle = pal.paper;
+        ctx.globalAlpha = 0.9;
+        ctx.font = '600 38px "Poppins", "Plus Jakarta Sans", sans-serif';
+        wrapCanvasLines(ctx, subtitle, 880).slice(0, 2).forEach(l => {
+          ctx.fillText(l, 540, iy);
+          iy += 46;
+        });
+      }
+      ctx.restore();
+    }
+    // 3. TEMPLATE: HOOK CARD
+    else if (tpl === 'hook_card') {
+      drawFullBg();
+      const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+      grad.addColorStop(0, 'rgba(0,0,0,0.32)');
+      grad.addColorStop(0.45, 'rgba(0,0,0,0.08)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.42)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      // Card at y=360 (matching HookCardCover translateY(170px) + SAFE.top)
+      const cardX = 120;
+      const cardW = 840;
+      let cardY = 360;
+
+      ctx.font = '600 38px "Poppins", "Plus Jakarta Sans", sans-serif';
+      const subLines = subtitle ? wrapCanvasLines(ctx, subtitle, cardW - 64).slice(0, 2) : [];
+      ctx.font = '900 52px "Poppins", "Plus Jakarta Sans", sans-serif';
+      const hlLines = wrapCanvasLines(ctx, title, cardW - 84).slice(0, 3);
+
+      const cardH = 64 + (badge ? 40 : 0) + (subLines.length * 48) + 18 + (hlLines.length * 64 + 24);
+      ctx.save();
+      ctx.fillStyle = pal.paper;
+      drawRoundedRect(ctx, cardX, cardY, cardW, cardH, 22);
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = pal.ink;
+      ctx.stroke();
+
+      let iy = cardY + 28;
+      if (badge) {
+        ctx.fillStyle = pal.ink;
+        ctx.globalAlpha = 0.72;
+        ctx.font = '700 22px "Poppins", "Plus Jakarta Sans", sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.fillText(badge.toUpperCase(), cardX + 32, iy);
+        ctx.globalAlpha = 1;
+        iy += 36;
+      }
+      ctx.fillStyle = pal.ink;
+      ctx.font = '600 38px "Poppins", "Plus Jakarta Sans", sans-serif';
+      ctx.textBaseline = 'top';
+      subLines.forEach(l => {
+        ctx.fillText(l, cardX + 32, iy);
+        iy += 48;
+      });
+
+      iy += 12;
+      const hlBoxH = hlLines.length * 62 + 20;
+      ctx.fillStyle = pal.accent;
+      drawRoundedRect(ctx, cardX + 28, iy, cardW - 56, hlBoxH, 14);
+      ctx.fill();
+
+      ctx.fillStyle = pal.accentInk;
+      ctx.font = '900 50px "Poppins", "Plus Jakarta Sans", sans-serif';
+      let hy = iy + 12;
+      hlLines.forEach(l => {
+        ctx.fillText(l, cardX + 44, hy);
+        hy += 62;
+      });
+      ctx.restore();
+    }
+    // 4. TEMPLATE: BIG HEADLINE (DEFAULT)
+    else {
+      drawFullBg();
+      const grad = ctx.createLinearGradient(0, 0, 0, 1920);
+      grad.addColorStop(0, 'rgba(0,0,0,0.12)');
+      grad.addColorStop(0.35, 'rgba(0,0,0,0.28)');
+      grad.addColorStop(0.78, 'rgba(0,0,0,0.80)');
+      grad.addColorStop(1, 'rgba(0,0,0,0.90)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const tSize = title.length > 22 ? 84 : 104;
+      ctx.font = `800 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      const tLines = wrapCanvasLines(ctx, title, 880).slice(0, 3);
+      const tLineH = Math.round(tSize * 1.18);
+
+      ctx.font = '600 46px "Poppins", "Plus Jakarta Sans", sans-serif';
+      const sLines = subtitle ? wrapCanvasLines(ctx, subtitle, 920).slice(0, 2) : [];
+
+      let blockY = 1520 - (tLines.length * tLineH) - (sLines.length * 56) - (badge ? 96 : 0);
+      if (badge) {
+        drawBadgePill(badge, 80, blockY, false);
+        blockY += 94;
+      }
+      if (sLines.length > 0) {
+        ctx.save();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '600 46px "Poppins", "Plus Jakarta Sans", sans-serif';
+        ctx.textBaseline = 'top';
+        sLines.forEach(l => {
+          ctx.fillText(l, 80, blockY);
+          blockY += 56;
+        });
+        ctx.restore();
+        blockY += 16;
+      }
+      ctx.font = `800 ${tSize}px "Poppins", "Plus Jakarta Sans", sans-serif`;
+      ctx.textBaseline = 'top';
+      tLines.forEach(l => {
+        const lw = ctx.measureText(l).width;
+        ctx.fillStyle = pal.accent;
+        drawRoundedRect(ctx, 80, blockY - 4, Math.min(920, lw + 40), tLineH - 6, 12);
+        ctx.fill();
+        ctx.fillStyle = pal.accentInk;
+        ctx.fillText(l, 100, blockY);
+        blockY += tLineH;
+      });
+    }
+
+    // Watermark pill at y = 1580
+    if (watermark) {
+      ctx.save();
+      ctx.font = '700 23px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const cleanWm = watermark.replace(/@/g, '').split('|').map(s => s.trim()).filter(Boolean).join('   |   ');
+      const wmW = Math.min(880, ctx.measureText(cleanWm).width + 64);
+      const wmX = (1080 - wmW) / 2;
+      const wmY = 1580;
+      ctx.fillStyle = 'rgba(12, 10, 18, 0.85)';
+      drawRoundedRect(ctx, wmX, wmY, wmW, 50, 999);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(cleanWm, 540, wmY + 26);
+      ctx.restore();
+    }
+
+    // Optional Safe Zone Grid Overlay (IG 4:5 y=285..1635 & TikTok 3:4 y=240..1680)
+    if (coverPreviewState.showGrid) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.fillRect(0, 0, 1080, 285);
+      ctx.fillRect(0, 1635, 1080, 1920 - 1635);
+
+      ctx.strokeStyle = '#F2A93B';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([14, 10]);
+      ctx.strokeRect(12, 285, 1056, 1350);
+
+      ctx.fillStyle = '#F2A93B';
+      ctx.font = '700 24px monospace';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('BATAS GRID IG 4:5 (y: 285 - 1635)', 28, 276);
+      ctx.restore();
+    }
+  }
+
+  // Bind hidden cover source video events once
+  (function initCoverCanvasVideo() {
+    const vid = $('coverSourceVideo');
+    if (!vid) return;
+    vid.addEventListener('loadeddata', () => {
+      if (coverPreviewState.videoTargetSec >= 0) {
+        try {
+          coverPreviewState.seeking = true;
+          vid.currentTime = Math.min(vid.duration || coverPreviewState.videoTargetSec, Math.max(0, coverPreviewState.videoTargetSec));
+        } catch (_) {
+          coverPreviewState.seeking = false;
+        }
+      }
+      renderCoverLiveCanvas();
+    });
+    vid.addEventListener('seeked', () => {
+      coverPreviewState.seeking = false;
+      setCoverCanvasStatus('');
+      renderCoverLiveCanvas();
+    });
+    vid.addEventListener('error', () => {
+      coverPreviewState.seeking = false;
+      setCoverCanvasStatus('Video sumber belum tersedia');
+    });
+  })();
+
+  // Cover-only inputs update the separate cover canvas instantly without triggering right-side video Live Frame
+  [el.inputCoverFrameSec, el.inputCoverBadge, el.inputCoverSubtitle, el.inputCoverTitle].forEach(inp => {
+    if (inp) {
+      inp.addEventListener('input', () => {
         syncFormToVariant();
-        updateThemeVisualPreview();
+        renderCoverLiveCanvas();
         triggerAutoSave();
       });
     }
+  });
+
+  [el.selectCoverTemplate, el.selectCoverFocus, el.selectCoverClipIndex, el.selectCoverImage, el.chkCoverEmbed].forEach(ctrl => {
+    if (ctrl) {
+      ctrl.addEventListener('change', () => {
+        syncFormToVariant();
+        renderCoverLiveCanvas();
+        triggerAutoSave();
+      });
+    }
+  });
+
+  $('btnToggleCoverGrid')?.addEventListener('click', (e) => {
+    const btn = e.currentTarget;
+    coverPreviewState.showGrid = !coverPreviewState.showGrid;
+    btn.setAttribute('aria-pressed', coverPreviewState.showGrid ? 'true' : 'false');
+    renderCoverLiveCanvas();
+  });
+
+  $('btnDownloadCoverInstant')?.addEventListener('click', () => {
+    const canvas = $('coverLiveCanvas');
+    if (!canvas) return;
+    const prevGrid = coverPreviewState.showGrid;
+    if (prevGrid) {
+      coverPreviewState.showGrid = false;
+      renderCoverLiveCanvas();
+    }
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    if (prevGrid) {
+      coverPreviewState.showGrid = true;
+      renderCoverLiveCanvas();
+    }
+    const rawName = (el.inputCustomOutputName?.value.trim() || state.currentProduct?.name || 'Produk').replace(/[/\\?%*:|"<>]/g, '-').trim();
+    const vk = state.activeVariantKey || 'v1';
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${rawName} ${vk}-cover.jpg`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   });
 
   if (el.btnPreviewCoverLive) {
     el.btnPreviewCoverLive.addEventListener('click', () => {
       syncFormToVariant();
-      const modeSeg = $('playerModeSeg');
-      if (modeSeg) {
-        const liveBtn = modeSeg.querySelector('button[data-mode="live"]');
-        if (liveBtn && !liveBtn.classList.contains('active')) liveBtn.click();
-      }
-      live.moment = 'cover';
-      live.armed = true;
-      clearTimeout(live.timer);
-      runLivePreview();
+      renderCoverLiveCanvas();
+      $('coverCanvasStage')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       showToast({
         type: 'info',
-        title: 'Pratinjau Cover Video',
-        message: 'Merender desain cover (1080×1920) di layar HP sebelah kanan...',
-        duration: 2800
+        title: 'Kanvas Thumbnail Disegarkan',
+        message: 'Pratinjau thumbnail diperbarui langsung di kanvas Cover Studio.',
+        duration: 2000
       });
     });
   }
@@ -3116,11 +4126,24 @@
     el.btnRenderCoverJpg.addEventListener('click', async () => {
       syncFormToVariant();
       if (!state.currentProduct) return;
+      renderCoverLiveCanvas();
+      const canvas = $('coverLiveCanvas');
+      const prevGrid = coverPreviewState.showGrid;
+      if (prevGrid) {
+        coverPreviewState.showGrid = false;
+        renderCoverLiveCanvas();
+      }
+      const imageDataUrl = canvas ? canvas.toDataURL('image/jpeg', 0.95) : undefined;
+      if (prevGrid) {
+        coverPreviewState.showGrid = true;
+        renderCoverLiveCanvas();
+      }
+
       const variantKey = state.activeVariantKey || 'v1';
       const customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
       const origHtml = el.btnRenderCoverJpg.innerHTML;
       el.btnRenderCoverJpg.disabled = true;
-      el.btnRenderCoverJpg.innerHTML = `<span style="display:inline-block; animation:spin 0.8s linear infinite;">⏳</span> Merender Cover...`;
+      el.btnRenderCoverJpg.textContent = 'Menyimpan Cover...';
 
       try {
         const res = await fetch('/api/render-cover', {
@@ -3130,31 +4153,20 @@
             productId: state.activeProductId,
             productData: state.currentProduct,
             variantKey,
-            customOutputName
+            customOutputName,
+            imageDataUrl
           })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Gagal merender cover JPG');
+        if (!res.ok) throw new Error(data.error || 'Gagal menyimpan cover JPG');
 
         await loadVideos();
 
-        // Tampilkan juga di Live Frame
-        const r = liveRefs();
-        if (r.img) {
-          live.moment = 'cover';
-          renderLiveSide({ frame: 0, sec: 0, renderMode: 'cover', note: `Tersimpan: out/${data.coverFileName}` });
-          r.img.src = `${data.coverUrl}?t=${Date.now()}`;
-          setLiveState('ready', '');
-        }
-
-        // Buka modal pratinjau cover agar user bisa melihat langsung tanpa harus unduh
-        openCoverPreviewModal({ coverFile: data.coverFileName, videoName: customOutputName });
-
         showToast({
           type: 'success',
-          title: 'Cover JPG Berhasil Dibuat!',
+          title: 'Cover JPG Tersimpan!',
           message: `File out/${data.coverFileName} (1080×1920) siap digunakan.`,
-          duration: 5000,
+          duration: 4500,
           actionLabel: 'Unduh JPG',
           onAction: () => {
             const a = document.createElement('a');
@@ -3166,7 +4178,7 @@
           }
         });
       } catch (err) {
-        showToast({ type: 'error', title: 'Gagal Render Cover', message: err.message });
+        showToast({ type: 'error', title: 'Gagal Menyimpan Cover', message: err.message });
       } finally {
         el.btnRenderCoverJpg.disabled = false;
         el.btnRenderCoverJpg.innerHTML = origHtml;
@@ -3352,12 +4364,6 @@
         triggerAutoSave();
       });
     }
-  });
-
-  el.selectCtaPlatform?.addEventListener('change', () => {
-    syncFormToVariant();
-    triggerAutoSave();
-    updateThemeVisualPreview();
   });
 
   el.selectProduct.addEventListener('change', () => {
@@ -4723,8 +5729,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          videoName: nextVideo,
-          caption: el.inputTiktokCaption?.value || ''
+          videoName: nextVideo
         })
       });
       const data = await res.json();
@@ -4900,12 +5905,27 @@
     try {
       const uploadToProduct = el.chkUploadToProductFolder ? el.chkUploadToProductFolder.checked : true;
       const pidParam = (uploadToProduct && state.activeProductId) ? `&productId=${encodeURIComponent(state.activeProductId)}` : '';
-      const res = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}${pidParam}`, {
-        method: 'POST',
-        body: file
+      const data = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/api/upload?filename=${encodeURIComponent(file.name)}${pidParam}`);
+        xhr.upload.onprogress = (ev) => {
+          if (ev.lengthComputable && el.uploadStatusBox) {
+            const pct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
+            el.uploadStatusBox.textContent = `Mengunggah ${file.name} (${pct}% • ${formatBytes(ev.loaded)} / ${formatBytes(ev.total)})...`;
+          }
+        };
+        xhr.onload = () => {
+          let parsed = {};
+          try { parsed = JSON.parse(xhr.responseText || '{}'); } catch (_) { }
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(parsed);
+          } else {
+            reject(new Error(parsed.error || `Gagal mengunggah (${xhr.status})`));
+          }
+        };
+        xhr.onerror = () => reject(new Error('Koneksi terputus saat mengunggah file'));
+        xhr.send(file);
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengunggah');
 
       el.uploadStatusBox.className = 'feedback-banner success';
       el.uploadStatusBox.innerHTML = `Berhasil mengunggah <strong>public/${data.filename}</strong> (${data.sizeMB} MB).`;
@@ -4914,6 +5934,13 @@
       await loadAssets();
       if (typeof loadPublicBrowser === 'function') {
         await loadPublicBrowser();
+      }
+
+      // If image file, auto-select as cover image
+      if (/\.(jpe?g|png|webp)$/i.test(file.name) && el.selectCoverImage) {
+        el.selectCoverImage.value = data.filename;
+        syncFormToVariant();
+        triggerAutoSave();
       }
 
       // If video file, auto-select as product video
@@ -5316,40 +6343,17 @@
   function syncRenderModalTargetDisplay(target) {
     if (!el.renderModalOutputName || !state.currentProduct) return;
     const rawName = (el.inputCustomOutputName?.value.trim() || state.currentProduct.name || 'video').replace(/[/\\?%*:|"<>]/g, '-').trim();
-    const plat = el.renderModalPlatform ? el.renderModalPlatform.value : 'both';
-
-    let platLabel = ' (Multi-Platform)';
-    if (plat === 'both') platLabel = ' [TikTok & Reels]';
-    else if (plat === 'tiktok') platLabel = ' (TikTok)';
-    else if (plat === 'instagram') platLabel = ' (Reels)';
-
     const effectiveTarget = target || document.querySelector('input[name="renderTargetOption"]:checked')?.value || 'all';
 
     if (effectiveTarget === 'v1') {
-      if (plat === 'both') {
-        el.renderModalOutputName.textContent = `out/${rawName} v1 (TikTok).mp4 & (Reels).mp4`;
-      } else {
-        el.renderModalOutputName.textContent = `out/${rawName} v1${platLabel}.mp4`;
-      }
+      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4`;
     } else if (effectiveTarget === 'v2') {
-      if (plat === 'both') {
-        el.renderModalOutputName.textContent = `out/${rawName} v2 (TikTok).mp4 & (Reels).mp4`;
-      } else {
-        el.renderModalOutputName.textContent = `out/${rawName} v2${platLabel}.mp4`;
-      }
+      el.renderModalOutputName.textContent = `out/${rawName} v2.mp4`;
     } else {
-      if (plat === 'both') {
-        el.renderModalOutputName.textContent = `out/${rawName} v1 & v2 [4 Video: TikTok + Reels]`;
-      } else {
-        el.renderModalOutputName.textContent = `out/${rawName} v1${platLabel}.mp4 & v2${platLabel}.mp4`;
-      }
+      el.renderModalOutputName.textContent = `out/${rawName} v1.mp4 & v2.mp4`;
     }
     el.renderModalOutputName.title = el.renderModalOutputName.textContent;
   }
-
-  el.renderModalPlatform?.addEventListener('change', () => {
-    syncRenderModalTargetDisplay();
-  });
 
   function updateRenderScopeCards(selectedVal) {
     document.querySelectorAll('.render-scope-card').forEach(card => {
@@ -5405,10 +6409,6 @@
     }
     if (el.renderModalFps && el.selectFps) {
       el.renderModalFps.value = el.selectFps.value || '60';
-    }
-    if (el.renderModalPlatform) {
-      const savedPlat = state.currentProduct.variants?.[state.activeVariantKey]?.ctaPlatform;
-      el.renderModalPlatform.value = savedPlat && (savedPlat === 'tiktok' || savedPlat === 'instagram' || savedPlat === 'universal') ? savedPlat : 'both';
     }
 
     const v1Title = state.currentProduct.variants?.v1?.title || 'Problem-Solution (Pastel)';
@@ -5484,7 +6484,6 @@
       const fps = el.renderModalFps?.value || el.selectFps?.value || '60';
       if (el.selectFps) el.selectFps.value = fps;
       const quality = el.renderModalQuality?.value || 'balanced';
-      const ctaPlatform = el.renderModalPlatform ? el.renderModalPlatform.value : (state.currentProduct.variants?.[state.activeVariantKey]?.ctaPlatform || 'universal');
 
       const useGpu = el.chkGpuRender ? el.chkGpuRender.checked : false;
       let customOutputName = el.inputCustomOutputName?.value.trim() || state.currentProduct.name;
@@ -5517,12 +6516,9 @@
         const labelTarget = target === 'all'
           ? 'Kedua Versi (V1 & V2)'
           : (target === 'v2' ? 'Hanya Versi 2 (V2)' : 'Hanya Versi 1 (V1)');
-        const platLabel = ctaPlatform === 'both'
-          ? 'Dual Platform (TikTok & Reels)'
-          : (ctaPlatform === 'tiktok' ? 'Khusus TikTok' : (ctaPlatform === 'instagram' ? 'Khusus IG Reels' : 'Multi-Platform'));
         const engineLabel = useGpu ? 'GPU AMD Radeon' : 'CPU';
         const qLabel = quality === 'high' ? 'Tinggi (CRF 17)' : (quality === 'eco' ? 'Hemat (CRF 24)' : 'Standar (CRF 20)');
-        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} • ${platLabel} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
+        appendLog(`[STUDIO] Memulai render [${engineLabel}]: ${labelTarget} (${fps}fps, ${qLabel}) dengan judul "${customOutputName}"...`, true);
 
         const res = await fetch('/api/render', {
           method: 'POST',
@@ -5535,7 +6531,6 @@
             quality,
             customOutputName,
             useGpu,
-            ctaPlatform,
             autoRenderCover: el.chkAutoRenderCover ? el.chkAutoRenderCover.checked : true
           })
         });

@@ -103,23 +103,28 @@ Sertakan 3 field modern ini di setiap versi JSON:
    - `"sale_yellow"`: Kuning Promo (Flash sale, produk viral, promo tanggal kembar, diskon hemat)
    - `"pastel_rose"`: Soft Rose Pink (Skincare, kecantikan, bumil/busui, fashion wanita)
    - `"tech_blue"`: Biru Teknologi (Gadget, elektronik, otomotif, perabot modern)
+   - `"warm_kuliner"`: Saffron & Terracotta Hangat (Makanan, snack, minuman, bumbu dapur, kuliner viral)
+   - `"sage_hampers"`: Hijau Sage & Emas Hangat (Fashion muslim, hijab, mukena, hampers, koleksi Lebaran)
    - `"flash_sale"`: Crimson Red (Promo gila-gilaan, cuci gudang, urgensi diskon)
    - `"ink_mono"`: Monokrom / Kertas Elegan (Luxury, lifestyle, editorial santai)
    - `"pastel"`: Lilac / Ungu Pastel Lembut (Skincare estetik, produk relaksasi, wewangian)
    - `"minimal"`: Dark Zinc Clean (Minimalis modern, premium aesthetic, sleek hardware)
-2. "hookStyle" (5 Animasi Hook Flat):
+2. "hookStyle" (7 Animasi Hook Flat):
    - `"marker_highlight"`: Kartu kertas + stabilo tergambar (Skincare, bumil/busui, kebutuhan harian)
    - `"stack_slam"`: Dua plat menghantam layar bergantian + getar (Flash sale, produk viral)
    - `"struck_swap"`: Masalah dicoret lalu digantikan solusi (Problem-solution, sebelum/sesudah)
    - `"tilt_card"`: Kartu 3D tilt dengan stiker badge (Review jujur, suplemen, vitamin)
    - `"mask_wipe"`: Teks naik dari garis potong + plat menyapu (Gadget, fashion, lifestyle)
-3. "subtitleStyle" (6 Subtitle Kata-per-Kata Flat):
-   - `"karaoke_block"`: Kata aktif jadi blok warna solid (Default aman segala footage)
+   - `"split_versus"`: Komparasi dua kartu masalah vs solusi + koin VS di tengah (Before/After, perbandingan produk)
+   - `"floating_tag"`: Kartu tag e-commerce dengan pin dot berdenyut (Kuliner, hampers, fashion, produk estetik)
+3. "subtitleStyle" (7 Subtitle Kata-per-Kata Flat):
+   - `"karaoke_block"`: Kata aktif jadi blok warna solid + highlight angka otomatis (Default aman segala footage)
    - `"pop_scale"`: Satu kata besar memantul ritme cepat (Voiceover cepat, produk viral)
    - `"highlighter_bar"`: Plat gelap + stabilo menyapu kata aktif (Edukatif, penjelasan, skincare)
    - `"fill_sweep"`: Warna mengisi kata sesuai durasi suara (Storytelling, narasi tenang)
    - `"typewriter_band"`: Pita tipis + serif miring (Premium, fashion, parfum)
    - `"sticker_label"`: Label bergaris miring bergantian (Review santai, gadget)
+   - `"glass_pill"`: Kapsul kaca buram (frosted glass) + pil kata aktif (Kuliner, hampers, ASMR, estetik)
 
 ATURAN A/B TESTING DESAIN (`v1` vs `v2`):
 - Versi 1 (`v1`) dan Versi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` (atau `hookStyle` dan `subtitleStyle`) yang BERBEDA agar visualnya kontras untuk A/B testing!
@@ -216,6 +221,24 @@ PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
 - Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec` (detik absolut video sumber agar suara asli produk hanya aktif di momen aksi tertentu), `autoDucking: true` (otomatis kecilkan suara video asli ke 0.45x saat VoiceOver berbicara), dan `fitMode: "blur_backdrop"` (untuk video sumber horizontal 16:9 agar tidak terpotong).
 - productHeadlineMaxSec (opsional): Angka dalam detik (mis. 3.5) agar kartu teks Babak Demo & Spec otomatis hilang setelah beberapa detik sehingga produk tampil penuh tanpa tertutup teks.
 
+LANGKAH 6 - PILIH COVER / THUMBNAIL OTOMATIS (FRAME VIDEO TERBAIK & DESAIN BERBEDA):
+Tonton seluruh video mentah, lalu pilihkan **1 frame paling fotogenik, tajam (tidak blur/goyang), terang, dan memperlihatkan produk/hasil dengan jelas** untuk dijadikan Cover Thumbnail TikTok & IG Reels (tidak harus sama dengan klip hook awal!):
+- `coverClipIndex`: Index klip (`0`, `1`, `2`, atau `3`) yang paling bagus visualnya untuk latar cover (misalnya klip `2` saat close-up produk atau klip `1` saat momen hasil terlihat jelas).
+- `coverFrameSec`: Angka detik **spesifik** di dalam video asli tempat frame paling tajam & estetik tersebut berada (harus berada di dalam rentang `0` sampai durasi video asli, hindari detik transisi atau tangan bergerak cepat).
+- `coverTemplate`: Pilih desain cover yang paling kontras dan menarik di grid profil (8 variasi tersedia):
+  * `"promo_split"`: Visual produk di bagian atas (auto-crop fokus produk) + panel kertas bersih berisi judul & CTA di bagian bawah.
+  * `"top_banner_hero"`: Panel judul besar di bagian atas + visual produk penuh di bagian bawah.
+  * `"magazine_box"`: Halaman katalog kertas dengan masthead atas dan bingkai foto/video fokus produk di tengah.
+  * `"diagonal_split"`: Visual produk di atas + potongan panel diagonal miring tajam dengan pita aksen.
+  * `"polaroid_review"`: Bingkai foto Polaroid miring berisi produk + blok highlight judul di bawahnya.
+  * `"studio_poster"`: Poster grafis studio mandiri **tanpa frame video** (cocok jika seluruh video terlalu gelap/ramai).
+  * `"big_headline"`: Latar frame video penuh + judul blok aksen raksasa di bagian bawah-tengah.
+  * `"hook_card"`: Menggunakan kartu hook yang dibekukan.
+- `coverFocus`: Mode auto-crop fokus produk pada jendela cover: `"auto"` (default, deteksi otomatis posisi & zoom produk), `"center_close"` (zoom close-up tengah 1.35x), `"lower_product"` (fokus ke area tangan/meja bagian bawah), `"upper_face"` (fokus ke area wajah/atas), atau `"full"`.
+- `coverBadge` (2-4 kata), `coverTitle` (maks 28 karakter, berbeda/lebih ringkas dari `hookHighlight` agar tidak monoton), dan `coverSubtitle` (maks 34 karakter).
+- `coverEmbed`: `true` agar cover otomatis disisipkan sebagai frame pertama video (untuk Cover Picker TikTok).
+- Untuk A/B testing, bedakan `coverTemplate` dan `coverFrameSec` antara `v1` dan `v2` (misal `v1` memakai `"big_headline"` dari momen hasil, `v2` memakai `"promo_split"` atau `"studio_poster"`).
+
 ================================================================================
 OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
 ================================================================================
@@ -299,7 +322,13 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "specLine1": "Isi jumbo 450ml ekstra hemat...",
       "specHighlight": "Satu kotak tahan 1-2 bulan!",
       "ctaText": "Lagi promo diskon, langsung cek yuk!",
-      "ctaPlatform": "universal",
+      "coverTemplate": "big_headline",
+      "coverClipIndex": 2,
+      "coverFrameSec": 53.5,
+      "coverBadge": "SOLUSI LEMARI WANGI",
+      "coverTitle": "BEBAS JAMUR & BAU APEK!",
+      "coverSubtitle": "Cukup taruh di pojok lemari",
+      "coverEmbed": true,
       "clips": [
         { "startSec": 0, "endSec": 6, "videoIndex": 1 },
         { "startSec": 20, "endSec": 28, "videoIndex": 2 },
@@ -342,7 +371,13 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "specLine1": "Ambil paket bundle isi 3 kotak...",
       "specHighlight": "Jatuhnya jauh lebih murah banget!",
       "ctaText": "Klaim voucher diskon sekarang!",
-      "ctaPlatform": "universal",
+      "coverTemplate": "promo_split",
+      "coverClipIndex": 1,
+      "coverFrameSec": 31.0,
+      "coverBadge": "PROMO BUNDLE HEMAT",
+      "coverTitle": "TAHAN 1-2 BULAN!",
+      "coverSubtitle": "Isi jumbo 450ml anti lembap",
+      "coverEmbed": true,
       "clips": [
         { "startSec": 5, "endSec": 11 },
         { "startSec": 28, "endSec": 35 },
