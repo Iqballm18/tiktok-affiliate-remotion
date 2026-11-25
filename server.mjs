@@ -18,7 +18,7 @@ import {
   getVideoDurationSec,
 } from './scripts/product-helper.mjs';
 import os from 'os';
-import { renderProductVariant, renderProductStill, renderProductCover, syncPublicToBundle, syncSingleFileToCachedBundle, getOrBuildBundle, makeCancelSignal, cleanupRemotionTemp } from './render.mjs';
+import { renderProductVariant, renderProductStill, renderProductCover, syncPublicToBundle, syncSingleFileToCachedBundle, getOrBuildBundle, makeCancelSignal, cleanupRemotionTemp, warmupRemotionBrowser, closeRemotionBrowser } from './render.mjs';
 import { alignWhisperWithScript } from './scripts/align-captions.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -185,6 +185,453 @@ function appendLog(line) {
   renderState.logs.push(line);
   if (renderState.logs.length > 500) renderState.logs.shift();
   broadcast('log', { text: line, timestamp: Date.now() });
+}
+
+// =============================================================
+// Integrasi Langsung ke Database Supabase (affiliate-list-video)
+// =============================================================
+function parseSimpleEnvFile(filePath) {
+  const out = {};
+  try {
+    if (!fs.existsSync(filePath)) return out;
+    const content = fs.readFileSync(filePath, 'utf8');
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eqIdx = line.indexOf('=');
+      if (eqIdx === -1) continue;
+      const key = line.slice(0, eqIdx).trim();
+      let val = line.slice(eqIdx + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (key) out[key] = val;
+    }
+  } catch (_) { }
+  return out;
+}
+
+function resolveSupabaseCredentials() {
+  const candidates = [
+    {
+      source: 'process.env',
+      url: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      anonKey: process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+    },
+  ];
+
+  const envPaths = [
+    { source: '.env.local', file: path.join(__dirname, '.env.local') },
+    { source: '.env', file: path.join(__dirname, '.env') },
+    { source: 'affiliate-list-video/.env.local', file: path.resolve(__dirname, '../../affiliate-list-video/.env.local') },
+    { source: 'affiliate-list-video/.env.local', file: path.resolve(__dirname, '../affiliate-list-video/.env.local') },
+  ];
+
+  for (const ep of envPaths) {
+    const parsed = parseSimpleEnvFile(ep.file);
+    if (parsed.SUPABASE_URL || parsed.NEXT_PUBLIC_SUPABASE_URL) {
+      candidates.push({
+        source: ep.source,
+        url: parsed.SUPABASE_URL || parsed.NEXT_PUBLIC_SUPABASE_URL || '',
+        anonKey: parsed.SUPABASE_ANON_KEY || parsed.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+      });
+    }
+  }
+
+  try {
+    const cfg = loadConfig();
+    if (cfg.supabaseUrl && cfg.supabaseAnonKey) {
+      candidates.push({
+        source: 'config.json',
+        url: cfg.supabaseUrl,
+        anonKey: cfg.supabaseAnonKey,
+      });
+    }
+  } catch (_) { }
+
+  const found = candidates.find(c => c.url && c.anonKey);
+  if (!found) {
+    return { configured: false, url: '', anonKey: '', host: '', source: '' };
+  }
+
+  const cleanUrl = String(found.url).trim().replace(/\/+$/, '');
+  let host = '';
+  try {
+    host = new URL(cleanUrl).host;
+  } catch (_) {
+    host = cleanUrl;
+  }
+
+  return {
+    configured: true,
+    url: cleanUrl,
+    anonKey: String(found.anonKey).trim(),
+    host,
+    source: found.source,
+  };
+}
+
+function parseRenderedVideoFilename(filename) {
+  const cleanTitle = String(filename || '').replace(/\.mp4$/i, '').trim();
+
+  let platformTarget = 'Multi-Platform';
+  const platformMatch = cleanTitle.match(/\((Multi-Platform|TikTok|Reels|Shopee[^)]*)\)\s*$/i);
+  if (platformMatch && platformMatch[1]) {
+    platformTarget = platformMatch[1];
+  }
+
+  const withoutPlatform = cleanTitle
+    .replace(/\s*\((Multi-Platform|TikTok|Reels|Shopee[^)]*)\)\s*$/i, '')
+    .trim();
+
+  let variantKey = '';
+  const variantMatch = withoutPlatform.match(/\s+(v[12])$/i);
+  if (variantMatch && variantMatch[1]) {
+    variantKey = variantMatch[1].toLowerCase();
+  }
+
+  const baseProductName = withoutPlatform.replace(/\s+v[12]$/i, '').trim();
+
+  return {
+    cleanTitle,
+    baseProductName,
+    variantKey,
+    platformTarget,
+  };
+}
+
+function normalizeMatchKey(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function buildAffiliateVideoRecordInput(targetFilename, uploadMeta = {}) {
+  const cfg = loadConfig();
+  const parsed = parseRenderedVideoFilename(targetFilename);
+  const normBase = normalizeMatchKey(parsed.baseProductName);
+
+  let matchedProd = null;
+  try {
+    const summaries = listProducts();
+    for (const item of summaries) {
+      let detail = null;
+      try {
+        detail = loadProduct(item.id);
+      } catch (_) {
+        continue;
+      }
+      if (!detail) continue;
+      const normDetailName = normalizeMatchKey(detail.name || item.name || '');
+      const normCustom = normalizeMatchKey(detail.customOutputName || '');
+      if (
+        (normDetailName && normDetailName === normBase) ||
+        (normCustom && normCustom === normBase) ||
+        (normDetailName && normBase.includes(normDetailName)) ||
+        (normDetailName && normDetailName.includes(normBase))
+      ) {
+        matchedProd = { ...detail, id: detail.id || item.id };
+        break;
+      }
+    }
+  } catch (_) { }
+
+  const vKey = parsed.variantKey || 'v1';
+  const variantObj = matchedProd?.variants?.[vKey] || null;
+  const defaultWatermark = cfg.defaultWatermark || '@spillbyna | @inanikmatul01';
+  const defaultFolderUrl = cfg.gdriveFolderUrl || 'https://drive.google.com/drive/my-drive';
+
+  const candidateCover = uploadMeta.coverFilename || `${parsed.cleanTitle}-cover.jpg`;
+  const hasLocalCover = fs.existsSync(path.join(OUT_DIR, candidateCover));
+
+  return {
+    title: parsed.cleanTitle,
+    product_name: matchedProd?.name || parsed.baseProductName,
+    variant_key: parsed.variantKey,
+    variant_title: variantObj?.title || '',
+    platform_target: parsed.platformTarget,
+    watermark_text: variantObj?.watermarkText || defaultWatermark,
+    is_uploaded: false,
+    gdrive_video_url: uploadMeta.url || '',
+    gdrive_thumbnail_url: uploadMeta.coverUrl || '',
+    gdrive_caption_url: uploadMeta.captionUrl || '',
+    gdrive_folder_url: uploadMeta.folderUrl || defaultFolderUrl,
+    studio_product_id: matchedProd?.id || '',
+    studio_video_filename: targetFilename,
+    studio_cover_filename: (uploadMeta.coverUrl || hasLocalCover) ? candidateCover : '',
+    caption_notes: variantObj?.tiktokCaption || variantObj?.voiceOverScript || '',
+    upload_date: null,
+  };
+}
+
+function generateNextCatalogCode(existingItems) {
+  let maxNumber = 0;
+  for (const item of existingItems) {
+    const match = String(item?.catalog_code || '').match(/(\d+)/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!Number.isNaN(num) && num > maxNumber) {
+        maxNumber = num;
+      }
+    }
+  }
+  return `VID-${String(maxNumber + 1).padStart(3, '0')}`;
+}
+
+async function supabaseRestRequest(creds, method, queryPath, bodyObj = null) {
+  const endpoint = `${creds.url}/rest/v1/${queryPath}`;
+  const headers = {
+    apikey: creds.anonKey,
+    Authorization: `Bearer ${creds.anonKey}`,
+    'Content-Type': 'application/json',
+  };
+  if (method !== 'GET') {
+    headers.Prefer = 'return=representation';
+  }
+
+  const res = await fetch(endpoint, {
+    method,
+    headers,
+    body: bodyObj !== null ? JSON.stringify(bodyObj) : undefined,
+  });
+
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_) {
+    data = text;
+  }
+
+  if (!res.ok) {
+    const errDetail = (data && typeof data === 'object' && (data.message || data.error || data.details))
+      ? `${data.message || data.error}${data.details ? ` (${data.details})` : ''}`
+      : String(text || `HTTP ${res.status}`).slice(0, 240);
+    throw new Error(`Supabase API gagal (${res.status}): ${errDetail}`);
+  }
+
+  return data;
+}
+
+function resolveAffiliateWebUrl() {
+  let raw = process.env.AFFILIATE_WEB_URL || '';
+  if (!raw) {
+    try {
+      const cfg = loadConfig();
+      raw = cfg.affiliateWebUrl || '';
+    } catch (_) { }
+  }
+  return String(raw || 'https://affiliate-ina.vercel.app').trim().replace(/\/+$/, '');
+}
+
+async function upsertViaAffiliateWebApi(webBaseUrl, validEntries, logFn = appendLog) {
+  const endpoint = `${webBaseUrl}/api/videos`;
+  const batchPayloads = validEntries.map(({ filename, meta }) => ({
+    filename,
+    input: buildAffiliateVideoRecordInput(filename, meta),
+  }));
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ batch: batchPayloads.map(b => b.input) }),
+  });
+
+  const text = await res.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_) {
+    data = null;
+  }
+
+  if (!res.ok || !data || !Array.isArray(data.items)) {
+    const detail = (data && data.error) ? data.error : String(text || `HTTP ${res.status}`).slice(0, 240);
+    throw new Error(`Endpoint ${endpoint} gagal (${res.status}): ${detail}`);
+  }
+
+  const syncedAt = new Date().toISOString();
+  const returnedItems = data.items;
+  const results = [];
+  let webHost = webBaseUrl;
+  try { webHost = new URL(webBaseUrl).host; } catch (_) { }
+
+  for (const { filename, input } of batchPayloads) {
+    const inFile = String(input.studio_video_filename || '').toLowerCase();
+    const inUrl = String(input.gdrive_video_url || '').trim();
+    const inTitle = String(input.title || '').trim().toLowerCase();
+
+    const savedRow = returnedItems.find(item => {
+      if (inFile && item.studio_video_filename && String(item.studio_video_filename).toLowerCase() === inFile) return true;
+      if (inUrl && item.gdrive_video_url && String(item.gdrive_video_url).trim() === inUrl) return true;
+      return String(item.title || '').trim().toLowerCase() === inTitle;
+    });
+
+    const catalogCode = savedRow?.catalog_code || '';
+    const supabaseId = savedRow?.id || '';
+
+    saveUploadHistoryEntry(filename, {
+      supabaseSynced: true,
+      supabaseId,
+      catalogCode,
+      supabaseSyncedAt: syncedAt,
+    });
+
+    if (typeof logFn === 'function') {
+      logFn(`[SUPABASE CLOUD] ${filename} tersimpan ke database via ${webHost}${catalogCode ? ` (${catalogCode})` : ''}.`);
+    }
+
+    results.push({
+      filename,
+      action: 'synced',
+      id: supabaseId,
+      catalogCode,
+    });
+  }
+
+  return {
+    ok: true,
+    insertedCount: Number(data.insertedCount || 0),
+    updatedCount: Number(data.updatedCount || 0),
+    results,
+  };
+}
+
+async function upsertVideosToAffiliateSupabase(entries, logFn = appendLog) {
+  const validEntries = (Array.isArray(entries) ? entries : []).filter(
+    e => e && e.filename && e.meta && String(e.meta.url || '').trim()
+  );
+
+  if (validEntries.length === 0) {
+    return { ok: true, insertedCount: 0, updatedCount: 0, results: [] };
+  }
+
+  const creds = resolveSupabaseCredentials();
+  const webBaseUrl = resolveAffiliateWebUrl();
+
+  // Jika kredensial lokal .env.local kosong/tertimpa, gunakan API produksi affiliate-ina.vercel.app secara otomatis
+  if (!creds.configured) {
+    if (!webBaseUrl) {
+      throw new Error('Kredensial Supabase maupun affiliateWebUrl belum dikonfigurasi.');
+    }
+    return upsertViaAffiliateWebApi(webBaseUrl, validEntries, logFn);
+  }
+
+  const existingRows = await supabaseRestRequest(
+    creds,
+    'GET',
+    'affiliate_videos?select=*&order=created_at.desc'
+  );
+  let workingItems = Array.isArray(existingRows) ? [...existingRows] : [];
+
+  let insertedCount = 0;
+  let updatedCount = 0;
+  const results = [];
+
+  for (const { filename, meta } of validEntries) {
+    const incoming = buildAffiliateVideoRecordInput(filename, meta);
+    const incomingFile = (incoming.studio_video_filename || '').toLowerCase();
+    const incomingDriveUrl = (incoming.gdrive_video_url || '').trim();
+    const incomingTitle = (incoming.title || '').trim().toLowerCase();
+
+    const existing = workingItems.find(item => {
+      if (incomingFile && item.studio_video_filename && String(item.studio_video_filename).toLowerCase() === incomingFile) {
+        return true;
+      }
+      if (incomingDriveUrl && item.gdrive_video_url && String(item.gdrive_video_url).trim() === incomingDriveUrl) {
+        return true;
+      }
+      return String(item.title || '').trim().toLowerCase() === incomingTitle;
+    });
+
+    const syncedAt = new Date().toISOString();
+
+    if (existing) {
+      const patch = {
+        product_name: incoming.product_name || existing.product_name || '',
+        variant_key: incoming.variant_key || existing.variant_key || '',
+        variant_title: incoming.variant_title || existing.variant_title || '',
+        platform_target: incoming.platform_target || existing.platform_target || 'Multi-Platform',
+        watermark_text: incoming.watermark_text || existing.watermark_text || '',
+        gdrive_video_url: incoming.gdrive_video_url || existing.gdrive_video_url || '',
+        gdrive_thumbnail_url: incoming.gdrive_thumbnail_url || existing.gdrive_thumbnail_url || '',
+        gdrive_caption_url: incoming.gdrive_caption_url || existing.gdrive_caption_url || '',
+        gdrive_folder_url: incoming.gdrive_folder_url || existing.gdrive_folder_url || '',
+        studio_product_id: incoming.studio_product_id || existing.studio_product_id || '',
+        studio_video_filename: incoming.studio_video_filename || existing.studio_video_filename || '',
+        studio_cover_filename: incoming.studio_cover_filename || existing.studio_cover_filename || '',
+        caption_notes: existing.caption_notes || incoming.caption_notes || '',
+        updated_at: syncedAt,
+      };
+
+      const updatedArr = await supabaseRestRequest(
+        creds,
+        'PATCH',
+        `affiliate_videos?id=eq.${encodeURIComponent(existing.id)}`,
+        patch
+      );
+      const savedRow = (Array.isArray(updatedArr) && updatedArr[0]) ? updatedArr[0] : { ...existing, ...patch };
+      workingItems = workingItems.map(it => (it.id === existing.id ? savedRow : it));
+      updatedCount++;
+
+      saveUploadHistoryEntry(filename, {
+        supabaseSynced: true,
+        supabaseId: savedRow.id,
+        catalogCode: savedRow.catalog_code || existing.catalog_code || '',
+        supabaseSyncedAt: syncedAt,
+      });
+
+      if (typeof logFn === 'function') {
+        logFn(`[SUPABASE UPDATE] ${filename} diperbarui di affiliate_videos (${savedRow.catalog_code || existing.catalog_code}).`);
+      }
+
+      results.push({
+        filename,
+        action: 'updated',
+        id: savedRow.id,
+        catalogCode: savedRow.catalog_code || existing.catalog_code || '',
+      });
+    } else {
+      const catalogCode = generateNextCatalogCode(workingItems);
+      const insertPayload = {
+        ...incoming,
+        catalog_code: catalogCode,
+      };
+
+      const createdArr = await supabaseRestRequest(
+        creds,
+        'POST',
+        'affiliate_videos',
+        insertPayload
+      );
+      const savedRow = (Array.isArray(createdArr) && createdArr[0]) ? createdArr[0] : { ...insertPayload };
+      workingItems = [savedRow, ...workingItems];
+      insertedCount++;
+
+      saveUploadHistoryEntry(filename, {
+        supabaseSynced: true,
+        supabaseId: savedRow.id || '',
+        catalogCode: savedRow.catalog_code || catalogCode,
+        supabaseSyncedAt: syncedAt,
+      });
+
+      if (typeof logFn === 'function') {
+        logFn(`[SUPABASE INSERT] ${filename} ditambahkan ke affiliate_videos (${savedRow.catalog_code || catalogCode}).`);
+      }
+
+      results.push({
+        filename,
+        action: 'inserted',
+        id: savedRow.id || '',
+        catalogCode: savedRow.catalog_code || catalogCode,
+      });
+    }
+  }
+
+  return {
+    ok: true,
+    insertedCount,
+    updatedCount,
+    results,
+  };
 }
 
 // =============================================================
@@ -1534,16 +1981,56 @@ const server = http.createServer(async (req, res) => {
     }
 
     const coverUploaded = Boolean(coverResult?.success);
-    const doneMsg = coverUploaded
-      ? `Selesai! Video & Cover berhasil disimpan di Google Drive.`
-      : defaultDoneMsg;
-
-    saveUploadHistoryEntry(targetFilename, {
+    const historyMeta = {
       url: finalUrl,
       coverUrl: coverResult?.url || null,
+      coverFilename: hasCover ? candidateCover : null,
       coverUploaded,
       folderUrl: cfg.gdriveFolderUrl
-    });
+    };
+
+    saveUploadHistoryEntry(targetFilename, historyMeta);
+
+    // Otomatis simpan / perbarui ke database Supabase (langsung atau via API affiliate-ina.vercel.app)
+    let supabaseSynced = false;
+    let catalogCode = '';
+    let supabaseAction = '';
+    let supabaseError = null;
+
+    const supaCreds = resolveSupabaseCredentials();
+    const webBridgeUrl = resolveAffiliateWebUrl();
+    if (supaCreds.configured || webBridgeUrl) {
+      broadcast('gdrive_upload_progress', {
+        filename: targetFilename,
+        step: 'syncing_supabase',
+        percent: 98,
+        message: 'Menyimpan metadata video ke database affiliate-list-video...'
+      });
+      try {
+        const syncRes = await upsertVideosToAffiliateSupabase(
+          [{ filename: targetFilename, meta: historyMeta }],
+          appendLog
+        );
+        const firstItem = syncRes.results?.[0];
+        if (firstItem) {
+          supabaseSynced = true;
+          catalogCode = firstItem.catalogCode || '';
+          supabaseAction = firstItem.action || 'synced';
+        }
+      } catch (supaErr) {
+        supabaseError = supaErr.message;
+        appendLog(`[SUPABASE WARN] Gagal menyinkronkan ${targetFilename} ke database: ${supaErr.message}`);
+      }
+    } else {
+      appendLog(`[SUPABASE WARN] Sinkronisasi dilewati karena kredensial Supabase dan affiliateWebUrl kosong.`);
+    }
+
+    const baseDoneMsg = coverUploaded
+      ? 'Selesai! Video dan Cover berhasil disimpan di Google Drive'
+      : defaultDoneMsg.replace(/\.$/, '');
+    const doneMsg = supabaseSynced
+      ? `${baseDoneMsg} serta tercatat di Supabase (${catalogCode}).`
+      : `${baseDoneMsg}.`;
 
     broadcast('gdrive_upload_progress', {
       filename: targetFilename,
@@ -1554,7 +2041,11 @@ const server = http.createServer(async (req, res) => {
       coverUrl: coverResult?.url || null,
       coverFilename: hasCover ? candidateCover : null,
       coverUploaded,
-      folderUrl: cfg.gdriveFolderUrl
+      folderUrl: cfg.gdriveFolderUrl,
+      supabaseSynced,
+      catalogCode,
+      supabaseAction,
+      supabaseError
     });
 
     return {
@@ -1563,7 +2054,11 @@ const server = http.createServer(async (req, res) => {
       url: finalUrl,
       coverUrl: coverResult?.url || null,
       coverUploaded,
-      folderUrl: cfg.gdriveFolderUrl
+      folderUrl: cfg.gdriveFolderUrl,
+      supabaseSynced,
+      catalogCode,
+      supabaseAction,
+      supabaseError
     };
   }
 
@@ -2502,6 +2997,28 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // 17b. Static: Dedicated Merger Workspace (merger/inputs & merger/outputs)
+  if (pathname.startsWith('/merger/inputs/') || pathname.startsWith('/merger/outputs/')) {
+    const isOut = pathname.startsWith('/merger/outputs/');
+    const subDir = isOut ? path.join(__dirname, 'merger', 'outputs') : path.join(__dirname, 'merger', 'inputs');
+    const filename = path.basename(decodeURIComponent(pathname));
+    const filePath = path.resolve(subDir, filename);
+    if (!filePath.startsWith(subDir)) {
+      res.writeHead(403, { 'Content-Type': 'text/plain' });
+      res.end('Akses ditolak');
+      return;
+    }
+    const ext = path.extname(filePath).toLowerCase();
+    const mimeMap = {
+      '.mp4': 'video/mp4',
+      '.mov': 'video/quicktime',
+      '.webm': 'video/webm',
+      '.mkv': 'video/x-matroska',
+    };
+    serveStaticFile(req, res, filePath, mimeMap[ext] || 'video/mp4');
+    return;
+  }
+
   // 18. Static: Web Frontend
   if (pathname === '/' || pathname === '/index.html') {
     serveStaticFile(req, res, path.join(WEB_DIR, 'index.html'), 'text/html; charset=utf-8');
@@ -2526,6 +3043,143 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (pathname === '/api/supabase-status' && req.method === 'GET') {
+    const creds = resolveSupabaseCredentials();
+    const webBaseUrl = resolveAffiliateWebUrl();
+    const shouldPing = urlObj.searchParams.get('ping') === '1';
+
+    if (!creds.configured && webBaseUrl) {
+      let webHost = webBaseUrl;
+      try { webHost = new URL(webBaseUrl).host; } catch (_) { }
+      if (!shouldPing) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ configured: true, connected: true, mode: 'vercel-api', host: webHost, source: 'config.affiliateWebUrl' }));
+        return;
+      }
+      try {
+        const pingRes = await fetch(`${webBaseUrl}/api/videos`);
+        const pingJson = await pingRes.json();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          configured: true,
+          connected: pingRes.ok && Array.isArray(pingJson?.items),
+          mode: 'vercel-api',
+          host: webHost,
+          source: 'config.affiliateWebUrl',
+          totalRows: Array.isArray(pingJson?.items) ? pingJson.items.length : 0,
+        }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          configured: true,
+          connected: false,
+          mode: 'vercel-api',
+          host: webHost,
+          source: 'config.affiliateWebUrl',
+          error: err.message,
+        }));
+      }
+      return;
+    }
+
+    if (!creds.configured) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ configured: false, connected: false, host: '', source: '' }));
+      return;
+    }
+    if (!shouldPing) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ configured: true, connected: true, host: creds.host, source: creds.source }));
+      return;
+    }
+
+    try {
+      const rows = await supabaseRestRequest(creds, 'GET', 'affiliate_videos?select=id&order=created_at.desc');
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        configured: true,
+        connected: true,
+        host: creds.host,
+        source: creds.source,
+        totalRows: Array.isArray(rows) ? rows.length : 0,
+      }));
+    } catch (err) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        configured: true,
+        connected: false,
+        host: creds.host,
+        source: creds.source,
+        error: err.message,
+      }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/supabase-sync' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(body || '{}');
+        const history = loadUploadHistory();
+        const targetVideo = payload.videoName ? path.basename(String(payload.videoName)) : '';
+
+        let entries = [];
+        if (targetVideo) {
+          const histEntry = history[targetVideo];
+          if (!histEntry || !histEntry.url) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: `Video "${targetVideo}" belum memiliki link Google Drive. Unggah ke Google Drive terlebih dahulu.`
+            }));
+            return;
+          }
+          entries = [{ filename: targetVideo, meta: histEntry }];
+        } else {
+          const forceAll = Boolean(payload.forceAll);
+          entries = Object.entries(history)
+            .filter(([, info]) => {
+              if (!info || typeof info !== 'object' || !String(info.url || '').trim()) return false;
+              return forceAll ? true : !info.supabaseSynced;
+            })
+            .map(([fname, info]) => ({ filename: fname, meta: info }));
+        }
+
+        if (entries.length === 0) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            success: true,
+            insertedCount: 0,
+            updatedCount: 0,
+            totalProcessed: 0,
+            results: [],
+            history: loadUploadHistory(),
+          }));
+          return;
+        }
+
+        appendLog(`[SUPABASE SYNC] Menyinkronkan ${entries.length} video Google Drive ke database affiliate_videos...`);
+        const syncRes = await upsertVideosToAffiliateSupabase(entries, appendLog);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: true,
+          insertedCount: syncRes.insertedCount,
+          updatedCount: syncRes.updatedCount,
+          totalProcessed: syncRes.results.length,
+          results: syncRes.results,
+          history: loadUploadHistory(),
+        }));
+      } catch (err) {
+        appendLog(`[SUPABASE ERROR] ${err.message}`);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
   if (pathname === '/api/cleanup-temp' && req.method === 'POST') {
     const result = cleanupRemotionTemp({
       maxAgeMs: 0, // hapus semua temp remotion yang sudah tidak dipakai
@@ -2533,6 +3187,389 @@ const server = http.createServer(async (req, res) => {
     });
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, ...result }));
+    return;
+  }
+
+  // 19. API: Folder Khusus Alat Gabung Video (Terpisah di merger/inputs & merger/outputs)
+  const MERGER_DIR = path.join(__dirname, 'merger');
+  const MERGER_INPUTS_DIR = path.join(MERGER_DIR, 'inputs');
+  const MERGER_OUTPUTS_DIR = path.join(MERGER_DIR, 'outputs');
+
+  if (pathname === '/api/merger/upload' && req.method === 'POST') {
+    const rawFilename = urlObj.searchParams.get('filename') || `clip-${Date.now()}.mp4`;
+    const safeFilename = path.basename(rawFilename).replace(/[^\w.-]/g, '_');
+    if (!fs.existsSync(MERGER_INPUTS_DIR)) {
+      fs.mkdirSync(MERGER_INPUTS_DIR, { recursive: true });
+    }
+    const targetPath = path.join(MERGER_INPUTS_DIR, safeFilename);
+    const tempPath = `${targetPath}.part`;
+
+    appendLog(`[MERGER UPLOAD] Menerima file bahan gabungan: merger/inputs/${safeFilename}...`);
+    const writeStream = fs.createWriteStream(tempPath, { highWaterMark: 4 * 1024 * 1024 });
+
+    const cleanupTemp = () => {
+      try { if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath); } catch (_) { }
+    };
+
+    req.on('aborted', () => {
+      writeStream.destroy();
+      cleanupTemp();
+    });
+
+    req.pipe(writeStream);
+    writeStream.on('finish', async () => {
+      try {
+        await fs.promises.rename(tempPath, targetPath);
+        const stat = await fs.promises.stat(targetPath);
+        const sizeMB = +(stat.size / (1024 * 1024)).toFixed(1);
+        appendLog(`[MERGER UPLOAD] Tersimpan di merger/inputs/${safeFilename} (${sizeMB} MB)`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, fileName: safeFilename, sizeMB }));
+      } catch (err) {
+        cleanupTemp();
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    writeStream.on('error', (err) => {
+      cleanupTemp();
+      if (!res.headersSent) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  if (pathname === '/api/merger/sources' && req.method === 'GET') {
+    try {
+      if (!fs.existsSync(MERGER_INPUTS_DIR)) fs.mkdirSync(MERGER_INPUTS_DIR, { recursive: true });
+      if (!fs.existsSync(MERGER_OUTPUTS_DIR)) fs.mkdirSync(MERGER_OUTPUTS_DIR, { recursive: true });
+
+      const videoExts = new Set(['.mp4', '.mov', '.mkv', '.webm']);
+      const scanIsolatedDir = (dirPath, bucket) => {
+        const list = [];
+        const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+        for (const entry of entries) {
+          if (!entry.isFile()) continue;
+          const ext = path.extname(entry.name).toLowerCase();
+          if (!videoExts.has(ext) || entry.name.endsWith('.part') || entry.name.startsWith('.')) continue;
+          const full = path.join(dirPath, entry.name);
+          try {
+            const stat = fs.statSync(full);
+            const dur = getVideoDurationSec(full);
+            list.push({
+              bucket,
+              fileName: entry.name,
+              sizeMB: +(stat.size / (1024 * 1024)).toFixed(1),
+              durationSec: dur ? Math.round(dur * 10) / 10 : null,
+              mtimeMs: stat.mtimeMs,
+              previewUrl: `/merger/${bucket}/${encodeURIComponent(entry.name)}`,
+            });
+          } catch (_) { }
+        }
+        list.sort((a, b) => b.mtimeMs - a.mtimeMs);
+        return list;
+      };
+
+      const inputs = scanIsolatedDir(MERGER_INPUTS_DIR, 'inputs');
+      const outputs = scanIsolatedDir(MERGER_OUTPUTS_DIR, 'outputs');
+
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ inputs, outputs }));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/api/merger/file' && req.method === 'DELETE') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', () => {
+      try {
+        const { bucket, fileName } = JSON.parse(body || '{}');
+        const baseDir = bucket === 'outputs' ? MERGER_OUTPUTS_DIR : MERGER_INPUTS_DIR;
+        const safeName = path.basename(String(fileName || ''));
+        const target = path.resolve(baseDir, safeName);
+        if (!safeName || !target.startsWith(baseDir) || !fs.existsSync(target)) {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'File tidak ditemukan' }));
+          return;
+        }
+        fs.unlinkSync(target);
+        appendLog(`[MERGER] Menghapus file merger/${bucket === 'outputs' ? 'outputs' : 'inputs'}/${safeName}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+
+  // 20. API: Gabungkan Beberapa Video Menjadi Satu ke merger/outputs/ (FFmpeg Merger)
+  if (pathname === '/api/merge-videos' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk; });
+    req.on('end', async () => {
+      const sendJson = (code, obj) => {
+        if (!res.headersSent) {
+          res.writeHead(code, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(obj));
+        }
+      };
+
+      try {
+        const payload = JSON.parse(body || '{}');
+        const rawClips = Array.isArray(payload.clips) ? payload.clips : [];
+        if (rawClips.length < 2) {
+          sendJson(400, { error: 'Pilih minimal 2 klip video untuk digabungkan.' });
+          return;
+        }
+
+        const resolveMergerInputPath = (fileName) => {
+          const safeName = path.basename(String(fileName || ''));
+          const resolved = path.resolve(MERGER_INPUTS_DIR, safeName);
+          if (!safeName || !resolved.startsWith(MERGER_INPUTS_DIR)) {
+            throw new Error('Path video di luar folder merger/inputs.');
+          }
+          if (!fs.existsSync(resolved)) {
+            throw new Error(`File video tidak ditemukan di merger/inputs: ${safeName}`);
+          }
+          return resolved;
+        };
+
+        const probeMediaInfo = (filePath) => new Promise((resolve) => {
+          const child = spawn('ffprobe', [
+            '-v', 'error',
+            '-show_entries', 'stream=codec_type,width,height:format=duration',
+            '-of', 'json',
+            filePath,
+          ], { windowsHide: true });
+          let out = '';
+          child.stdout.on('data', d => { out += d.toString(); });
+          child.on('close', () => {
+            try {
+              const parsed = JSON.parse(out || '{}');
+              const streams = Array.isArray(parsed.streams) ? parsed.streams : [];
+              const vStream = streams.find(s => s.codec_type === 'video') || {};
+              const hasAudio = streams.some(s => s.codec_type === 'audio');
+              const duration = parseFloat(parsed.format?.duration) || getVideoDurationSec(filePath) || 5;
+              resolve({
+                width: parseInt(vStream.width, 10) || 1080,
+                height: parseInt(vStream.height, 10) || 1920,
+                duration: Math.max(0.2, duration),
+                hasAudio,
+              });
+            } catch {
+              resolve({ width: 1080, height: 1920, duration: getVideoDurationSec(filePath) || 5, hasAudio: true });
+            }
+          });
+          child.on('error', () => {
+            resolve({ width: 1080, height: 1920, duration: getVideoDurationSec(filePath) || 5, hasAudio: true });
+          });
+        });
+
+        const resolvedClips = [];
+        for (const c of rawClips) {
+          const fullPath = resolveMergerInputPath(c.fileName || c.relPath);
+          const info = await probeMediaInfo(fullPath);
+          const startSec = Math.max(0, parseFloat(c.startSec) || 0);
+          const rawEnd = c.endSec !== undefined && c.endSec !== null && c.endSec !== '' ? parseFloat(c.endSec) : null;
+          const endSec = (rawEnd !== null && !isNaN(rawEnd) && rawEnd > startSec)
+            ? Math.min(info.duration, rawEnd)
+            : null;
+          const effectiveDur = Math.max(0.2, (endSec !== null ? endSec : info.duration) - startSec);
+          resolvedClips.push({
+            ...c,
+            fullPath,
+            info,
+            startSec,
+            endSec,
+            effectiveDur,
+            muted: Boolean(c.muted),
+          });
+        }
+
+        const rawOutName = String(payload.outputName || `gabungan-${Date.now()}`)
+          .replace(/\.mp4$/i, '')
+          .replace(/[^\w\s.-]/g, '')
+          .trim()
+          .replace(/\s+/g, '-') || `gabungan-${Date.now()}`;
+        const outFileName = `${rawOutName}.mp4`;
+
+        if (!fs.existsSync(MERGER_OUTPUTS_DIR)) {
+          fs.mkdirSync(MERGER_OUTPUTS_DIR, { recursive: true });
+        }
+
+        const finalOutputPath = path.join(MERGER_OUTPUTS_DIR, outFileName);
+        const tempOutputPath = path.join(os.tmpdir(), `merge_out_${Date.now()}_${Math.random().toString(36).slice(2, 7)}.mp4`);
+        const totalExpectedSec = resolvedClips.reduce((acc, c) => acc + c.effectiveDur, 0);
+        const previewUrl = `/merger/outputs/${encodeURIComponent(outFileName)}`;
+
+        const mode = payload.mode === 'fast_copy' ? 'fast_copy' : 'smart_normalize';
+        const hasTrimOrMute = resolvedClips.some(c => c.startSec > 0 || c.endSec !== null || c.muted);
+
+        appendLog(`[MERGER] Menggabungkan ${resolvedClips.length} video (${totalExpectedSec.toFixed(1)}s) -> merger/outputs/${outFileName}...`);
+        broadcast('merger_progress', { percent: 5, step: 'Menyiapkan klip sumber...' });
+
+        let ffmpegArgs = [];
+        let concatListPath = null;
+
+        if (mode === 'fast_copy' && !hasTrimOrMute) {
+          concatListPath = path.join(os.tmpdir(), `merge_list_${Date.now()}.txt`);
+          const listContent = resolvedClips
+            .map(c => `file '${c.fullPath.replace(/\\/g, '/').replace(/'/g, "'\\''")}'`)
+            .join('\n');
+          fs.writeFileSync(concatListPath, listContent, 'utf8');
+          ffmpegArgs = [
+            '-y',
+            '-f', 'concat',
+            '-safe', '0',
+            '-i', concatListPath,
+            '-c', 'copy',
+            '-movflags', '+faststart',
+            '-progress', 'pipe:1',
+            '-nostats',
+            tempOutputPath,
+          ];
+        } else {
+          const resChoice = payload.resolution || '1080x1920';
+          let targetW = 1080;
+          let targetH = 1920;
+          if (resChoice === '1920x1080') {
+            targetW = 1920;
+            targetH = 1080;
+          } else if (resChoice === 'match_first') {
+            targetW = Math.max(2, Math.floor(resolvedClips[0].info.width / 2) * 2);
+            targetH = Math.max(2, Math.floor(resolvedClips[0].info.height / 2) * 2);
+          }
+          const targetFps = parseInt(payload.fps, 10) === 60 ? 60 : 30;
+          const fitMode = payload.fitMode || 'cover_crop';
+
+          ffmpegArgs = ['-y'];
+          for (const c of resolvedClips) {
+            if (c.startSec > 0) {
+              ffmpegArgs.push('-ss', c.startSec.toFixed(3));
+            }
+            if (c.endSec !== null) {
+              ffmpegArgs.push('-t', c.effectiveDur.toFixed(3));
+            }
+            ffmpegArgs.push('-i', c.fullPath);
+          }
+
+          const filterParts = [];
+          resolvedClips.forEach((c, idx) => {
+            if (fitMode === 'blur_pad') {
+              filterParts.push(
+                `[${idx}:v]split=2[bg${idx}][fg${idx}];` +
+                `[bg${idx}]scale=${targetW}:${targetH}:force_original_aspect_ratio=increase,crop=${targetW}:${targetH},boxblur=20:5[bgb${idx}];` +
+                `[fg${idx}]scale=${targetW}:${targetH}:force_original_aspect_ratio=decrease[fgs${idx}];` +
+                `[bgb${idx}][fgs${idx}]overlay=(W-w)/2:(H-h)/2,setsar=1,fps=${targetFps},format=yuv420p[v${idx}]`
+              );
+            } else if (fitMode === 'contain_black') {
+              filterParts.push(
+                `[${idx}:v]scale=${targetW}:${targetH}:force_original_aspect_ratio=decrease,pad=${targetW}:${targetH}:(ow-iw)/2:(oh-ih)/2:black,setsar=1,fps=${targetFps},format=yuv420p[v${idx}]`
+              );
+            } else {
+              filterParts.push(
+                `[${idx}:v]scale=${targetW}:${targetH}:force_original_aspect_ratio=increase,crop=${targetW}:${targetH},setsar=1,fps=${targetFps},format=yuv420p[v${idx}]`
+              );
+            }
+
+            if (!c.muted && c.info.hasAudio) {
+              filterParts.push(
+                `[${idx}:a]aresample=44100,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=PTS-STARTPTS[a${idx}]`
+              );
+            } else {
+              filterParts.push(
+                `anullsrc=channel_layout=stereo:sample_rate=44100:d=${c.effectiveDur.toFixed(3)}[a${idx}]`
+              );
+            }
+          });
+
+          const concatInputs = resolvedClips.map((_, idx) => `[v${idx}][a${idx}]`).join('');
+          filterParts.push(`${concatInputs}concat=n=${resolvedClips.length}:v=1:a=1[outv][outa]`);
+
+          ffmpegArgs.push(
+            '-filter_complex', filterParts.join(';'),
+            '-map', '[outv]',
+            '-map', '[outa]',
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', '20',
+            '-c:a', 'aac',
+            '-b:a', '192k',
+            '-movflags', '+faststart',
+            '-progress', 'pipe:1',
+            '-nostats',
+            tempOutputPath
+          );
+        }
+
+        await new Promise((resolve, reject) => {
+          const child = spawn('ffmpeg', ffmpegArgs, { windowsHide: true });
+          let errLog = '';
+
+          child.stdout.on('data', chunk => {
+            const text = chunk.toString();
+            const match = text.match(/out_time_us=(\d+)/) || text.match(/out_time_ms=(\d+)/);
+            if (match && totalExpectedSec > 0) {
+              const curSec = parseInt(match[1], 10) / 1_000_000;
+              const pct = Math.max(8, Math.min(96, Math.round((curSec / totalExpectedSec) * 100)));
+              broadcast('merger_progress', {
+                percent: pct,
+                step: `Menggabungkan video (${curSec.toFixed(1)}s / ${totalExpectedSec.toFixed(1)}s)...`,
+              });
+            }
+          });
+
+          child.stderr.on('data', chunk => {
+            errLog += chunk.toString();
+            if (errLog.length > 4000) errLog = errLog.slice(-4000);
+          });
+
+          child.on('error', err => reject(new Error(`Gagal menjalankan FFmpeg: ${err.message}`)));
+          child.on('close', code => {
+            if (code === 0 && fs.existsSync(tempOutputPath)) {
+              resolve();
+            } else {
+              const tail = errLog.trim().split('\n').slice(-4).join(' ');
+              const hint = mode === 'fast_copy'
+                ? ' (Coba ubah Mode Penggabungan ke Normalisasi Seragam karena codec/resolusi antar video berbeda)'
+                : '';
+              reject(new Error(`FFmpeg gagal (kode ${code})${hint}: ${tail}`));
+            }
+          });
+        });
+
+        if (concatListPath && fs.existsSync(concatListPath)) {
+          try { fs.unlinkSync(concatListPath); } catch (_) { }
+        }
+
+        safeReplaceFile(tempOutputPath, finalOutputPath);
+        const outStat = fs.statSync(finalOutputPath);
+        const sizeMB = +(outStat.size / (1024 * 1024)).toFixed(1);
+
+        appendLog(`[MERGER SUKSES] Video gabungan tersimpan: merger/outputs/${outFileName} (${sizeMB} MB, ${totalExpectedSec.toFixed(1)}s)`);
+        broadcast('merger_progress', { percent: 100, step: 'Penggabungan selesai!' });
+
+        sendJson(200, {
+          success: true,
+          fileName: outFileName,
+          folderPath: `merger/outputs/${outFileName}`,
+          sizeMB,
+          durationSec: +totalExpectedSec.toFixed(1),
+          previewUrl,
+        });
+      } catch (err) {
+        appendLog(`[MERGER ERROR] ${err.message}`);
+        sendJson(500, { error: err.message });
+      }
+    });
     return;
   }
 
@@ -2560,9 +3597,19 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`   (Port 3000 bebas untuk Remotion Studio: npm run dev)`);
   console.log(`======================================================\n`);
   setTimeout(() => {
+    warmupRemotionBrowser((msg) => console.log(msg));
+  }, 1000);
+  setTimeout(() => {
     cleanupRemotionTemp({
       maxAgeMs: 2 * 60 * 60 * 1000, // bersihkan temp > 2 jam saat startup
       onLog: (msg) => console.log(msg)
     });
   }, 4000);
+});
+
+process.on('SIGINT', () => {
+  closeRemotionBrowser().finally(() => process.exit(0));
+});
+process.on('SIGTERM', () => {
+  closeRemotionBrowser().finally(() => process.exit(0));
 });

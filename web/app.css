@@ -5548,3 +5548,240 @@ body {
   color: var(--signal);
   background: rgba(242, 169, 59, 0.12);
 }
+
+/* ==========================================================================
+   TAB 4: GABUNG VIDEO (MULTI-CLIP VIDEO MERGER)
+   ========================================================================== */
+.merger-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(310px, 0.85fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .merger-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.merger-main-col,
+.merger-side-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.merger-side-col {
+  position: sticky;
+  top: 14px;
+}
+
+@media (max-width: 1024px) {
+  .merger-side-col {
+    position: static;
+  }
+}
+
+.merger-source-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.merger-source-list {
+  max-height: 290px;
+  overflow-y: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  background: var(--bg-ground);
+}
+
+.merger-source-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.merger-source-row:last-child {
+  border-bottom: none;
+}
+
+.merger-source-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.merger-source-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.merger-source-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.merger-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.merger-source-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.merger-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.merger-queue-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--bg-ground);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+
+@media (max-width: 720px) {
+  .merger-queue-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+.merger-order-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.merger-order-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--signal);
+  min-width: 24px;
+  text-align: center;
+}
+
+.merger-order-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.merger-order-btn {
+  width: 24px;
+  height: 18px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: 3px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.merger-order-btn:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--bg-panel);
+}
+
+.merger-order-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.merger-clip-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.merger-clip-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.merger-clip-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.merger-trim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.merger-trim-input {
+  width: 74px;
+  height: 26px;
+  padding: 2px 6px;
+  font-size: 11.5px;
+  text-align: center;
+}
+
+.merger-empty-state {
+  padding: 24px 16px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-control);
+}
+
+.merger-player-stage {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  max-height: 360px;
+  background: #0a0a09;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.merger-player-stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}

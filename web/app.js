@@ -33,6 +33,7 @@
     tabStudio: $('tabStudio'),
     tabSubtitles: $('tabSubtitles'),
     tabPublic: $('tabPublic'),
+    tabMerger: $('tabMerger'),
     headerPublicCount: $('headerPublicCount'),
 
     // Global Header Actions
@@ -211,6 +212,7 @@
     btnOpenPublicFolder: $('btnOpenPublicFolder'),
     btnRefreshPublicBrowser: $('btnRefreshPublicBrowser'),
     btnUploadAllToGDrive: $('btnUploadAllToGDrive'),
+    btnSyncGDriveToSupabase: $('btnSyncGDriveToSupabase'),
     inputPublicSearch: $('inputPublicSearch'),
     btnClearPublicSearch: $('btnClearPublicSearch'),
     countPublicPreviews: $('countPublicPreviews'),
@@ -384,10 +386,13 @@
     el.tabStudio.classList.toggle('active', targetTab === 'studio');
     el.tabSubtitles.classList.toggle('active', targetTab === 'subtitles');
     if (el.tabPublic) el.tabPublic.classList.toggle('active', targetTab === 'public');
+    if (el.tabMerger) el.tabMerger.classList.toggle('active', targetTab === 'merger');
     window.location.hash = targetTab;
 
     if (targetTab === 'public') {
       loadPublicBrowser();
+    } else if (targetTab === 'merger') {
+      if (typeof loadMergerSources === 'function') loadMergerSources();
     } else if (targetTab === 'subtitles') {
       // Selalu muat transkrip yang cocok dengan voiceover variasi yang sedang diedit di Studio
       const curVO = el.selectVoiceOver.value;
@@ -5419,6 +5424,7 @@
   let currentUploadStep = 'idle';
   let currentUploadMessage = '';
   const gdriveUploadedMap = new Map();
+  const supabaseSyncedMap = new Map();
 
   function updateAllQueueUI() {
     // 1. Update all table row buttons in Gallery
@@ -5542,7 +5548,8 @@
       box.style.display = 'block';
 
       if (data.step === 'init' || data.step === 'compress' || data.step === 'compress_done' ||
-        data.step === 'packaging' || data.step === 'uploading' || data.step === 'processing') {
+        data.step === 'packaging' || data.step === 'uploading' || data.step === 'processing' ||
+        data.step === 'uploading_cover' || data.step === 'syncing_supabase') {
         if (actionsEl) actionsEl.style.display = 'none';
         if (pulseEl) {
           pulseEl.style.display = 'inline-block';
@@ -5569,8 +5576,11 @@
           if (sizeEl) sizeEl.textContent = 'Lanjut Antrean';
         } else {
           if (titleEl) titleEl.textContent = `Semua Upload Selesai`;
-          if (statusEl) statusEl.textContent = `Video '${filename}' berhasil tersimpan di Google Drive.`;
-          if (sizeEl) sizeEl.textContent = '100% Selesai';
+          const dbSuffix = data.supabaseSynced
+            ? ` dan database Supabase${data.catalogCode ? ` (${data.catalogCode})` : ''}`
+            : '';
+          if (statusEl) statusEl.textContent = `Video '${filename}' berhasil tersimpan di Google Drive${dbSuffix}.`;
+          if (sizeEl) sizeEl.textContent = data.catalogCode ? `DB · ${data.catalogCode}` : '100% Selesai';
           if (actionsEl) actionsEl.style.display = 'flex';
           if (viewBtnEl && data.url) viewBtnEl.href = data.url;
         }
@@ -5610,14 +5620,25 @@
 
     if (data.step === 'done') {
       gdriveUploadedMap.set(filename, data.url || true);
+      if (data.supabaseSynced) {
+        supabaseSyncedMap.set(filename, {
+          synced: true,
+          catalogCode: data.catalogCode || ''
+        });
+      }
       if (activeUploadToast && qRemaining === 0) {
         removeToast(activeUploadToast);
         activeUploadToast = null;
       }
-      const successTitle = data.coverUploaded ? 'Upload Video & Cover Berhasil' : 'Upload berhasil';
+      const dbLabel = data.supabaseSynced
+        ? ` serta tercatat di database Supabase${data.catalogCode ? ` (${data.catalogCode})` : ''}`
+        : '';
+      const successTitle = data.supabaseSynced
+        ? 'Tersimpan di Drive & Supabase'
+        : (data.coverUploaded ? 'Upload Video & Cover Berhasil' : 'Upload berhasil');
       const successMsg = data.coverUploaded
-        ? `Video & Cover Thumbnail '${filename}' berhasil tersimpan di Google Drive!`
-        : `Video '${filename}' berhasil tersimpan di Google Drive!`;
+        ? `Video dan Cover '${filename}' tersimpan di Google Drive${dbLabel}.`
+        : `Video '${filename}' tersimpan di Google Drive${dbLabel}.`;
       showToast({
         type: 'success',
         title: successTitle,
@@ -5628,6 +5649,9 @@
           if (data.url) window.open(data.url, '_blank');
         }
       });
+      if (typeof loadPublicBrowser === 'function') {
+        loadPublicBrowser().catch(() => { });
+      }
     } else if (data.step === 'error') {
       if (activeUploadToast && qRemaining === 0) {
         removeToast(activeUploadToast);
@@ -5736,13 +5760,23 @@
 
       if (res.ok && data.success) {
         gdriveUploadedMap.set(nextVideo, data.url || true);
-        handleGDriveUploadProgressSSE({
-          filename: nextVideo,
-          step: 'done',
-          percent: 100,
-          url: data.url,
-          coverUploaded: data.coverUploaded
-        });
+        if (data.supabaseSynced) {
+          supabaseSyncedMap.set(nextVideo, {
+            synced: true,
+            catalogCode: data.catalogCode || ''
+          });
+        }
+        if (currentUploadStep !== 'done') {
+          handleGDriveUploadProgressSSE({
+            filename: nextVideo,
+            step: 'done',
+            percent: 100,
+            url: data.url,
+            coverUploaded: data.coverUploaded,
+            supabaseSynced: data.supabaseSynced,
+            catalogCode: data.catalogCode
+          });
+        }
       } else {
         throw new Error(data.error || 'Gagal mengunggah ke Google Drive');
       }
@@ -5859,11 +5893,90 @@
     });
   }
 
+  let isSyncingSupabase = false;
+  async function syncGDriveVideosToSupabase(videoName = '') {
+    if (isSyncingSupabase) return;
+    isSyncingSupabase = true;
+    const prevBtnHtml = el.btnSyncGDriveToSupabase ? el.btnSyncGDriveToSupabase.innerHTML : '';
+    if (el.btnSyncGDriveToSupabase) {
+      el.btnSyncGDriveToSupabase.disabled = true;
+      el.btnSyncGDriveToSupabase.innerHTML = `${svgIcon('refresh')} Menyinkronkan...`;
+    }
+
+    try {
+      const res = await fetch('/api/supabase-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(videoName ? { videoName } : {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Gagal menyinkronkan ke Supabase (HTTP ${res.status})`);
+      }
+
+      if (data.history && typeof data.history === 'object') {
+        Object.entries(data.history).forEach(([fname, info]) => {
+          if (info?.url) gdriveUploadedMap.set(fname, info.url);
+          if (info?.supabaseSynced) {
+            supabaseSyncedMap.set(fname, {
+              synced: true,
+              catalogCode: info.catalogCode || '',
+            });
+          }
+        });
+      }
+
+      updateAllQueueUI();
+      if (typeof loadPublicBrowser === 'function') {
+        await loadPublicBrowser();
+      }
+
+      if (data.totalProcessed === 0) {
+        showToast({
+          type: 'info',
+          title: 'Belum Ada Video di Drive',
+          message: 'Unggah video hasil render ke Google Drive terlebih dahulu agar dapat disinkronkan ke Supabase.',
+        });
+      } else {
+        showToast({
+          type: 'success',
+          title: 'Sinkronisasi Supabase Selesai',
+          message: `${data.insertedCount} video baru ditambahkan dan ${data.updatedCount} video diperbarui di database affiliate-list-video.`,
+          duration: 6500,
+        });
+      }
+    } catch (err) {
+      showToast({
+        type: 'error',
+        title: 'Sinkronisasi Supabase Gagal',
+        message: err.message,
+        duration: 7500,
+      });
+    } finally {
+      isSyncingSupabase = false;
+      if (el.btnSyncGDriveToSupabase) {
+        el.btnSyncGDriveToSupabase.disabled = false;
+        el.btnSyncGDriveToSupabase.innerHTML = prevBtnHtml;
+      }
+    }
+  }
+
+  if (el.btnSyncGDriveToSupabase) {
+    el.btnSyncGDriveToSupabase.addEventListener('click', () => {
+      syncGDriveVideosToSupabase('');
+    });
+  }
+
   // Action Delegation for Gallery Video Rows
   document.addEventListener('click', e => {
     const btnUpload = e.target.closest('.btn-upload-gdrive-row');
     if (btnUpload && btnUpload.dataset.video) {
       enqueueVideoForGDrive(btnUpload.dataset.video);
+      return;
+    }
+    const btnSyncRow = e.target.closest('.btn-sync-supabase-row');
+    if (btnSyncRow && btnSyncRow.dataset.video) {
+      syncGDriveVideosToSupabase(btnSyncRow.dataset.video);
       return;
     }
   });
@@ -6748,6 +6861,20 @@
       handleGDriveUploadProgressSSE(data);
     });
 
+    es.addEventListener('merger_progress', e => {
+      try {
+        const data = JSON.parse(e.data);
+        const stepEl = $('mergerProgressStep');
+        const pctEl = $('mergerProgressPct');
+        const fillEl = $('mergerProgressFill');
+        if (stepEl && data.step) stepEl.textContent = data.step;
+        if (typeof data.percent === 'number') {
+          if (pctEl) pctEl.textContent = `${data.percent}%`;
+          if (fillEl) fillEl.style.width = `${data.percent}%`;
+        }
+      } catch (_) { }
+    });
+
     es.addEventListener('files_changed', e => {
       try {
         const data = JSON.parse(e.data);
@@ -6978,7 +7105,7 @@
             let gdriveBtnHtml = `${svgIcon('upload')} <span>Upload</span>`;
             let gdriveBtnStyle = '';
             let gdriveBtnDisabled = '';
-            let gdriveBtnTitle = 'Unggah video ini langsung ke Google Drive';
+            let gdriveBtnTitle = 'Unggah video ini ke Google Drive dan simpan otomatis ke database Supabase';
 
             if (isCurrent) {
               gdriveBtnHtml = `<span>⏳</span> <span>${currentUploadPercent}%</span>`;
@@ -6993,7 +7120,7 @@
             } else if (isUploaded) {
               gdriveBtnHtml = `${svgIcon('check')} <span>Selesai</span>`;
               gdriveBtnStyle = 'color: #34d399; background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.3);';
-              gdriveBtnTitle = 'Sudah terunggah di Google Drive (klik untuk unggah ulang)';
+              gdriveBtnTitle = 'Sudah terunggah di Google Drive (klik untuk unggah ulang dan perbarui database)';
             }
 
             const tr = document.createElement('tr');
@@ -8456,6 +8583,514 @@
     toggle.setAttribute('aria-expanded', saved === '1');
   }
 
+  // ===========================================================================
+  // TAB 4: GABUNG VIDEO (FOLDER TERPISAH merger/inputs & merger/outputs)
+  // ===========================================================================
+  const mergerState = {
+    inputs: [],
+    outputs: [],
+    searchQuery: '',
+    queue: [],
+    isMerging: false,
+    lastResult: null,
+  };
+
+  async function loadMergerSources() {
+    const listEl = $('mergerSourceList');
+    if (!listEl) return;
+    try {
+      const res = await fetch('/api/merger/sources');
+      const rawText = await res.text();
+      if (res.status === 404) {
+        throw new Error('Endpoint /api/merger belum aktif di memori server. Silakan restart server.');
+      }
+      let data = {};
+      try { data = JSON.parse(rawText); } catch {
+        throw new Error(`Respons server tidak valid (${res.status}): ${rawText.slice(0, 120)}`);
+      }
+      if (!res.ok) throw new Error(data.error || 'Gagal memuat folder merger');
+      mergerState.inputs = Array.isArray(data.inputs) ? data.inputs : [];
+      mergerState.outputs = Array.isArray(data.outputs) ? data.outputs : [];
+      renderMergerSources();
+      renderMergerOutputs();
+    } catch (err) {
+      listEl.innerHTML = `<div class="merger-empty-state" style="border:none;color:#f87171;">Gagal memuat daftar video: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+
+  function renderMergerSources() {
+    const listEl = $('mergerSourceList');
+    if (!listEl) return;
+    const q = mergerState.searchQuery.trim().toLowerCase();
+    const filtered = mergerState.inputs.filter(item => {
+      if (q && !item.fileName.toLowerCase().includes(q)) return false;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      listEl.innerHTML = mergerState.inputs.length === 0
+        ? '<div class="merger-empty-state" style="border:none;">Belum ada klip di <code>merger/inputs/</code>. Klik <strong>Unggah Klip Video</strong> di kanan atas untuk menambahkan video.</div>'
+        : '<div class="merger-empty-state" style="border:none;">Tidak ada klip yang cocok dengan kata kunci pencarian.</div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map((item) => {
+      const durBadge = item.durationSec ? `${item.durationSec} dtk` : 'Durasi -';
+      return `
+        <div class="merger-source-row" role="listitem">
+          <div class="merger-source-info">
+            <div class="merger-source-name" title="merger/inputs/${escapeHtml(item.fileName)}">${escapeHtml(item.fileName)}</div>
+            <div class="merger-source-meta">
+              <span class="pill emerald" style="font-size:10px;padding:1px 6px;">merger/inputs</span>
+              <span class="num">${escapeHtml(durBadge)}</span>
+              <span class="num">${item.sizeMB} MB</span>
+            </div>
+          </div>
+          <div class="merger-source-actions">
+            <button type="button" class="btn small" data-merger-preview="${escapeHtml(item.fileName)}">
+              Putar
+            </button>
+            <button type="button" class="btn small primary" data-merger-add="${escapeHtml(item.fileName)}">
+              + Tambah
+            </button>
+            <button type="button" class="btn small danger" data-merger-del-in="${escapeHtml(item.fileName)}" title="Hapus dari merger/inputs/">
+              Hapus
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderMergerOutputs() {
+    const outEl = $('mergerOutputsList');
+    if (!outEl) return;
+    if (mergerState.outputs.length === 0) {
+      outEl.innerHTML = '<div class="merger-empty-state" style="border:none;">Belum ada hasil gabungan di <code>merger/outputs/</code>.</div>';
+      return;
+    }
+    outEl.innerHTML = mergerState.outputs.map((item) => {
+      const durBadge = item.durationSec ? `${item.durationSec} dtk` : 'Durasi -';
+      return `
+        <div class="merger-source-row" role="listitem">
+          <div class="merger-source-info">
+            <div class="merger-source-name" title="merger/outputs/${escapeHtml(item.fileName)}">${escapeHtml(item.fileName)}</div>
+            <div class="merger-source-meta">
+              <span class="pill amber" style="font-size:10px;padding:1px 6px;">merger/outputs</span>
+              <span class="num">${escapeHtml(durBadge)}</span>
+              <span class="num">${item.sizeMB} MB</span>
+            </div>
+          </div>
+          <div class="merger-source-actions">
+            <button type="button" class="btn small" data-merger-play-out="${escapeHtml(item.fileName)}">
+              Putar
+            </button>
+            <a class="btn small primary" href="${item.previewUrl}" download="${escapeHtml(item.fileName)}">
+              Unduh MP4
+            </a>
+            <button type="button" class="btn small danger" data-merger-del-out="${escapeHtml(item.fileName)}" title="Hapus dari merger/outputs/">
+              Hapus
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function computeMergerClipEffectiveDur(item) {
+    const baseDur = item.durationSec || 0;
+    const s = Math.max(0, parseFloat(item.startSec) || 0);
+    const hasEnd = item.endSec !== '' && item.endSec !== null && item.endSec !== undefined && !isNaN(parseFloat(item.endSec));
+    const e = hasEnd ? Math.min(baseDur || parseFloat(item.endSec), parseFloat(item.endSec)) : baseDur;
+    if (e > s) return +(e - s).toFixed(1);
+    return baseDur;
+  }
+
+  function renderMergerQueue() {
+    const qEl = $('mergerQueueList');
+    const summaryEl = $('mergerQueueSummary');
+    const clearBtn = $('btnMergerClearQueue');
+    const runBtn = $('btnRunMergeVideos');
+    const runLabel = $('btnRunMergeVideosLabel');
+    if (!qEl) return;
+
+    const count = mergerState.queue.length;
+    const totalDur = mergerState.queue.reduce((acc, c) => acc + computeMergerClipEffectiveDur(c), 0);
+
+    if (summaryEl) {
+      summaryEl.textContent = `${count} klip · ${totalDur.toFixed(1)} dtk`;
+    }
+    if (clearBtn) {
+      clearBtn.disabled = count === 0 || mergerState.isMerging;
+    }
+    if (runBtn && runLabel) {
+      runBtn.disabled = count < 2 || mergerState.isMerging;
+      runLabel.textContent = count < 2
+        ? 'Gabungkan Video (Pilih minimal 2 klip)'
+        : `Gabungkan ${count} Video (${totalDur.toFixed(1)} dtk)`;
+    }
+
+    if (count === 0) {
+      qEl.innerHTML = `
+        <div class="merger-empty-state">
+          Unggah atau tambahkan minimal 2 klip dari daftar <code>merger/inputs/</code> di atas untuk mulai menyusun urutan gabungan.
+        </div>
+      `;
+      return;
+    }
+
+    qEl.innerHTML = mergerState.queue.map((clip, i) => {
+      const orderNum = String(i + 1).padStart(2, '0');
+      const effDur = computeMergerClipEffectiveDur(clip);
+      const maxHint = clip.durationSec ? clip.durationSec : '';
+      return `
+        <div class="merger-queue-item" role="listitem" data-qid="${clip.uid}">
+          <div class="merger-order-controls">
+            <span class="merger-order-badge">${orderNum}</span>
+            <div class="merger-order-btns">
+              <button type="button" class="merger-order-btn" data-q-action="up" data-q-idx="${i}" ${i === 0 ? 'disabled' : ''} aria-label="Pindah klip ke atas" title="Naikkan urutan">▲</button>
+              <button type="button" class="merger-order-btn" data-q-action="down" data-q-idx="${i}" ${i === count - 1 ? 'disabled' : ''} aria-label="Pindah klip ke bawah" title="Turunkan urutan">▼</button>
+            </div>
+          </div>
+
+          <div class="merger-clip-body">
+            <div class="merger-clip-title-row">
+              <span class="merger-clip-title">${escapeHtml(clip.fileName)}</span>
+              <span class="pill emerald num" style="font-size:10px;padding:1px 6px;">${effDur} dtk</span>
+            </div>
+            <div class="merger-trim-row">
+              <label>Mulai (dtk):
+                <input type="number" class="input merger-trim-input" data-q-field="startSec" data-q-idx="${i}" min="0" step="0.1" value="${clip.startSec ?? ''}" placeholder="0">
+              </label>
+              <label>Selesai (dtk):
+                <input type="number" class="input merger-trim-input" data-q-field="endSec" data-q-idx="${i}" min="0" step="0.1" value="${clip.endSec ?? ''}" placeholder="${maxHint || 'Akhir'}">
+              </label>
+              <button type="button" class="btn small" data-q-action="toggle-mute" data-q-idx="${i}" aria-pressed="${clip.muted ? 'true' : 'false'}">
+                Suara: ${clip.muted ? 'Bisu' : 'Aktif'}
+              </button>
+            </div>
+          </div>
+
+          <div class="merger-source-actions">
+            <button type="button" class="btn small" data-q-action="preview" data-q-idx="${i}">Putar</button>
+            <button type="button" class="btn small danger" data-q-action="remove" data-q-idx="${i}">Lepas</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function previewVideoInMerger(url, labelText) {
+    const player = $('mergerPreviewPlayer');
+    const cap = $('mergerPlayerCaption');
+    if (!player) return;
+    player.src = url;
+    player.play().catch(() => { });
+    if (cap) cap.textContent = labelText || url;
+  }
+
+  function addSourceItemToMergerQueue(item) {
+    if (!item) return;
+    mergerState.queue.push({
+      uid: `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      fileName: item.fileName,
+      durationSec: item.durationSec,
+      previewUrl: item.previewUrl,
+      startSec: '',
+      endSec: '',
+      muted: false,
+    });
+    const outInp = $('inputMergerOutputName');
+    if (outInp && !outInp.value.trim()) {
+      const base = item.fileName.replace(/\.[^/.]+$/, '');
+      outInp.value = `${base}-gabungan`;
+    }
+    renderMergerQueue();
+  }
+
+  async function deleteMergerFile(bucket, fileName) {
+    try {
+      const res = await fetch('/api/merger/file', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bucket, fileName }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal menghapus file');
+      if (bucket === 'inputs') {
+        mergerState.queue = mergerState.queue.filter(q => q.fileName !== fileName);
+        renderMergerQueue();
+      }
+      await loadMergerSources();
+      showToast({ type: 'info', title: 'File Dihapus', message: `merger/${bucket}/${fileName} telah dihapus.` });
+    } catch (err) {
+      showToast({ type: 'error', title: 'Gagal Menghapus', message: err.message });
+    }
+  }
+
+  function initVideoMerger() {
+    if (!$('tabMerger')) return;
+
+    $('btnMergerRefreshSources')?.addEventListener('click', () => {
+      loadMergerSources();
+    });
+
+    $('inputMergerSearch')?.addEventListener('input', e => {
+      mergerState.searchQuery = e.target.value || '';
+      renderMergerSources();
+    });
+
+    $('selectMergerMode')?.addEventListener('change', e => {
+      const normBox = $('mergerNormalizeOptions');
+      if (normBox) {
+        normBox.style.display = e.target.value === 'fast_copy' ? 'none' : 'block';
+      }
+    });
+
+    $('mergerSourceList')?.addEventListener('click', e => {
+      const addBtn = e.target.closest('[data-merger-add]');
+      if (addBtn) {
+        const fname = addBtn.dataset.mergerAdd;
+        const found = mergerState.inputs.find(s => s.fileName === fname);
+        if (found) addSourceItemToMergerQueue(found);
+        return;
+      }
+      const prevBtn = e.target.closest('[data-merger-preview]');
+      if (prevBtn) {
+        const fname = prevBtn.dataset.mergerPreview;
+        const found = mergerState.inputs.find(s => s.fileName === fname);
+        if (found) {
+          $('mergerResultActions').style.display = 'none';
+          previewVideoInMerger(found.previewUrl, `Bahan: ${found.fileName}`);
+        }
+        return;
+      }
+      const delBtn = e.target.closest('[data-merger-del-in]');
+      if (delBtn) {
+        deleteMergerFile('inputs', delBtn.dataset.mergerDelIn);
+      }
+    });
+
+    $('mergerOutputsList')?.addEventListener('click', e => {
+      const playBtn = e.target.closest('[data-merger-play-out]');
+      if (playBtn) {
+        const fname = playBtn.dataset.mergerPlayOut;
+        const found = mergerState.outputs.find(s => s.fileName === fname);
+        if (found) {
+          const dlBtn = $('btnDownloadMergedVideo');
+          if (dlBtn) {
+            dlBtn.href = found.previewUrl;
+            dlBtn.download = found.fileName;
+          }
+          $('mergerResultActions').style.display = 'flex';
+          previewVideoInMerger(`${found.previewUrl}?t=${Date.now()}`, `Hasil Gabungan: ${found.fileName}`);
+        }
+        return;
+      }
+      const delBtn = e.target.closest('[data-merger-del-out]');
+      if (delBtn) {
+        deleteMergerFile('outputs', delBtn.dataset.mergerDelOut);
+      }
+    });
+
+    $('mergerQueueList')?.addEventListener('click', e => {
+      const btn = e.target.closest('[data-q-action]');
+      if (!btn) return;
+      const idx = parseInt(btn.dataset.qIdx, 10);
+      const act = btn.dataset.qAction;
+      if (isNaN(idx) || !mergerState.queue[idx]) return;
+
+      if (act === 'up' && idx > 0) {
+        const tmp = mergerState.queue[idx - 1];
+        mergerState.queue[idx - 1] = mergerState.queue[idx];
+        mergerState.queue[idx] = tmp;
+        renderMergerQueue();
+      } else if (act === 'down' && idx < mergerState.queue.length - 1) {
+        const tmp = mergerState.queue[idx + 1];
+        mergerState.queue[idx + 1] = mergerState.queue[idx];
+        mergerState.queue[idx] = tmp;
+        renderMergerQueue();
+      } else if (act === 'remove') {
+        mergerState.queue.splice(idx, 1);
+        renderMergerQueue();
+      } else if (act === 'toggle-mute') {
+        mergerState.queue[idx].muted = !mergerState.queue[idx].muted;
+        renderMergerQueue();
+      } else if (act === 'preview') {
+        const clip = mergerState.queue[idx];
+        $('mergerResultActions').style.display = 'none';
+        previewVideoInMerger(clip.previewUrl, `Urutan #${idx + 1}: ${clip.fileName}`);
+      }
+    });
+
+    $('mergerQueueList')?.addEventListener('input', e => {
+      const inp = e.target.closest('[data-q-field]');
+      if (!inp) return;
+      const idx = parseInt(inp.dataset.qIdx, 10);
+      const field = inp.dataset.qField;
+      if (isNaN(idx) || !mergerState.queue[idx]) return;
+      mergerState.queue[idx][field] = inp.value;
+      const summaryEl = $('mergerQueueSummary');
+      const totalDur = mergerState.queue.reduce((acc, c) => acc + computeMergerClipEffectiveDur(c), 0);
+      if (summaryEl) summaryEl.textContent = `${mergerState.queue.length} klip · ${totalDur.toFixed(1)} dtk`;
+    });
+
+    $('btnMergerClearQueue')?.addEventListener('click', () => {
+      mergerState.queue = [];
+      renderMergerQueue();
+    });
+
+    $('btnMergerUploadFiles')?.addEventListener('click', () => {
+      $('mergerUploadInput')?.click();
+    });
+
+    $('mergerUploadInput')?.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length === 0) return;
+      const fb = $('mergerUploadFeedback');
+      if (fb) {
+        fb.style.display = 'block';
+        fb.className = 'feedback-banner warn';
+      }
+      try {
+        const uploadedNames = [];
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          const resData = await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `/api/merger/upload?filename=${encodeURIComponent(f.name)}`);
+            xhr.upload.onprogress = (ev) => {
+              if (ev.lengthComputable && fb) {
+                const pct = Math.min(99, Math.round((ev.loaded / ev.total) * 100));
+                fb.textContent = `Mengunggah ke merger/inputs (${i + 1}/${files.length}): ${f.name} (${pct}%)...`;
+              }
+            };
+            xhr.onload = () => {
+              let parsed = {};
+              try { parsed = JSON.parse(xhr.responseText || '{}'); } catch (_) { }
+              if (xhr.status >= 200 && xhr.status < 300) resolve(parsed);
+              else reject(new Error(parsed.error || `Gagal mengunggah ${f.name} (${xhr.status})`));
+            };
+            xhr.onerror = () => reject(new Error('Koneksi terputus saat mengunggah video'));
+            xhr.send(f);
+          });
+          uploadedNames.push(resData.fileName);
+        }
+        await loadMergerSources();
+        uploadedNames.forEach(fname => {
+          const found = mergerState.inputs.find(s => s.fileName === fname);
+          if (found) addSourceItemToMergerQueue(found);
+        });
+        if (fb) {
+          fb.className = 'feedback-banner success';
+          fb.textContent = `${files.length} video tersimpan di merger/inputs/ dan langsung dimasukkan ke urutan penggabungan.`;
+        }
+      } catch (err) {
+        if (fb) {
+          fb.className = 'feedback-banner error';
+          fb.textContent = `Gagal mengunggah: ${err.message}`;
+        }
+      } finally {
+        e.target.value = '';
+      }
+    });
+
+    $('btnRunMergeVideos')?.addEventListener('click', async () => {
+      if (mergerState.queue.length < 2 || mergerState.isMerging) return;
+      mergerState.isMerging = true;
+      renderMergerQueue();
+
+      const progBox = $('mergerProgressBox');
+      const progStep = $('mergerProgressStep');
+      const progPct = $('mergerProgressPct');
+      const progFill = $('mergerProgressFill');
+      const resBanner = $('mergerResultBanner');
+      const resActions = $('mergerResultActions');
+
+      if (resBanner) resBanner.style.display = 'none';
+      if (resActions) resActions.style.display = 'none';
+      if (progBox) progBox.style.display = 'block';
+      if (progStep) progStep.textContent = 'Menyiapkan proses penggabungan FFmpeg...';
+      if (progPct) progPct.textContent = '5%';
+      if (progFill) progFill.style.width = '5%';
+
+      try {
+        const outputName = $('inputMergerOutputName')?.value.trim() || `gabungan-${Date.now()}`;
+        const mode = $('selectMergerMode')?.value || 'smart_normalize';
+        const resolution = $('selectMergerResolution')?.value || '1080x1920';
+        const fps = parseInt($('selectMergerFps')?.value || '30', 10);
+        const fitMode = $('selectMergerFit')?.value || 'cover_crop';
+
+        const res = await fetch('/api/merge-videos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clips: mergerState.queue.map(c => ({
+              fileName: c.fileName,
+              startSec: c.startSec,
+              endSec: c.endSec,
+              muted: c.muted,
+            })),
+            outputName,
+            mode,
+            resolution,
+            fps,
+            fitMode,
+          }),
+        });
+        const rawResText = await res.text();
+        if (res.status === 404) {
+          throw new Error('Endpoint /api/merge-videos belum termuat. Silakan restart server.');
+        }
+        let data = {};
+        try { data = JSON.parse(rawResText); } catch {
+          throw new Error(`Respons server tidak valid (${res.status}): ${rawResText.slice(0, 120)}`);
+        }
+        if (!res.ok) throw new Error(data.error || 'Gagal menggabungkan video');
+
+        mergerState.lastResult = data;
+        if (progStep) progStep.textContent = 'Penggabungan selesai!';
+        if (progPct) progPct.textContent = '100%';
+        if (progFill) progFill.style.width = '100%';
+
+        if (resBanner) {
+          resBanner.style.display = 'block';
+          resBanner.className = 'feedback-banner success';
+          resBanner.innerHTML = `Berhasil digabung: <strong>${escapeHtml(data.folderPath)}</strong> (${data.sizeMB} MB · ${data.durationSec} dtk).`;
+        }
+
+        previewVideoInMerger(`${data.previewUrl}?t=${Date.now()}`, `Hasil Gabungan: ${data.fileName}`);
+
+        const dlBtn = $('btnDownloadMergedVideo');
+        if (dlBtn) {
+          dlBtn.href = data.previewUrl;
+          dlBtn.download = data.fileName;
+        }
+        if (resActions) {
+          resActions.style.display = 'flex';
+        }
+
+        await loadMergerSources();
+
+        showToast({
+          type: 'success',
+          title: 'Video Berhasil Digabung',
+          message: `${data.folderPath} (${data.sizeMB} MB) siap diunduh.`,
+        });
+      } catch (err) {
+        if (resBanner) {
+          resBanner.style.display = 'block';
+          resBanner.className = 'feedback-banner error';
+          resBanner.textContent = err.message;
+        }
+        showToast({ type: 'error', title: 'Gagal Menggabungkan Video', message: err.message });
+      } finally {
+        mergerState.isMerging = false;
+        renderMergerQueue();
+      }
+    });
+  }
+
   // -------------------------------------------------------------
   // Initialization
   // -------------------------------------------------------------
@@ -8467,31 +9102,38 @@
     initPlayerModeSwitcher();
     initSourceScrubber();
     initMonitorDrawer();
+    initVideoMerger();
     initBanks();
     await loadAppConfig();
     await loadAssets();
     await loadProductsList();
     await loadVideos();
-    await loadPublicBrowser();
-    await loadGDriveLink();
     try {
       const histRes = await fetch('/api/upload-history');
       if (histRes.ok) {
         const hist = await histRes.json();
         if (hist && typeof hist === 'object') {
           Object.entries(hist).forEach(([fname, info]) => {
-            gdriveUploadedMap.set(fname, info?.url || true);
+            if (info?.url) gdriveUploadedMap.set(fname, info.url);
+            else if (info) gdriveUploadedMap.set(fname, true);
+            if (info?.supabaseSynced) {
+              supabaseSyncedMap.set(fname, {
+                synced: true,
+                catalogCode: info.catalogCode || ''
+              });
+            }
           });
           updateAllQueueUI();
-          renderPublicBrowser?.();
         }
       }
     } catch (_) { }
+    await loadPublicBrowser();
+    await loadGDriveLink();
     initSSE();
     initAllCustomSelects();
 
     const hash = window.location.hash.replace('#', '');
-    if (['studio', 'subtitles', 'public'].includes(hash)) {
+    if (['studio', 'subtitles', 'public', 'merger'].includes(hash)) {
       switchTab(hash);
     }
   }

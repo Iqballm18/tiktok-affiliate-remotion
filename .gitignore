@@ -16,6 +16,7 @@ dist/
 # ==========================================
 out/*
 !out/.gitkeep
+merger/
 
 # ==========================================
 # Large AI Models & Whisper Binaries (~600MB+)
@@ -61,6 +62,7 @@ public/products/**
 # Sensitive Local Config & API Credentials
 # ==========================================
 config.json
+config/
 .env
 .env.*
 .env.local

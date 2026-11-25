@@ -245,6 +245,11 @@
               <use href="#i-folder"></use>
             </svg> Galeri &amp; berkas <span class="tab-count num" id="headerPublicCount">0</span>
           </button>
+          <button class="studio-tab-btn" data-tab="merger">
+            <svg class="ic" aria-hidden="true">
+              <use href="#i-layers"></use>
+            </svg> Gabung video
+          </button>
         </nav>
       </div>
 
@@ -1970,6 +1975,13 @@
                   <use href="#i-upload"></use>
                 </svg> Upload Semua ke Drive
               </button>
+              <button class="btn small" id="btnSyncGDriveToSupabase" type="button"
+                style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border-color: rgba(56, 189, 248, 0.32);"
+                title="Sinkronkan video yang sudah terunggah di Google Drive ke database Supabase affiliate-list-video">
+                <svg class="ic" aria-hidden="true">
+                  <use href="#i-repeat"></use>
+                </svg> Sinkronkan ke Database
+              </button>
               <button class="btn small primary" id="btnRefreshPublicBrowser" type="button">
                 <svg class="ic" aria-hidden="true">
                   <use href="#i-refresh"></use>
@@ -2123,6 +2135,182 @@
             </div>
           </div>
         </section>
+      </section>
+
+      <!-- ========================================================= -->
+      <!-- TAB 4: GABUNG VIDEO (Folder Terpisah merger/inputs & outputs) -->
+      <!-- ========================================================= -->
+      <section class="tab-view" id="tabMerger">
+        <div class="merger-layout">
+          <!-- Kolom Kiri: Folder Bahan Gabungan (merger/inputs/) & Urutan Penggabungan -->
+          <div class="merger-main-col">
+            <!-- Panel 1: Pilih / Unggah Bahan Video Khusus Merger -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Bahan Video (<code>merger/inputs/</code>)</h2>
+                  <p class="panel-sub">Folder ini terpisah penuh dari database produk Studio (<code>public/</code>). Unggah klip yang ingin digabung ke sini.</p>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <button class="btn small" id="btnMergerRefreshSources" type="button" title="Muat ulang daftar file di merger/">
+                    Segarkan
+                  </button>
+                  <button class="btn small primary" id="btnMergerUploadFiles" type="button"
+                    title="Unggah beberapa video ke folder khusus merger/inputs/ dan masukkan ke urutan">
+                    <svg class="ic" aria-hidden="true">
+                      <use href="#i-upload"></use>
+                    </svg> Unggah Klip Video
+                  </button>
+                  <input type="file" id="mergerUploadInput" multiple
+                    accept="video/mp4,video/quicktime,video/webm,video/x-matroska" style="display: none;">
+                </div>
+              </div>
+
+              <div class="merger-source-toolbar">
+                <div style="flex: 1; min-width: 180px;">
+                  <label for="inputMergerSearch" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Cari nama klip video</label>
+                  <input class="input" type="search" id="inputMergerSearch" placeholder="Cari nama klip di merger/inputs/..."
+                    style="height: 32px; font-size: 12px;">
+                </div>
+              </div>
+
+              <div id="mergerUploadFeedback" class="feedback-banner warn" style="display: none;"></div>
+
+              <div class="merger-source-list" id="mergerSourceList" role="list">
+                <div class="merger-empty-state" style="border:none;">Belum ada klip di <code>merger/inputs/</code>. Klik <strong>Unggah Klip Video</strong> di kanan atas untuk menambahkan video.</div>
+              </div>
+            </section>
+
+            <!-- Panel 2: Urutan Video yang Akan Digabung -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Urutan Penggabungan Video</h2>
+                  <p class="panel-sub">Atur urutan dari atas ke bawah. Anda juga dapat memotong detik awal/akhir tiap klip sebelum digabung.</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="pill emerald num" id="mergerQueueSummary">0 klip · 0.0 dtk</span>
+                  <button class="btn small danger" id="btnMergerClearQueue" type="button" disabled>
+                    Kosongkan Urutan
+                  </button>
+                </div>
+              </div>
+
+              <div class="merger-queue-list" id="mergerQueueList" role="list">
+                <div class="merger-empty-state">
+                  Unggah atau tambahkan minimal 2 klip dari daftar <code>merger/inputs/</code> di atas untuk mulai menyusun urutan gabungan.
+                </div>
+              </div>
+            </section>
+
+            <!-- Panel 3: Daftar Hasil Video Gabungan (merger/outputs/) -->
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Hasil Video Gabungan (<code>merger/outputs/</code>)</h2>
+                  <p class="panel-sub">Semua video hasil penggabungan tersimpan rapi di folder <code>merger/outputs/</code>.</p>
+                </div>
+              </div>
+              <div class="merger-source-list" id="mergerOutputsList" role="list">
+                <div class="merger-empty-state" style="border:none;">Belum ada hasil gabungan di <code>merger/outputs/</code>.</div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Kolom Kanan: Pengaturan Output & Pratinjau Hasil -->
+          <aside class="merger-side-col">
+            <section class="studio-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Pengaturan &amp; Ekspor</h2>
+                  <p class="panel-sub">Hasil disimpan otomatis ke <code>merger/outputs/*.mp4</code>.</p>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="inputMergerOutputName">Nama File Output (.mp4)</label>
+                <input class="input" type="text" id="inputMergerOutputName" placeholder="mis. video-gabungan-01">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="selectMergerMode">Mode Penggabungan</label>
+                <select class="input" id="selectMergerMode">
+                  <option value="smart_normalize">Normalisasi Seragam (Aman Beda Format / Resolusi)</option>
+                  <option value="fast_copy">Salin Instan Tanpa Encode (Khusus Codec &amp; Resolusi Sama)</option>
+                </select>
+              </div>
+
+              <div id="mergerNormalizeOptions">
+                <div class="form-row two-col" style="gap: 10px; margin-bottom: 10px;">
+                  <div class="form-group" style="margin: 0;">
+                    <label class="form-label" for="selectMergerResolution">Resolusi Target</label>
+                    <select class="input" id="selectMergerResolution">
+                      <option value="1080x1920">9:16 Vertikal (1080×1920)</option>
+                      <option value="match_first">Ikuti Video Pertama</option>
+                      <option value="1920x1080">16:9 Horizontal (1920×1080)</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin: 0;">
+                    <label class="form-label" for="selectMergerFps">Frame Rate</label>
+                    <select class="input" id="selectMergerFps">
+                      <option value="30">30 FPS (Cepat)</option>
+                      <option value="60">60 FPS (Halus)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="selectMergerFit">Penyesuaian Rasio Layar</label>
+                  <select class="input" id="selectMergerFit">
+                    <option value="cover_crop">Isi Penuh Layar (Crop Tengah)</option>
+                    <option value="blur_pad">Latar Blur Sinematik</option>
+                    <option value="contain_black">Utuh dengan Bar Hitam</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn primary" id="btnRunMergeVideos" type="button" disabled
+                style="width: 100%; justify-content: center; height: 38px; font-weight: 600;">
+                <svg class="ic" aria-hidden="true">
+                  <use href="#i-layers"></use>
+                </svg>
+                <span id="btnRunMergeVideosLabel">Gabungkan Video (Pilih minimal 2 klip)</span>
+              </button>
+
+              <div class="progress-box" id="mergerProgressBox" style="display: none; margin-top: 10px;">
+                <div class="progress-header">
+                  <span id="mergerProgressStep">Menyiapkan FFmpeg...</span>
+                  <span class="num" id="mergerProgressPct">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                  <div class="progress-bar-fill" id="mergerProgressFill"></div>
+                </div>
+              </div>
+
+              <div id="mergerResultBanner" class="feedback-banner" style="display: none; margin-top: 10px;"></div>
+            </section>
+
+            <!-- Panel Pratinjau Klip / Hasil Gabungan -->
+            <section class="studio-panel">
+              <div class="panel-header" style="padding-bottom: 8px;">
+                <div>
+                  <h2 class="panel-title" style="font-size: 13.5px;">Pemutar Pratinjau</h2>
+                  <p class="panel-sub" id="mergerPlayerCaption">Klik Putar pada klip untuk melihat isi video.</p>
+                </div>
+              </div>
+
+              <div class="merger-player-stage">
+                <video id="mergerPreviewPlayer" controls preload="metadata"></video>
+              </div>
+
+              <div id="mergerResultActions" style="display: none; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+                <a class="btn small primary" id="btnDownloadMergedVideo" href="#" download style="width: 100%; justify-content: center;">
+                  Unduh Hasil MP4
+                </a>
+              </div>
+            </section>
+          </aside>
+        </div>
       </section>
 
     </main>

@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { bundle } from '@remotion/bundler';
-import { renderMedia, renderStill, selectComposition, makeCancelSignal } from '@remotion/renderer';
+import { renderMedia, renderStill, selectComposition, makeCancelSignal, openBrowser } from '@remotion/renderer';
 import { loadProduct, resolveVariantProps, listProducts, loadConfig } from './scripts/product-helper.mjs';
 
 export { makeCancelSignal };
@@ -28,6 +28,140 @@ const PUBLIC_DIR = path.resolve(__dirname, 'public');
 // In-memory bundle cache across multiple renders
 let cachedBundleLocation = null;
 let lastBundleBuiltTime = 0;
+
+// Persistent Headless Chromium pool so Live Preview, Cover, and Render do not cold-launch Chrome per call
+const REMOTION_TIMEOUT_MS = 60000;
+const BROWSER_IDLE_TTL_MS = 15 * 60 * 1000;
+let sharedBrowser = null;
+let sharedBrowserGlMode = null;
+let sharedBrowserPromise = null;
+let sharedBrowserIdleTimer = null;
+
+function touchBrowserIdleTimer() {
+  if (sharedBrowserIdleTimer) clearTimeout(sharedBrowserIdleTimer);
+  sharedBrowserIdleTimer = setTimeout(() => {
+    closeRemotionBrowser().catch(() => { });
+  }, BROWSER_IDLE_TTL_MS);
+  if (typeof sharedBrowserIdleTimer.unref === 'function') {
+    sharedBrowserIdleTimer.unref();
+  }
+}
+
+export async function closeRemotionBrowser() {
+  if (sharedBrowserIdleTimer) {
+    clearTimeout(sharedBrowserIdleTimer);
+    sharedBrowserIdleTimer = null;
+  }
+  const inst = sharedBrowser;
+  sharedBrowser = null;
+  sharedBrowserGlMode = null;
+  sharedBrowserPromise = null;
+  if (inst) {
+    try {
+      await inst.close({ silent: true });
+    } catch (_) { }
+  }
+}
+
+export async function getOrOpenRemotionBrowser({ enableGpu = true, onLog = null, forceRestart = false } = {}) {
+  const desiredGl = enableGpu ? 'angle' : null;
+
+  if (forceRestart) {
+    await closeRemotionBrowser();
+  }
+
+  if (sharedBrowser && sharedBrowserGlMode === desiredGl) {
+    touchBrowserIdleTimer();
+    return sharedBrowser;
+  }
+
+  if (sharedBrowser && sharedBrowserGlMode !== desiredGl) {
+    await closeRemotionBrowser();
+  }
+
+  if (sharedBrowserPromise) {
+    return sharedBrowserPromise;
+  }
+
+  sharedBrowserPromise = (async () => {
+    const tryOpen = async (glValue) => {
+      const inst = await openBrowser('chrome', {
+        chromiumOptions: { gl: glValue },
+      });
+      const clearRef = () => {
+        if (sharedBrowser === inst) {
+          sharedBrowser = null;
+          sharedBrowserGlMode = null;
+        }
+      };
+      if (typeof inst.once === 'function') {
+        inst.once('closed', clearRef);
+        inst.once('closed-silent', clearRef);
+      }
+      return { inst, glValue };
+    };
+
+    try {
+      let opened;
+      try {
+        opened = await tryOpen(desiredGl);
+      } catch (firstErr) {
+        if (onLog) {
+          onLog(`[BROWSER WARN] Gagal membuka Chromium dengan gl=${desiredGl} (${firstErr.message}). Mencoba mode kompatibilitas...`);
+        }
+        opened = await tryOpen(undefined);
+      }
+      sharedBrowser = opened.inst;
+      sharedBrowserGlMode = desiredGl;
+      touchBrowserIdleTimer();
+      return sharedBrowser;
+    } finally {
+      sharedBrowserPromise = null;
+    }
+  })();
+
+  return sharedBrowserPromise;
+}
+
+export async function warmupRemotionBrowser(onLog = console.log) {
+  try {
+    const cfg = loadConfig();
+    const enableGpu = cfg.enableGpuRender !== false;
+    await getOrOpenRemotionBrowser({ enableGpu, onLog });
+    onLog('[BROWSER] Instance Chromium Headless siap digunakan (warm pool aktif).');
+  } catch (err) {
+    onLog(`[BROWSER WARN] Pemanasan awal Chromium tertunda: ${err.message}`);
+  }
+}
+
+async function withSharedBrowser({ enableGpu = true, onLog = console.log }, taskFn) {
+  let browser = await getOrOpenRemotionBrowser({ enableGpu, onLog });
+  try {
+    const res = await taskFn(browser);
+    touchBrowserIdleTimer();
+    return res;
+  } catch (err) {
+    const msg = String(err?.message || '');
+    const isBrowserConnErr =
+      msg.includes('Timed out') ||
+      msg.includes('connect to the browser') ||
+      msg.includes('Target closed') ||
+      msg.includes('Session closed') ||
+      msg.includes('Connection closed') ||
+      msg.includes('Missing target') ||
+      msg.includes('ECONNREFUSED');
+
+    if (!isBrowserConnErr) {
+      throw err;
+    }
+
+    onLog(`[BROWSER RETRY] Koneksi Chromium terputus (${msg.slice(0, 120)}). Membuka ulang browser dan mengulangi...`);
+    browser = await getOrOpenRemotionBrowser({ enableGpu, onLog, forceRestart: true });
+    const retryRes = await taskFn(browser);
+    touchBrowserIdleTimer();
+    return retryRes;
+  }
+}
 
 function hasSrcFilesChanged(sinceTime) {
   if (!sinceTime) return true;
@@ -62,22 +196,23 @@ export function syncPublicToBundle(bundleLocation, onLog = console.log) {
   const bundlePublic = path.join(bundleLocation, 'public');
 
   try {
-    if (fs.existsSync(bundlePublic)) {
-      const lstat = fs.lstatSync(bundlePublic);
-      if (lstat.isSymbolicLink()) {
-        // Sudah tertaut langsung ke PUBLIC_DIR via junction/symlink (0 ms)
-        return;
-      }
-    }
-  } catch (_) { }
-
-  // Gunakan directory junction agar 2.8+ GB media di public/ tidak disalin ulang ke drive C:
-  try {
-    if (!fs.existsSync(bundlePublic)) {
-      fs.symlinkSync(PUBLIC_DIR, bundlePublic, 'junction');
+    const lstat = fs.lstatSync(bundlePublic);
+    if (lstat.isSymbolicLink()) {
+      // Sudah tertaut langsung ke PUBLIC_DIR via junction/symlink (0 ms)
       return;
     }
+    // @remotion/bundler membuat folder public/ kosong secara bawaan meskipun publicDir: null.
+    // Hapus folder reguler tersebut terlebih dahulu agar junction 0ms ke PUBLIC_DIR berhasil dibuat!
+    fs.rmSync(bundlePublic, { recursive: true, force: true });
   } catch (_) { }
+
+  // Gunakan directory junction agar 2.8+ GB media di public/ tidak pernah disalin ke drive C:
+  try {
+    fs.symlinkSync(PUBLIC_DIR, bundlePublic, 'junction');
+    return;
+  } catch (jErr) {
+    onLog(`[WARN] Junction public gagal (${jErr.message}), menyalin fallback...`);
+  }
 
   if (!fs.existsSync(bundlePublic)) {
     fs.mkdirSync(bundlePublic, { recursive: true });
@@ -161,12 +296,17 @@ export function cleanupRemotionTemp({ maxAgeMs = 1000 * 60 * 60 * 2, onLog = () 
         continue;
       }
 
-      if (entry.isDirectory() && entry.name.startsWith('remotion-webpack-bundle-')) {
+      if (
+        entry.isDirectory() &&
+        (entry.name.startsWith('remotion-webpack-bundle-') || entry.name.startsWith('puppeteer_dev_chrome_profile-'))
+      ) {
         try {
           const st = fs.statSync(fullPath);
           if (now - st.mtimeMs >= maxAgeMs) {
             const sz = getDirSizeBytes(fullPath);
-            detachBundlePublicJunction(fullPath);
+            if (entry.name.startsWith('remotion-webpack-bundle-')) {
+              detachBundlePublicJunction(fullPath);
+            }
             fs.rmSync(fullPath, { recursive: true, force: true });
             deletedCount++;
             freedBytes += sz;
@@ -278,16 +418,8 @@ export async function renderProductVariant({
   const { props, totalClipsSec, durationInFrames } = resolveVariantProps(product, variantKey, { fps });
   onLog(`[PROPS] Durasi video: ${totalClipsSec.toFixed(1)}s (${durationInFrames} frames @ ${fps}fps)`);
 
-  // 2. Build or reuse bundle & sinkronkan aset public/ terbaru
+  // 2. Build or reuse bundle & tautkan aset public/ via junction 0ms
   const bundleLocation = await getOrBuildBundle(onLog);
-  syncPublicToBundle(bundleLocation, onLog);
-
-  // 3. Select composition
-  const composition = await selectComposition({
-    serveUrl: bundleLocation,
-    id: 'TikTokAffiliate',
-    inputProps: props,
-  });
 
   // Ensure output directory exists
   if (!fs.existsSync(OUT_DIR)) {
@@ -305,17 +437,9 @@ export async function renderProductVariant({
 
   onLog(`[RENDER] Menyimpan video ke: out/${outFileName}`);
 
-  // 4. Siapkan opsi akselerasi GPU (Chromium GPU Compositing & ANGLE Direct3D 11 via AMD Radeon)
+  // 3. Siapkan opsi akselerasi GPU (Chromium GPU Compositing & ANGLE Direct3D 11 via AMD Radeon)
   const enableGpu = useGpu !== undefined ? !!useGpu : !!config.enableGpuRender;
-
-  // Di Remotion 4.0, chromiumOptions.gl = 'angle' mengarahkan Chromium headless
-  // untuk menggunakan backend Direct3D 11 yang mempercepat WebGL, backdrop blur,
-  // dan layer compositing langsung melalui GPU AMD Radeon RX 6600.
-  const chromiumOptions = enableGpu ? {
-    gl: 'angle',
-  } : {
-    gl: null,
-  };
+  const chromiumOptions = enableGpu ? { gl: 'angle' } : { gl: null };
 
   if (enableGpu) {
     onLog(`[GPU] 🎮 Akselerasi GPU Radeon AKTIF (Chromium ANGLE D3D11 / WebGL Compositing)`);
@@ -325,55 +449,68 @@ export async function renderProductVariant({
     onLog(`[CPU] Tips: Aktifkan GPU Rendering di modal untuk mempercepat render frame`);
   }
 
-  // 4. Render media dengan konfigurasi optimal untuk Intel i5-12400 (12 Threads) & RX 6600
+  // 4. Render media menggunakan warm browser pool & konfigurasi multi-thread
   let lastLoggedFrame = -1;
   const startTime = Date.now();
   const cpuCount = os.cpus()?.length || 8;
   const optimalConcurrency = Math.max(4, Math.min(10, cpuCount > 4 ? cpuCount - 2 : 4));
 
-  const renderResult = await renderMedia({
-    composition,
-    serveUrl: bundleLocation,
-    codec: 'h264',
-    crf,
-    x264Preset: 'veryfast',
-    imageFormat: 'jpeg',
-    jpegQuality,
-    outputLocation,
-    inputProps: props,
-    concurrency: optimalConcurrency,
-    offthreadVideoThreads: Math.max(2, Math.min(6, Math.floor(cpuCount / 2))),
-    disallowParallelEncoding: false,
-    cancelSignal: cancelSignal || cancelToken,
-    chromiumOptions,
-    onProgress: (prog) => {
-      const rendered = prog.renderedFrames;
-      const total = prog.totalFrames || durationInFrames;
-      const percent = total > 0 ? (rendered / total) * 100 : 0;
+  await withSharedBrowser({ enableGpu, onLog }, async (puppeteerInstance) => {
+    const composition = await selectComposition({
+      serveUrl: bundleLocation,
+      id: 'TikTokAffiliate',
+      inputProps: props,
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+    });
 
-      // Calculate simple ETA
-      const elapsed = (Date.now() - startTime) / 1000;
-      const fpsRendered = rendered > 0 && elapsed > 0 ? rendered / elapsed : 0;
-      const remainingFrames = total - rendered;
-      const etaSeconds = fpsRendered > 0 ? Math.round(remainingFrames / fpsRendered) : 0;
-      const etaStr = etaSeconds > 60 ? `${Math.floor(etaSeconds / 60)}m ${etaSeconds % 60}s` : `${etaSeconds}s`;
+    await renderMedia({
+      composition,
+      serveUrl: bundleLocation,
+      codec: 'h264',
+      crf,
+      x264Preset: 'veryfast',
+      imageFormat: 'jpeg',
+      jpegQuality,
+      outputLocation,
+      inputProps: props,
+      concurrency: optimalConcurrency,
+      offthreadVideoThreads: Math.max(2, Math.min(6, Math.floor(cpuCount / 2))),
+      disallowParallelEncoding: false,
+      cancelSignal: cancelSignal || cancelToken,
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+      onProgress: (prog) => {
+        const rendered = prog.renderedFrames;
+        const total = prog.totalFrames || durationInFrames;
+        const percent = total > 0 ? (rendered / total) * 100 : 0;
 
-      if (rendered !== lastLoggedFrame && (rendered % 60 === 0 || rendered === total)) {
-        lastLoggedFrame = rendered;
-        onLog(`[REMOTION] Frame ${rendered}/${total} (${percent.toFixed(1)}%) — ETA: ${etaStr}`);
-      }
+        // Calculate simple ETA
+        const elapsed = (Date.now() - startTime) / 1000;
+        const fpsRendered = rendered > 0 && elapsed > 0 ? rendered / elapsed : 0;
+        const remainingFrames = total - rendered;
+        const etaSeconds = fpsRendered > 0 ? Math.round(remainingFrames / fpsRendered) : 0;
+        const etaStr = etaSeconds > 60 ? `${Math.floor(etaSeconds / 60)}m ${etaSeconds % 60}s` : `${etaSeconds}s`;
 
-      if (typeof onProgress === 'function') {
-        onProgress({
-          step: rendered >= total ? 'Meng-encode Video' : 'Merender Frame Remotion',
-          frame: rendered,
-          totalFrames: total,
-          percent,
-          eta: etaStr,
-          encodedFrames: prog.encodedFrames,
-        });
-      }
-    },
+        if (rendered !== lastLoggedFrame && (rendered % 60 === 0 || rendered === total)) {
+          lastLoggedFrame = rendered;
+          onLog(`[REMOTION] Frame ${rendered}/${total} (${percent.toFixed(1)}%) — ETA: ${etaStr}`);
+        }
+
+        if (typeof onProgress === 'function') {
+          onProgress({
+            step: rendered >= total ? 'Meng-encode Video' : 'Merender Frame Remotion',
+            frame: rendered,
+            totalFrames: total,
+            percent,
+            eta: etaStr,
+            encodedFrames: prog.encodedFrames,
+          });
+        }
+      },
+    });
   });
 
   const durationSec = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -390,7 +527,7 @@ export async function renderProductVariant({
         productOrId: product,
         variantKey,
         customOutputName: cleanProductName,
-        platformSuffix,
+        platformSuffix: '',
         onLog,
       });
       coverFileName = coverRes.coverFileName;
@@ -428,14 +565,6 @@ export async function renderProductCover({
 
   onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion...', percent: 45 });
   const bundleLocation = await getOrBuildBundle(onLog);
-  syncPublicToBundle(bundleLocation, onLog);
-
-  onProgress({ step: 'select', message: 'Memuat komposisi cover 1080x1920...', percent: 70 });
-  const composition = await selectComposition({
-    serveUrl: bundleLocation,
-    id: 'TikTokAffiliate',
-    inputProps: props,
-  });
 
   if (!fs.existsSync(OUT_DIR)) {
     fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -447,18 +576,33 @@ export async function renderProductCover({
   cleanProductName = cleanProductName.replace(vRegex, '').trim();
   const coverFileName = `${cleanProductName} ${variantKey}${platformSuffix}-cover.jpg`;
   const coverLocation = path.join(OUT_DIR, coverFileName);
+  const chromiumOptions = enableGpu ? { gl: 'angle' } : { gl: null };
 
-  onProgress({ step: 'render', message: 'Merender cover 1080x1920...', percent: 85 });
-  onLog(`[COVER] Merender thumbnail cover ke: out/${coverFileName}`);
-  await renderStill({
-    composition,
-    serveUrl: bundleLocation,
-    output: coverLocation,
-    inputProps: props,
-    frame: 0,
-    imageFormat: 'jpeg',
-    jpegQuality: 95,
-    chromiumOptions: enableGpu ? { gl: 'angle' } : { gl: null },
+  await withSharedBrowser({ enableGpu, onLog }, async (puppeteerInstance) => {
+    onProgress({ step: 'select', message: 'Memuat komposisi cover 1080x1920...', percent: 70 });
+    const composition = await selectComposition({
+      serveUrl: bundleLocation,
+      id: 'TikTokAffiliate',
+      inputProps: props,
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+    });
+
+    onProgress({ step: 'render', message: 'Merender cover 1080x1920...', percent: 85 });
+    onLog(`[COVER] Merender thumbnail cover ke: out/${coverFileName}`);
+    await renderStill({
+      composition,
+      serveUrl: bundleLocation,
+      output: coverLocation,
+      inputProps: props,
+      frame: 0,
+      imageFormat: 'jpeg',
+      jpegQuality: 95,
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+    });
   });
 
   onProgress({ step: 'done', message: 'Cover berhasil dibuat!', percent: 100 });
@@ -486,6 +630,7 @@ export async function renderProductStill({
   const product = typeof productOrId === 'string' ? loadProduct(productOrId) : productOrId;
   const config = loadConfig();
   const enableGpu = config.enableGpuRender !== false;
+  const chromiumOptions = enableGpu ? { gl: 'angle' } : { gl: null };
   const resolveOpts = {};
   if (renderMode) resolveOpts.renderMode = renderMode;
   const { props } = resolveVariantProps(product, variantKey, resolveOpts);
@@ -493,33 +638,39 @@ export async function renderProductStill({
 
   onProgress({ step: 'bundle', message: 'Mempersiapkan bundle Remotion (Webpack)...', percent: 45 });
   const bundleLocation = await getOrBuildBundle(onLog);
-  syncPublicToBundle(bundleLocation, onLog);
-
-  onProgress({ step: 'select', message: 'Memuat komposisi video 1080x1920...', percent: 65 });
-  const composition = await selectComposition({
-    serveUrl: bundleLocation,
-    id: 'TikTokAffiliate',
-    inputProps: props,
-  });
-
-  const maxFrame = Math.max(0, (composition.durationInFrames || 1) - 1);
-  const safeFrame = renderMode === 'cover' ? 0 : Math.max(0, Math.min(maxFrame, Number.isFinite(targetFrame) ? targetFrame : 0));
 
   // Simpan ke direktori temp OS agar out/previews/ TIDAK PERNAH menumpuk file sampah
   const tempPreviewDir = path.join(os.tmpdir(), 'remotion_previews');
   if (!fs.existsSync(tempPreviewDir)) fs.mkdirSync(tempPreviewDir, { recursive: true });
   const previewPath = path.join(tempPreviewDir, `preview_live_${Date.now()}.png`);
 
-  onProgress({ step: 'render', message: `Merender frame ${safeFrame} di Chromium headless...`, percent: 85 });
-  onLog(`[STILL] Merender still ${renderMode === 'cover' ? 'cover' : `frame ${safeFrame}`} untuk pratinjau cepat...`);
-  await renderStill({
-    composition,
-    serveUrl: bundleLocation,
-    output: previewPath,
-    inputProps: props,
-    frame: safeFrame,
-    imageFormat: 'png',
-    chromiumOptions: enableGpu ? { gl: 'angle' } : { gl: null },
+  await withSharedBrowser({ enableGpu, onLog }, async (puppeteerInstance) => {
+    onProgress({ step: 'select', message: 'Memuat komposisi video 1080x1920...', percent: 65 });
+    const composition = await selectComposition({
+      serveUrl: bundleLocation,
+      id: 'TikTokAffiliate',
+      inputProps: props,
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+    });
+
+    const maxFrame = Math.max(0, (composition.durationInFrames || 1) - 1);
+    const safeFrame = renderMode === 'cover' ? 0 : Math.max(0, Math.min(maxFrame, Number.isFinite(targetFrame) ? targetFrame : 0));
+
+    onProgress({ step: 'render', message: `Merender frame ${safeFrame} di Chromium headless...`, percent: 85 });
+    onLog(`[STILL] Merender still ${renderMode === 'cover' ? 'cover' : `frame ${safeFrame}`} untuk pratinjau cepat...`);
+    await renderStill({
+      composition,
+      serveUrl: bundleLocation,
+      output: previewPath,
+      inputProps: props,
+      frame: safeFrame,
+      imageFormat: 'png',
+      puppeteerInstance,
+      chromiumOptions,
+      timeoutInMilliseconds: REMOTION_TIMEOUT_MS,
+    });
   });
 
   onProgress({ step: 'done', message: 'Pratinjau frame berhasil dibuat!', percent: 100 });
@@ -575,6 +726,7 @@ Contoh:
         }
       }
       console.log('\n[BATCH] Semua produk selesai dirender!');
+      await closeRemotionBrowser();
       process.exit(0);
     }
 
@@ -588,6 +740,7 @@ Contoh:
         variantKey: vk,
         frame,
       });
+      await closeRemotionBrowser();
       process.exit(0);
     }
 
@@ -606,9 +759,11 @@ Contoh:
     }
 
     console.log('\n🎉 Render selesai sempurna!');
+    await closeRemotionBrowser();
     process.exit(0);
   } catch (err) {
     console.error('\n❌ Terjadi kesalahan saat render:', err.message);
+    await closeRemotionBrowser();
     process.exit(1);
   }
 }
