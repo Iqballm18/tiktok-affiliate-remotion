@@ -6,6 +6,6 @@
   "autoFitVoiceOver": true,
   "enableGpuRender": false,
   "gdriveFolderUrl": "",
-  "gdriveWebhookUrl": ""
+  "gdriveWebhookUrl": "",
+  "affiliateWebUrl": ""
 }
-
