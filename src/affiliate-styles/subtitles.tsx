@@ -156,8 +156,8 @@ const Layer: React.FC<{bottom: number; children: React.ReactNode}> = ({bottom, c
       justifyContent: 'flex-end',
       alignItems: 'center',
       paddingBottom: bottom,
-      paddingLeft: SAFE.left,
-      paddingRight: SAFE.right,
+      paddingLeft: SAFE.side,
+      paddingRight: SAFE.side,
       fontFamily: FONT.display,
       pointerEvents: 'none',
     }}
@@ -243,17 +243,18 @@ export const KaraokeBlockSubtitle: React.FC<SubtitleProps> = ({
 export const PopScaleSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 80,
-  bottom = SAFE.bottom + 40,
+  fontSize = 76,
+  bottom = SAFE.bottom + 36,
   maxWords = 3,
   uppercase = true,
 }) => {
   const s = useSubtitleState(words, maxWords);
-  if (!s) return null;
-  const wi = Math.max(0, s.wordIndex);
+  if (!s || s.wordIndex < 0) return null;
+  const wi = s.wordIndex;
   const w = s.chunk.words[wi];
-  const p = wordSpring(s, w, 9, 230);
+  const p = wordSpring(s, w, 12, 240);
   const flip = (s.chunk.index + wi) % 2 === 0;
+  const clampedP = Math.min(1, Math.max(0, p));
   return (
     <Layer bottom={bottom}>
       <div
@@ -261,12 +262,16 @@ export const PopScaleSubtitle: React.FC<SubtitleProps> = ({
         style={{
           fontSize,
           fontWeight: 900,
-          lineHeight: 1,
+          lineHeight: 1.05,
           textAlign: 'center',
+          maxWidth: '100%',
+          wordBreak: 'break-word',
           textTransform: uppercase ? 'uppercase' : 'none',
           color: flip ? palette.paper : palette.accent,
           ...outline(fontSize * 0.1, palette.ink),
-          transform: `scale(${0.55 + 0.45 * p}) rotate(${flip ? -3 : 3}deg)`,
+          filter: 'drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45))',
+          opacity: Math.min(1, clampedP * 2.4),
+          transform: `scale(${0.74 + 0.26 * p}) rotate(${(1 - clampedP) * (flip ? -4 : 4)}deg)`,
         }}
       >
         {w.text}
@@ -295,7 +300,9 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
     <Layer bottom={bottom}>
       <div
         style={{
-          background: withAlpha(palette.ink, 0.9),
+          background: withAlpha(palette.ink, 0.92),
+          border: '1.5px solid rgba(255, 255, 255, 0.14)',
+          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.32)',
           borderRadius: 16,
           padding: '14px 22px',
           maxWidth: '100%',
@@ -303,14 +310,14 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
           opacity: Math.min(1, cIn * 1.35),
         }}
       >
-        <Row gap="4px 10px">
+        <Row gap="4px 8px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
             const spec = !active && isSpecToken(w.text);
             const p = active ? Math.min(1, wordSpring(s, w, 16, 240)) : i < s.wordIndex ? 1 : 0;
             const wordBaseStyle: React.CSSProperties = {
               fontSize,
-              fontWeight: spec || active ? 900 : 800,
+              fontWeight: 800,
               lineHeight: 1.2,
               textTransform: uppercase ? 'uppercase' : 'none',
               padding: '2px 8px',
@@ -323,7 +330,7 @@ export const HighlighterBarSubtitle: React.FC<SubtitleProps> = ({
                 style={{
                   position: 'relative',
                   display: 'inline-block',
-                  opacity: i > s.wordIndex ? 0.6 : 1,
+                  opacity: i > s.wordIndex ? 0.62 : 1,
                 }}
               >
                 <span
@@ -393,6 +400,7 @@ export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
     <Layer bottom={bottom}>
       <div
         style={{
+          filter: 'drop-shadow(0 6px 16px rgba(0, 0, 0, 0.38))',
           transform: `translateY(${(1 - cIn) * 10}px) scale(${0.96 + 0.04 * cIn})`,
           opacity: Math.min(1, cIn * 1.35),
         }}
@@ -430,45 +438,40 @@ export const FillSweepSubtitle: React.FC<SubtitleProps> = ({
 
 /* ------------------------------------------------------------------ */
 /* 5. TYPEWRITER BAND                                                  */
-/* Pita gelap tipis + serif miring; kata muncul saat diucapkan.        */
+/* Pita gelap mengambang di safe zone + serif miring editorial.        */
 /* Nuansa editorial/premium. Cocok untuk fashion, parfum, lifestyle.   */
 /* ------------------------------------------------------------------ */
 export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
   words,
   palette,
-  fontSize = 44,
+  fontSize = 46,
   bottom = SAFE.bottom,
-  maxWords = 5,
+  maxWords = 4,
   uppercase = false,
 }) => {
   const s = useSubtitleState(words, maxWords);
   if (!s) return null;
+  const fadeFrames = Math.max(4, Math.round(0.14 * s.fps));
   return (
-    <AbsoluteFill
-      style={{
-        boxSizing: 'border-box',
-        width: '100%',
-        height: '100%',
-        justifyContent: 'flex-end',
-        fontFamily: FONT.serif,
-        pointerEvents: 'none',
-      }}
-    >
+    <Layer bottom={bottom}>
       <div
         style={{
           boxSizing: 'border-box',
-          width: '100%',
-          marginBottom: bottom - 24,
-          background: withAlpha(palette.ink, 0.62),
-          padding: `14px ${SAFE.right}px 14px ${SAFE.left}px`,
+          maxWidth: '100%',
+          background: withAlpha(palette.ink, 0.86),
+          border: '1px solid rgba(255, 255, 255, 0.18)',
+          boxShadow: '0 12px 28px rgba(0, 0, 0, 0.34)',
+          borderRadius: 12,
+          padding: '14px 28px',
           textAlign: 'center',
+          fontFamily: FONT.serif,
         }}
       >
         <Row gap="4px 14px">
           {s.chunk.words.map((w, i) => {
             const shown = i <= s.wordIndex;
             const age = s.frame - Math.round(w.start * s.fps);
-            const t = interpolate(age, [0, 5], [0, 1], {
+            const t = interpolate(age, [0, fadeFrames], [0, 1], {
               extrapolateLeft: 'clamp',
               extrapolateRight: 'clamp',
             });
@@ -479,12 +482,12 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
                 style={{
                   fontSize,
                   fontStyle: 'italic',
-                  fontWeight: 500,
+                  fontWeight: 600,
                   lineHeight: 1.25,
                   textTransform: uppercase ? 'uppercase' : 'none',
                   color: last ? palette.accent : palette.paper,
                   opacity: shown ? t : 0, // kata disimpan agar layout tidak bergeser
-                  transform: `translateY(${(1 - (shown ? t : 0)) * 12}px)`,
+                  transform: `translateY(${(1 - (shown ? t : 0)) * 10}px)`,
                 }}
               >
                 {w.text}
@@ -493,7 +496,7 @@ export const TypewriterBandSubtitle: React.FC<SubtitleProps> = ({
           })}
         </Row>
       </div>
-    </AbsoluteFill>
+    </Layer>
   );
 };
 
@@ -517,21 +520,22 @@ export const StickerLabelSubtitle: React.FC<SubtitleProps> = ({
     fps: s.fps,
     config: {damping: 12, stiffness: 220, mass: 0.7},
   });
-  const tilt = s.chunk.index % 2 === 0 ? -1.8 : 1.8;
+  const tilt = s.chunk.index % 2 === 0 ? -1.6 : 1.6;
   return (
     <Layer bottom={bottom}>
       <div
         style={{
           background: palette.paper,
           border: `3.5px solid ${palette.ink}`,
+          boxShadow: '6px 6px 0 rgba(0, 0, 0, 0.78), 0 12px 24px rgba(0, 0, 0, 0.26)',
           borderRadius: 14,
           padding: '10px 20px',
           maxWidth: '100%',
           opacity: Math.min(1, p * 2),
-          transform: `translateY(${(1 - p) * 26}px) scale(${0.85 + 0.15 * p}) rotate(${tilt}deg)`,
+          transform: `translateY(${(1 - p) * 24}px) scale(${0.86 + 0.14 * p}) rotate(${tilt}deg)`,
         }}
       >
-        <Row gap="2px 10px">
+        <Row gap="2px 8px">
           {s.chunk.words.map((w, i) => {
             const active = i === s.wordIndex;
             const spec = !active && isSpecToken(w.text);
@@ -588,15 +592,15 @@ export const GlassPillSubtitle: React.FC<SubtitleProps> = ({
           flexWrap: 'wrap',
           justifyContent: 'center',
           alignItems: 'center',
-          gap: '8px 10px',
+          gap: '6px 4px',
           maxWidth: '100%',
-          padding: '14px 24px',
+          padding: '12px 20px',
           borderRadius: 999,
-          backgroundColor: 'rgba(16, 14, 12, 0.68)',
+          backgroundColor: 'rgba(16, 14, 12, 0.76)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
-          border: '1.5px solid rgba(255, 255, 255, 0.22)',
-          boxShadow: '0 14px 34px rgba(0, 0, 0, 0.32)',
+          border: '1.5px solid rgba(255, 255, 255, 0.24)',
+          boxShadow: '0 14px 34px rgba(0, 0, 0, 0.34)',
           transform: `translateY(${(1 - cIn) * 12}px) scale(${0.95 + 0.05 * cIn})`,
           opacity: Math.min(1, cIn * 1.35),
         }}
@@ -605,34 +609,52 @@ export const GlassPillSubtitle: React.FC<SubtitleProps> = ({
           const active = i === s.wordIndex;
           const passed = i < s.wordIndex;
           const spec = !active && isSpecToken(w.text);
-          const p = active ? Math.min(1.12, wordSpring(s, w)) : 0;
+          const p = active ? Math.min(1.08, wordSpring(s, w, 15, 250)) : 0;
           return (
             <span
               key={i}
               style={{
+                position: 'relative',
+                display: 'inline-block',
                 fontFamily: FONT.display,
                 fontSize,
-                fontWeight: active || spec ? 900 : 700,
+                fontWeight: 800,
                 lineHeight: 1.15,
                 textTransform: uppercase ? 'uppercase' : 'none',
-                padding: active ? '4px 16px' : '2px 6px',
+                padding: '4px 12px',
                 borderRadius: 999,
-                color: active
-                  ? palette.accentInk
-                  : spec
-                  ? palette.accent
-                  : passed
-                  ? 'rgba(255,255,255,0.95)'
-                  : 'rgba(255,255,255,0.72)',
-                background: active ? palette.accent : 'transparent',
-                boxShadow: active ? '0 4px 14px rgba(0,0,0,0.22)' : 'none',
-                textDecoration: spec ? 'underline' : 'none',
-                textDecorationThickness: spec ? '3px' : undefined,
-                textUnderlineOffset: spec ? '4px' : undefined,
-                transform: active ? `scale(${1 + 0.06 * p})` : 'none',
               }}
             >
-              {w.text}
+              {active && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: 999,
+                    background: palette.accent,
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.24)',
+                    opacity: Math.min(1, p * 2.2),
+                    transform: `scale(${0.86 + 0.14 * Math.min(1, p)})`,
+                  }}
+                />
+              )}
+              <span
+                style={{
+                  position: 'relative',
+                  color: active
+                    ? palette.accentInk
+                    : spec
+                    ? palette.accent
+                    : passed
+                    ? 'rgba(255,255,255,0.95)'
+                    : 'rgba(255,255,255,0.72)',
+                  textDecoration: spec ? 'underline' : 'none',
+                  textDecorationThickness: spec ? '3px' : undefined,
+                  textUnderlineOffset: spec ? '4px' : undefined,
+                }}
+              >
+                {w.text}
+              </span>
             </span>
           );
         })}

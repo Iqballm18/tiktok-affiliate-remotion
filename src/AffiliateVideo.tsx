@@ -2279,8 +2279,21 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const preset = resolvePreset(presetKey, presetVariant);
     const flatStylePreset = presetKey && presetKey in STYLE_PRESETS ? STYLE_PRESETS[presetKey as keyof typeof STYLE_PRESETS] : null;
 
+    const MULTI_CAPTION_KEYS = [
+        'outline_pop', 'marker_sweep', 'reveal', 'plate',
+        'pill_sparkle', 'pill_pop', 'bang_pill', 'under_draw', 'underline', 'bang_under',
+        'dim_focus', 'dim_to_full', 'blur_in', 'kinetic_reveal',
+        'paper_ink', 'light_plate', 'frosted_chip', 'capsule_plate',
+        'kinetic_bounce', 'bounce_pop', 'dot_pop',
+    ];
+    const normCardProp = (cardStyleProp || '').toLowerCase().trim().replace(/[-\s]/g, '_');
+    const hasExplicitMultiHook = Boolean(
+        normCardProp &&
+        resolveHookSelection(normCardProp) !== null &&
+        !(normCardProp in HookStyles)
+    );
     const useNewHook = Boolean(
-        (hookStyleProp && hookStyleProp in HookStyles) ||
+        (hookStyleProp && hookStyleProp in HookStyles && !hasExplicitMultiHook) ||
         (cardStyleProp && cardStyleProp in HookStyles) ||
         (preset?.hookStyle && preset.hookStyle in HookStyles && !cardStyleProp) ||
         (flatStylePreset && !cardStyleProp)
@@ -2293,8 +2306,14 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
         DEFAULT_PRESET.hookStyle
     );
 
+    const normCapProp = (captionStyleProp || '').toLowerCase().trim().replace(/[-\s]/g, '_');
+    const hasExplicitMultiCaption = Boolean(
+        normCapProp &&
+        MULTI_CAPTION_KEYS.indexOf(normCapProp) !== -1 &&
+        !(normCapProp in SubtitleStyles)
+    );
     const useNewSubtitle = Boolean(
-        (subtitleStyleProp && subtitleStyleProp in SubtitleStyles) ||
+        (subtitleStyleProp && subtitleStyleProp in SubtitleStyles && !hasExplicitMultiCaption) ||
         (captionStyleProp && captionStyleProp in SubtitleStyles) ||
         (preset?.subtitleStyle && preset.subtitleStyle in SubtitleStyles && !captionStyleProp) ||
         (flatStylePreset && !captionStyleProp)
@@ -2315,7 +2334,13 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
         DEFAULT_PRESET.palette
     );
     const finalPalette: Palette = PALETTES[finalPaletteName] ?? PALETTES.editorial;
-    const themeStyle = themeStyleProp ?? (paletteProp && paletteProp in THEMES ? paletteProp : undefined) ?? preset?.themeStyle;
+    const themeStyle =
+        (paletteProp && paletteProp in THEMES ? paletteProp : undefined) ??
+        (themeStyleProp && themeStyleProp in THEMES ? themeStyleProp : undefined) ??
+        themeStyleProp ??
+        preset?.palette ??
+        preset?.themeStyle;
+    const sfxThemeBase = themeStyleProp ?? themeStyle;
     const cardStyle = cardStyleProp ?? preset?.cardStyle;
     const hookVariant: VariantVersion = resolveVariantVersion(hookVariantProp ?? preset?.hookVariant);
     const captionStyle = captionStyleProp ?? preset?.captionStyle;
@@ -2331,11 +2356,11 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
     const activePreset: SfxPresetId =
         sfxPreset ||
         preset?.sfxPreset ||
-        (themeStyle === 'pastel'
+        (sfxThemeBase === 'pastel' || sfxThemeBase === 'pastel_rose'
             ? 'beauty'
-            : themeStyle === 'minimal'
+            : sfxThemeBase === 'minimal' || sfxThemeBase === 'ink_mono'
                 ? 'minimal'
-                : themeStyle === 'editorial'
+                : sfxThemeBase === 'editorial' || sfxThemeBase === 'tech_blue'
                     ? 'tech'
                     : 'viral');
 
@@ -2783,6 +2808,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             badge={badgeText}
                             palette={finalPalette}
                             durationInFrames={hookDuration}
+                            stage="hook"
                         />
                     ) : (
                         <EditorialHeadline
@@ -2829,6 +2855,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                                     badge={demoBadge}
                                     palette={finalPalette}
                                     durationInFrames={demoHeadlineDur}
+                                    stage="demo"
                                 />
                             )
                         ) : (
@@ -2865,6 +2892,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                                     badge={specBadge}
                                     palette={finalPalette}
                                     durationInFrames={specHeadlineDur}
+                                    stage="spec"
                                 />
                             )
                         ) : (
@@ -2964,6 +2992,7 @@ export const AffiliateVideo: React.FC<AffiliateProps> = ({
                             karaokeHighlight={karaokeHighlight}
                             captionStyle={captionStyle}
                             captionVariant={captionVariant}
+                            accentColor={finalPaletteName !== 'minimal' ? finalPalette.accent : undefined}
                             // Naikkan caption saat kartu CTA muncul supaya keduanya tidak bersentuhan.
                             liftFromFrame={ctaStartFrame - voStartFrame}
                             liftPx={CAPTION_LIFT_IN_CTA}

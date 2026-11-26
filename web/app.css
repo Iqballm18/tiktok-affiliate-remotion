@@ -3850,7 +3850,7 @@ body {
   display: inline-block;
   margin-top: 3px;
   padding: 2px 6px;
-  color: #0B0C10;
+  color: var(--cc-accent-ink, #0B0C10);
   font-weight: 900;
   z-index: 1;
 }

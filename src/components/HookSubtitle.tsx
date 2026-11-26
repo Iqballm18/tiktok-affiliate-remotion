@@ -113,6 +113,8 @@ export interface HookSubtitleProps {
     liftFromFrame?: number;
     /** Seberapa jauh (px) caption naik mulai liftFromFrame. */
     liftPx?: number;
+    /** Override warna aksen opsional agar selaras dengan seluruh swatch palet Studio. */
+    accentColor?: string;
 }
 
 interface ProcessedChunk {
@@ -159,17 +161,8 @@ const splitTextIntoChunks = (fullText: string): string[] => {
 };
 
 const accentFor = (theme: ThemeDefinition): string => {
-    switch (theme.id) {
-        case 'pastel':
-            return '#FF8FA3';
-        case 'flash_sale':
-            return '#FFD23F';
-        case 'minimal':
-            return '#FFE600';
-        case 'editorial':
-        default:
-            return '#FFC83D';
-    }
+    if (theme.id === 'minimal') return '#FFE600';
+    return theme.colors.accent || '#FFC83D';
 };
 
 const ring = (px: number, color = 'rgba(0, 0, 0, 0.92)'): string =>
@@ -206,13 +199,14 @@ const SubtitleCard: React.FC<{
     style: CaptionStyle;
     version: VariantVersion;
     extraBottom?: number;
-}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight, style, version, extraBottom = 0 }) => {
+    accentColor?: string;
+}> = ({ words, localFrame, durationFrames, theme, karaokeHighlight, style, version, extraBottom = 0, accentColor }) => {
     const { fps } = useVideoConfig();
-    const accent = accentFor(theme);
+    const accent = accentColor || accentFor(theme);
 
     const enterSpring = spring({ fps, frame: localFrame, config: theme.springs.snappy });
-    const enterY = interpolate(enterSpring, [0, 1], [14, 0]);
-    const exitProgress = interpolate(localFrame, [durationFrames - 4, durationFrames], [0, 1], {
+    const enterY = interpolate(enterSpring, [0, 1], [10, 0]);
+    const exitProgress = interpolate(localFrame, [Math.max(0, durationFrames - 3), Math.max(1, durationFrames)], [0, 1], {
         extrapolateLeft: 'clamp',
         extrapolateRight: 'clamp',
     });
@@ -327,8 +321,8 @@ const SubtitleCard: React.FC<{
                 );
             }
 
-            // v1: Classic Skewed Stabilo Marker
-            const barOpacity = active ? 1 : past ? 0.55 : 0;
+            // v1: Classic Skewed Stabilo Marker (teks gelap saat aktif di atas stabilo terang agar kontras tinggi)
+            const barOpacity = active ? 1 : past ? 0.42 : 0;
             return (
                 <span
                     key={idx}
@@ -343,9 +337,9 @@ const SubtitleCard: React.FC<{
                             position: 'absolute',
                             left: -10,
                             right: -10,
+                            top: active ? 2 : '44%',
                             bottom: 0,
-                            height: '62%',
-                            borderRadius: 6,
+                            borderRadius: 7,
                             backgroundColor: accent,
                             opacity: barOpacity,
                             transform: `skewX(-8deg) scaleX(${sweep})`,
@@ -356,8 +350,8 @@ const SubtitleCard: React.FC<{
                         style={{
                             ...baseWordStyle,
                             position: 'relative',
-                            color: '#FFFFFF',
-                            textShadow: `${ring(2.5)}, 0 4px 14px rgba(0, 0, 0, 0.55)`,
+                            color: active ? '#111111' : '#FFFFFF',
+                            textShadow: active ? 'none' : `${ring(3)}, 0 4px 14px rgba(0, 0, 0, 0.58)`,
                         }}
                     >
                         {word.text}
@@ -608,14 +602,14 @@ const SubtitleCard: React.FC<{
             style={{
                 position: 'absolute',
                 bottom: 460 + extraBottom,
-                left: 48,
-                right: 48,
+                left: 140,
+                right: 140,
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
                 pointerEvents: 'none',
                 zIndex: 50,
-                opacity: enterSpring * (1 - exitProgress),
+                opacity: Math.min(1, enterSpring * 1.4) * (1 - exitProgress * 0.4),
                 transform: `translateY(${enterY}px)`,
             }}
         >
@@ -625,8 +619,8 @@ const SubtitleCard: React.FC<{
                     flexWrap: 'wrap',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    rowGap: isPlate ? 4 : 0,
-                    maxWidth: 940,
+                    rowGap: isPlate ? 6 : 4,
+                    maxWidth: 800,
                     textAlign: 'center',
                     ...plateContainerStyle,
                 }}
@@ -648,6 +642,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
     captionVariant,
     liftFromFrame,
     liftPx = 0,
+    accentColor,
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
@@ -665,13 +660,13 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
             })
             : 0;
 
-    // 0. Whisper captions (timestamp per kata)
+    // 0. Whisper captions (timestamp per kata, dipotong ringkas 3-4 kata per baris)
     const tikTokPages = React.useMemo(() => {
         if (!captions || captions.length === 0) return null;
         return createTikTokStyleCaptions({
             captions,
-            combineTokensWithinMilliseconds: 1000,
-            breakOnSilenceAfterMilliseconds: 700,
+            combineTokensWithinMilliseconds: 650,
+            breakOnSilenceAfterMilliseconds: 480,
         }).pages;
     }, [captions]);
 
@@ -769,6 +764,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
                 style={style}
                 version={version}
                 extraBottom={extraBottom}
+                accentColor={accentColor}
             />
         );
     }
@@ -807,6 +803,7 @@ export const HookSubtitle: React.FC<HookSubtitleProps> = ({
             style={style}
             version={version}
             extraBottom={extraBottom}
+            accentColor={accentColor}
         />
     );
 };

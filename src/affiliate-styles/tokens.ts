@@ -3,11 +3,11 @@
 // tanpa gradien dekoratif. Semua warna di sini flat.
 
 export const SAFE = {
-  top: 160, // area UI atas TikTok (search, following/for you)
+  top: 180, // area UI atas TikTok (search, following/for you) & header Reels
   bottom: 440, // caption + tombol produk keranjang kuning
-  side: 120, // margin kiri-kanan simetris
-  left: 120, // margin kiri simetris agar hook & subtitle tepat di tengah
-  right: 120, // margin kanan simetris & tetap aman dari ikon sidebar TikTok/Reels
+  side: 140, // margin kiri-kanan simetris untuk subtitle tengah (x: 140..940, aman dari ikon kanan)
+  left: 64, // margin kiri kartu hook atas
+  right: 148, // margin kanan kartu hook agar tidak menabrak kolom Like/Comment/Bookmark
 } as const;
 
 export type PaletteName =
@@ -56,8 +56,8 @@ export const PALETTES: Record<PaletteName, Palette> = {
   minimal: {
     ink: '#111111',
     paper: '#FFFFFF',
-    accent: '#111111',
-    accentInk: '#FFFFFF',
+    accent: '#CBD5E1', // Cool architectural silver-slate (kontras 11.9:1 dengan #111111 & tampak jelas di atas #FFFFFF)
+    accentInk: '#111111',
     alert: '#DC2626',
   },
   pastel_rose: {

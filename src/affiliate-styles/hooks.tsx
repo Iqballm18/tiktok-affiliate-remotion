@@ -15,6 +15,7 @@ export interface HookProps {
   badge?: string; // badgeText (opsional)
   palette: Palette;
   durationInFrames?: number; // lama hook tampil, default 90
+  stage?: 'hook' | 'demo' | 'spec'; // mencegah coretan negatif muncul di babak demo/spec
 }
 
 export type HookStyleName =
@@ -117,6 +118,8 @@ export const MarkerHighlightHook: React.FC<HookProps> = ({
           boxSizing: 'border-box',
           background: palette.paper,
           color: palette.ink,
+          border: '1.5px solid rgba(15, 23, 42, 0.14)',
+          boxShadow: '0 14px 30px rgba(0, 0, 0, 0.22)',
           padding: '24px 32px 28px',
           borderRadius: 20,
           opacity: Math.min(1, card * 2),
@@ -214,6 +217,7 @@ export const StackSlamHook: React.FC<HookProps> = ({
           ...slam(a, shake(frame, 0, fps), 0),
           background: palette.ink,
           color: palette.paper,
+          boxShadow: '0 12px 26px rgba(0, 0, 0, 0.28)',
           fontSize: 42,
           fontWeight: 800,
           lineHeight: 1.15,
@@ -232,7 +236,9 @@ export const StackSlamHook: React.FC<HookProps> = ({
           ...slam(b, shake(frame, 9, fps), -1.5),
           background: palette.accent,
           color: palette.accentInk,
-          fontSize: 54,
+          border: `2px solid ${palette.ink}`,
+          boxShadow: '0 14px 30px rgba(0, 0, 0, 0.3)',
+          fontSize: 52,
           fontWeight: 900,
           lineHeight: 1.1,
           wordBreak: 'break-word',
@@ -252,7 +258,7 @@ export const StackSlamHook: React.FC<HookProps> = ({
 /* ------------------------------------------------------------------ */
 /* 3. STRUCK SWAP                                                      */
 /* Masalah dicoret, solusi menggantikannya. Narasi "sebelum/sesudah".  */
-/* Cocok: problem-solution (jerawat, bau, boros, ribet)                */
+/* Pada babak demo/spec, tampil tanpa mencoret poin positif produk.    */
 /* ------------------------------------------------------------------ */
 export const StruckSwapHook: React.FC<HookProps> = ({
   line1,
@@ -260,16 +266,22 @@ export const StruckSwapHook: React.FC<HookProps> = ({
   badge,
   palette,
   durationInFrames = 90,
+  stage = 'hook',
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  const isProblemStage = stage === 'hook';
   const first = useIn(0);
-  const second = useIn(36, 11, 190);
-  const strike = interpolate(frame, [f30(20, fps), f30(32, fps)], [0, 1], {
-    easing: Easing.inOut(Easing.cubic),
-    ...CLAMP,
-  });
-  const dim = interpolate(frame, [f30(34, fps), f30(46, fps)], [0, 1], CLAMP);
+  const second = useIn(isProblemStage ? 24 : 9, 11, 195);
+  const strike = isProblemStage
+    ? interpolate(frame, [f30(14, fps), f30(24, fps)], [0, 1], {
+        easing: Easing.inOut(Easing.cubic),
+        ...CLAMP,
+      })
+    : 0;
+  const dim = isProblemStage
+    ? interpolate(frame, [f30(22, fps), f30(34, fps)], [0, 1], CLAMP)
+    : 0;
 
   return (
     <Frame durationInFrames={durationInFrames}>
@@ -280,8 +292,7 @@ export const StruckSwapHook: React.FC<HookProps> = ({
             color: palette.paper,
             fontSize: 20,
             fontWeight: 800,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
+            letterSpacing: 0.8,
             padding: '5px 14px',
             borderRadius: 999,
             marginBottom: 8,
@@ -297,7 +308,9 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           position: 'relative',
           background: palette.paper,
           color: palette.ink,
-          fontSize: 40,
+          border: '1.5px solid rgba(15, 23, 42, 0.16)',
+          boxShadow: '0 12px 26px rgba(0, 0, 0, 0.22)',
+          fontSize: 38,
           fontWeight: 700,
           lineHeight: 1.24,
           textAlign: 'left',
@@ -305,14 +318,16 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           padding: '16px 24px',
           borderRadius: 14,
           maxWidth: '100%',
-          opacity: Math.min(1, first * 2) * (1 - 0.45 * dim),
-          transform: `translateX(${(1 - first) * -80}px) scale(${1 - 0.06 * dim})`,
+          opacity: Math.min(1, first * 2) * (1 - 0.38 * dim),
+          transform: `translateX(${(1 - first) * -70}px) scale(${1 - 0.05 * dim})`,
           transformOrigin: 'left center',
         }}
       >
         <span
           style={{
-            backgroundImage: `linear-gradient(${palette.alert}, ${palette.alert})`,
+            backgroundImage: isProblemStage
+              ? `linear-gradient(${palette.alert}, ${palette.alert})`
+              : 'none',
             backgroundSize: `${strike * 100}% 5px`,
             backgroundPosition: 'left 56%',
             backgroundRepeat: 'no-repeat',
@@ -329,16 +344,18 @@ export const StruckSwapHook: React.FC<HookProps> = ({
           marginTop: 10,
           background: palette.accent,
           color: palette.accentInk,
-          fontSize: 52,
+          border: `2px solid ${palette.ink}`,
+          boxShadow: '0 14px 30px rgba(0, 0, 0, 0.28)',
+          fontSize: 50,
           fontWeight: 900,
           lineHeight: 1.1,
           textAlign: 'left',
           wordBreak: 'break-word',
-          padding: '18px 28px',
+          padding: '18px 26px',
           borderRadius: 16,
           maxWidth: '100%',
           opacity: Math.min(1, second * 3),
-          transform: `scale(${0.7 + 0.3 * second}) rotate(${-1.5 * second}deg)`,
+          transform: `scale(${0.76 + 0.24 * second}) rotate(${-1.2 * second}deg)`,
           transformOrigin: 'left center',
         }}
       >
@@ -389,11 +406,12 @@ export const TiltCardHook: React.FC<HookProps> = ({
               zIndex: 2,
               background: palette.accent,
               color: palette.accentInk,
+              border: `1.5px solid ${palette.ink}`,
               fontSize: 22,
               fontWeight: 800,
               padding: '6px 14px',
               borderRadius: 8,
-              transform: `scale(${sticker}) rotate(-4deg)`,
+              transform: `scale(${sticker}) rotate(-3deg)`,
             }}
           >
             {badge}
@@ -405,11 +423,13 @@ export const TiltCardHook: React.FC<HookProps> = ({
             maxWidth: '100%',
             background: palette.paper,
             color: palette.ink,
-            padding: '24px 28px 26px',
+            border: '1.5px solid rgba(15, 23, 42, 0.14)',
+            boxShadow: '0 16px 34px rgba(0, 0, 0, 0.24)',
+            padding: '26px 28px',
             borderRadius: 18,
             opacity: Math.min(1, p * 1.6),
-            filter: `blur(${(1 - Math.min(1, p)) * 14}px)`,
-            transform: `perspective(1400px) rotateX(${(1 - p) * 12}deg) rotateY(${-3 + (1 - p) * -8}deg) scale(${push})`,
+            filter: `blur(${(1 - Math.min(1, p)) * 12}px)`,
+            transform: `perspective(1400px) rotateX(${(1 - p) * 12}deg) rotateY(${-2.5 + (1 - p) * -8}deg) scale(${push})`,
             transformOrigin: 'center center',
           }}
         >
@@ -527,8 +547,8 @@ export const MaskWipeHook: React.FC<HookProps> = ({
 
 /* ------------------------------------------------------------------ */
 /* 6. SPLIT VERSUS                                                     */
-/* Komparasi dua blok kontras: Cara Biasa (❌) vs Solusi Produk (✅).  */
-/* Cocok: produk pembersih, alat praktis, problem-solver               */
+/* Komparasi dua blok kontras: Masalah (✕) vs Solusi Produk (✓).      */
+/* Pada babak demo/spec, menggunakan penanda poin positif tanpa ✕.    */
 /* ------------------------------------------------------------------ */
 export const SplitVersusHook: React.FC<HookProps> = ({
   line1,
@@ -536,9 +556,11 @@ export const SplitVersusHook: React.FC<HookProps> = ({
   badge,
   palette,
   durationInFrames = 90,
+  stage = 'hook',
 }) => {
   const topIn = useIn(0, 14, 170);
-  const botIn = useIn(12, 12, 200);
+  const botIn = useIn(10, 12, 200);
+  const isProblemStage = stage === 'hook';
 
   return (
     <Frame durationInFrames={durationInFrames}>
@@ -549,6 +571,7 @@ export const SplitVersusHook: React.FC<HookProps> = ({
           borderRadius: 18,
           overflow: 'hidden',
           border: `3px solid ${palette.ink}`,
+          boxShadow: '0 14px 30px rgba(0, 0, 0, 0.28)',
         }}
       >
         {badge ? (
@@ -558,12 +581,11 @@ export const SplitVersusHook: React.FC<HookProps> = ({
               color: palette.paper,
               fontSize: 20,
               fontWeight: 800,
-              letterSpacing: 1.4,
-              textTransform: 'uppercase',
+              letterSpacing: 0.8,
               padding: '8px 20px',
             }}
           >
-            ⚡ {badge}
+            {badge}
           </div>
         ) : null}
         <div
@@ -581,16 +603,16 @@ export const SplitVersusHook: React.FC<HookProps> = ({
         >
           <span
             style={{
-              background: palette.alert,
-              color: '#FFFFFF',
-              fontSize: 22,
+              background: isProblemStage ? palette.alert : palette.ink,
+              color: isProblemStage ? '#FFFFFF' : palette.paper,
+              fontSize: 20,
               fontWeight: 900,
               padding: '4px 10px',
               borderRadius: 8,
               flexShrink: 0,
             }}
           >
-            ✕
+            {isProblemStage ? '✕' : '01'}
           </span>
           <span style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}>
             {line1}
@@ -612,7 +634,7 @@ export const SplitVersusHook: React.FC<HookProps> = ({
             style={{
               background: palette.ink,
               color: palette.paper,
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: 900,
               padding: '4px 10px',
               borderRadius: 8,
@@ -621,7 +643,7 @@ export const SplitVersusHook: React.FC<HookProps> = ({
           >
             ✓
           </span>
-          <span style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.12, wordBreak: 'break-word' }}>
+          <span style={{ fontSize: 44, fontWeight: 900, lineHeight: 1.12, wordBreak: 'break-word' }}>
             {highlight}
           </span>
         </div>
@@ -656,40 +678,44 @@ export const FloatingTagHook: React.FC<HookProps> = ({
           background: palette.paper,
           color: palette.ink,
           border: `3px solid ${palette.ink}`,
+          boxShadow: '0 14px 30px rgba(0, 0, 0, 0.24)',
           borderRadius: 20,
           padding: '28px 28px 24px',
           opacity: Math.min(1, card * 2),
           transform: `translateY(${(1 - card) * -36}px) scale(${0.94 + 0.06 * card})`,
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: -18,
-            right: 22,
-            background: palette.alert,
-            color: '#FFFFFF',
-            fontSize: 20,
-            fontWeight: 800,
-            letterSpacing: 1,
-            textTransform: 'uppercase',
-            padding: '5px 16px',
-            borderRadius: 999,
-            transform: `scale(${tag}) rotate(3deg)`,
-          }}
-        >
-          {badge || '★ REKOMENDASI'}
-        </div>
+        {badge ? (
+          <div
+            style={{
+              position: 'absolute',
+              top: -18,
+              right: 22,
+              background: palette.alert,
+              color: '#FFFFFF',
+              fontSize: 20,
+              fontWeight: 800,
+              letterSpacing: 0.6,
+              padding: '5px 16px',
+              borderRadius: 999,
+              transform: `scale(${tag}) rotate(2deg)`,
+            }}
+          >
+            {badge}
+          </div>
+        ) : null}
         <div style={{ fontSize: 36, fontWeight: 700, lineHeight: 1.22, wordBreak: 'break-word' }}>
           {line1}
         </div>
         <div
           style={{
+            boxSizing: 'border-box',
+            maxWidth: '100%',
             marginTop: 12,
             display: 'inline-block',
             background: palette.accent,
             color: palette.accentInk,
-            fontSize: 48,
+            fontSize: 46,
             fontWeight: 900,
             lineHeight: 1.12,
             padding: '10px 20px',

@@ -2,7 +2,7 @@
 
 Gunakan master prompt ini pada Google Gemini saat Anda mengunggah video produk mentah (dan link cuplikan podcast YouTube jika ingin memakai hook podcast dinamis).
 
-Versi ini menambahkan **pemilihan desain otomatis**: Gemini menonton video, lalu memilih layout hook, gaya subtitle, dan tema yang paling cocok dengan produk dan kondisi footage. Anda tidak perlu memilih desain manual di Web Studio.
+Versi ini menggabungkan **pemilihan desain otomatis** (Gemini menonton video lalu memilih layout hook, gaya subtitle, palet, dan cover yang paling pas dengan kondisi footage) dengan **aturan copywriting afiliasi anti-template** agar naskah voiceover, teks kartu layar, cover, dan caption terdengar seperti kreator sungguhan dan mendorong konversi nyata.
 
 ---
 
@@ -11,13 +11,13 @@ Versi ini menambahkan **pemilihan desain otomatis**: Gemini menonton video, lalu
 Salin seluruh teks di bawah ini ke Gemini bersama dengan file video produk mentah:
 
 ````
-Kamu adalah Creative Director & Video Editor TikTok Affiliate spesialis konten viral FYP dengan konversi penjualan tinggi.
+Kamu adalah Creative Director, Copywriter Konversi, dan Video Editor TikTok Affiliate yang terbiasa membuat konten review produk jujur, spesifik, dan berkonversi tinggi tanpa terdengar seperti iklan brosur atau bot AI.
 
 TUGAS KAMU:
-Analisis visual video produk mentah yang saya lampirkan di chat ini. Tentukan detik-detik potongan footage terbaik, PILIH DESAIN yang paling cocok untuk produk dan footage ini, buat naskah voice over ElevenLabs yang persuasif, siapkan caption postingan TikTok, dan hasilkan JSON DATA PRODUK STANDAR yang siap di-import langsung ke Web Studio Remotion.
+Analisis visual video produk mentah yang saya lampirkan di chat ini. Tentukan detik potongan footage terbaik, PILIH DESAIN yang paling cocok untuk produk dan kondisi footage, tulis naskah voice over ElevenLabs yang alami, siapkan caption postingan, dan hasilkan JSON DATA PRODUK STANDAR yang siap di-import langsung ke Web Studio Remotion.
 
 ================================================================================
-INFORMASI VIDEO MENTAH & ATURAN BATAS DURASI (WAJIB DIPATUHI):
+INFORMASI VIDEO MENTAH & FAKTA PRODUK (WAJIB DIPATUHI):
 ================================================================================
 DURASI ASLI VIDEO: [TULIS DURASI VIDEO DI SINI, contoh: 95 detik (01:35)]
 *(Jika mengunggah 2 video berbeda untuk Hook + Produk, tulis seperti ini:*
@@ -27,25 +27,29 @@ DURASI ASLI VIDEO: [TULIS DURASI VIDEO DI SINI, contoh: 95 detik (01:35)]
 
 INFORMASI EVENT PROMO (OPSIONAL - TANGGAL KEMBAR / GAJIAN):
 MODE EVENT: [TULIS JIKA LAGI EVENT: contoh: 11.11 / Tanggal Kembar / Payday 25 / Harbolnas 12.12 / Kosongkan jika hari biasa]
-*(Jika bagian ini diisi, OTOMATIS arahkan Badge, Hook, Spec, dan CTA ke sudut pandang FOMO promo diskon, voucher event, atau bundle hemat. Untuk desain, Versi 2 wajib memakai receipt + flash_sale + marker_sweep, lihat bagian PEMILIHAN DESAIN OTOMATIS).*
+*(Jika bagian ini KOSONG, DILARANG mengklaim sedang ada flash sale, diskon, harga terjun bebas, atau voucher event. Jika bagian ini DIISI, arahkan Versi 2 ke sudut pandang promo event tersebut dengan `receipt` + `sale_yellow`/`flash_sale`).*
+
+FAKTA & BUKTI PRODUK (OPSIONAL - ISI JIKA ADA DATA TAMBAHAN):
+FAKTA PRODUK: [TULIS JIKA ADA: contoh: ukuran 60ml, BPOM, Halal, garansi, pilihan warna/varian, harga kisaran, atau kosongkan jika hanya mengandalkan visual video]
+*(ATURAN KEJUJURAN KLAIM: Hanya tulis klaim, ukuran, sertifikasi, atau angka yang benar-benar terlihat di kemasan/video atau ditulis di atas. Jika tidak ada datanya, DILARANG mengarang angka terjual seperti "Terjual 50rb+", rating "4.9", klaim medis/keamanan seperti "Sudah BPOM", atau urgensi palsu seperti "Sering sold out").*
 
 ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
-1. SEMUA nilai "startSec" dan "endSec" HARUS berada di dalam batas durasi video asli (0 sampai <durasi_maksimal>)!
-2. DILARANG KERAS mengarang angka detik yang melebihi durasi video!
-   - Contoh Nyata: Jika video berdurasi 95 detik, detik klip TERAKHIR (endSec) maksimal adalah 95 detik (contoh: 86 s/d 93). Angka seperti 120, 127, atau 133 adalah ERROR FATAL karena video sudah selesai di detik ke-95!
+1. SEMUA nilai "startSec" dan "endSec" HARUS berada di dalam batas durasi video asli (0 sampai <durasi_maksimal>).
+2. DILARANG KERAS mengarang angka detik yang melebihi durasi video.
+   - Contoh: Jika video berdurasi 95 detik, detik klip TERAKHIR (endSec) maksimal adalah 95 detik (contoh: 86 s/d 93). Angka seperti 120, 127, atau 133 adalah ERROR FATAL karena video sudah selesai di detik ke-95.
 3. URUTAN 4 BABAK KLIP DALAM RENTANG PANJANG VIDEO:
-   - Klip 1 (Babak 1: Hook): Wajib ACTION-FIRST di 2-3 detik pertama! DILARANG memilih visual statis (seperti hanya memegang produk diam di depan kamera atau memandang kemasan). Jika ada adegan aksi / demonstrasi fisik (misal: uji tiup kencang tisu melayang, semprotan tekstur, pemasangan jepit, perbandingan before-after), Klip 1 WAJIB mengambil potongan aksi paling scroll-stopping tersebut sebagai pembuka! (~5-6s, contoh: 0 s/d 6). Jika user melampirkan 2 video, potong Babak 1 dari VIDEO 1 (Hook / Podcast / Reaksi / Review).
-   - Klip 2 (Babak 2: Solusi & Demo Tekstur): Momen saat produk dicoba/dipakai di sepertiga video produk (~7-8s, contoh: 20 s/d 28).
-   - Klip 3 (Babak 3: Spesifikasi & Keunggulan): Close-up detail kemasan / fitur utama + 1 poin pematah keraguan pembeli (~7-8s, contoh: 50 s/d 58).
-   - Klip 4 (Babak 4: CTA Keranjang di Kiri Bawah): Momen closing kemasan utuh SEBELUM video produk berakhir (~5-6s, contoh: 86 s/d 92 dari video 95s).
-   * Total gabungan durasi 4 babak berkisar 23-26 detik (snappy & langsung loop mulus tanpa jeda kosong/dead air di akhir).
+   - Klip 1 (Babak 1: Hook): Wajib ACTION-FIRST di 2-3 detik pertama. DILARANG memilih visual statis (seperti hanya memegang produk diam di depan kamera atau memandang kemasan). Pilih potongan aksi fisik paling menarik mata seperti semprotan tekstur, lipatan produk, pemasangan alat, atau perbandingan nyata (~5-6s, contoh: 0 s/d 6). Jika user melampirkan 2 video, potong Babak 1 dari VIDEO 1.
+   - Klip 2 (Babak 2: Solusi & Demo Tekstur): Momen saat produk dipakai atau diuji langsung (~7-8s, contoh: 20 s/d 28).
+   - Klip 3 (Babak 3: Spesifikasi & Pematah Ragu): Close-up detail bahan, ukuran, fitur utama, atau bukti fisik yang menjawab keraguan pembeli (~7-8s, contoh: 50 s/d 58).
+   - Klip 4 (Babak 4: CTA Arah Keranjang Kiri Bawah): Momen penutup produk utuh atau hasil pemakaian SEBELUM video berakhir (~5-6s, contoh: 86 s/d 92 dari video 95s).
+   * Total gabungan durasi 4 babak berkisar 23-26 detik agar ritme rapat dan mengulang mulus tanpa jeda kosong di akhir.
 4. FORMAT OBJEK KLIP (DUKUNGAN 1 VIDEO MAUPUN 2 VIDEO LANGSUNG):
    - Jika HANYA 1 video diunggah:
      { "startSec": number, "endSec": number }
    - OPSI SUARA ASLI REKAMAN VIDEO (NATURAL ASMR / AKSI PRODUK):
-     Jika pada klip tertentu terdapat aksi fisik produk yang memuaskan didengar (seperti menyemprot cairan "psssht", membuka tutup botol "pop/klik", menggeser/mengunci produk, atau menuang tekstur), TAMBAHKAN properti:
+     Jika pada klip tertentu terdapat bunyi aksi fisik produk yang jelas dan mendukung (seperti semprotan "psssht", tutup botol "klik", resleting, atau ketukan bahan), tambahkan properti:
      `"muted": false, "volume": 0.8`
-     pada objek klip tersebut! Sistem Remotion akan otomatis mempertahankan suara asli aksinya untuk berpadu alami dengan voiceover AI. Jika klip tidak ada aksi fisik khusus, jangan cantumkan (default hening agar rekaman b-roll bebas noise).
+     pada objek klip tersebut. Jika klip tidak memiliki bunyi aksi khusus, jangan cantumkan agar rekaman tetap bersih dari bising latar.
    - Jika 2 VIDEO DIUNGGAH (Multi-Footage: Video 1 & Video 2):
      Sertakan "videoIndex": 1 atau "videoIndex": 2 di dalam setiap objek klip (atau cantumkan nama file aslinya di field "src").
      Contoh Klip Multi-Video:
@@ -55,9 +59,8 @@ ATURAN MUTLAK TIMESTAMP KLIP (ANTI OVERFLOW / ANTI FREEZE):
        { "startSec": 50, "endSec": 58, "videoIndex": 1 },
        { "startSec": 85, "endSec": 92, "videoIndex": 1 }
      ]
-     *Web Studio Remotion akan LANGSUNG otomatis memetakan klip ke video yang sesuai saat JSON di-import!*
-5. JANGAN cantumkan "videoSource" atau "voiceOver" di root JSON!
-   - File video dan voice over di-resolve otomatis oleh Web Studio Remotion berdasarkan aset produk yang tersedia.
+5. JANGAN cantumkan "videoSource" atau "voiceOver" di root JSON.
+   - File video dan voice over dipetakan otomatis oleh Web Studio Remotion berdasarkan aset produk yang tersedia.
 
 ================================================================================
 PEMILIHAN DESAIN OTOMATIS (WAJIB - LAKUKAN SEBELUM MENULIS COPY):
@@ -76,7 +79,7 @@ LANGKAH 1 - PILIH cardStyle & hookVariant (18 desain layout hook multi-versi):
 | Gadget, elektronik, alat, otomotif, tools | `label_tape` | `v1` (Dymo Emboss), `v2` (Cyber Industrial Spec Bar), `v3` (Frosted Split Tag) | `type_stack` |
 | Ibu & bayi, suplemen, curhat solusi masalah pribadi | `chat_thread` | `v1` (WA/iMessage Q&A), `v2` (TikTok Comment Reply Sticker), `v3` (Voice DM Waveform) | `sticky_note` |
 | Promo event, bundle, diskon, harga | `receipt` | `v1` (Struk Kasir Thermal), `v2` (Kupon Promo Sobek), `v3` (White Catalog Index `01 // HOOK`) | `type_stack` |
-| Fashion kasual, kuliner, edukasi, podcast, umum | `type_stack` | `v1` (Poster Brush), `v2` (Kinetic Pill + Sparkle `✦`), `v3` (Strike-Through + Frame Box) | `label_tape` |
+| Fashion kasual, kuliner, edukasi, podcast, umum | `type_stack` | `v1` (Poster Brush), `v2` (Kinetic Pill + Sparkle), `v3` (Strike-Through + Frame Box) | `label_tape` |
 
 LANGKAH 2 - SESUAIKAN DENGAN FOOTAGE (boleh menimpa pilihan utama):
 - Sepertiga atas layar TERANG, RAMAI, atau penuh detail -> pilih layout yang punya permukaan solid sendiri: `sticky_note`, `receipt`, `chat_thread`, `label_tape`, atau `quiet_serif` dengan `hookVariant: "v3"` (Warm Paper Pocket).
@@ -85,7 +88,7 @@ LANGKAH 2 - SESUAIKAN DENGAN FOOTAGE (boleh menimpa pilihan utama):
 
 LANGKAH 3 - PILIH captionStyle & captionVariant (12 desain subtitle karaoke):
 - `"outline_pop"`: `v1` (putih berkontur klasik), `v2` (3D kinetic bounce miring), `v3` (indikator titik/bar aktif di atas kata). Default aman untuk segala footage.
-- `"marker_sweep"`: `v1` (stabilo miring menyapu), `v2` (kapsul mengembang dari kiri + kilau `✦` berputar ala `bang-motion`), `v3` (garis bawah tergambar kiri ke kanan). Cocok untuk promo & energi tinggi.
+- `"marker_sweep"`: `v1` (stabilo miring menyapu), `v2` (kapsul mengembang dari kiri + aksen kilau), `v3` (garis bawah tergambar kiri ke kanan). Cocok untuk promo & energi tinggi.
 - `"reveal"`: `v1` (kata muncul satu per satu), `v2` (semua kata tampil redup 32% lalu menyala 100% saat diucapkan), `v3` (muncul dengan vertical blur-in). Cocok untuk skincare, edukasi, & storytelling.
 - `"plate"`: `v1` (pelat gelap solid), `v2` (pelat kertas hangat `#F7F4EB` tinta hitam), `v3` (kapsul kaca buram per kata aktif). Cocok untuk footage sangat terang/ramai.
 
@@ -95,23 +98,29 @@ LANGKAH 4 - PILIH themeStyle (warna progress bar dan karakter SFX):
 - `"flash_sale"`: promo, event, diskon
 - `"minimal"`: rumah tangga, fashion, lifestyle, luxury, dan kategori lain
 
-LANGKAH 5 - GAYA FLAT MOTION-GRAPHICS (SANGAT DIREKOMENDASIKAN):
-Sertakan 3 field modern ini di setiap versi JSON:
-1. "palette" (Pilihan Palet Warna Terintegrasi):
+LANGKAH 5 - PILIH PALET & OPSI GAYA FLAT MOTION-GRAPHICS (JANGAN TIMPA PILIHAN SENDIRI):
+PENTING (ATURAN ANTI-BENTROK SISTEM):
+- Sistem memiliki 2 keluarga Hook (18 `cardStyle` realistis di Langkah 1 vs 7 `hookStyle` flat di bawah) dan 2 keluarga Subtitle (12 `captionStyle` di Langkah 3 vs 7 `subtitleStyle` flat di bawah).
+- Jika sebuah varian memakai `cardStyle` + `hookVariant` dari Langkah 1, **JANGAN isi field `hookStyle`** (biarkan tidak ditulis di varian tersebut agar `cardStyle` tampil utuh). Sebaliknya, isi `hookStyle` HANYA jika ingin memakai salah satu dari 7 animasi flat di bawah.
+- Begitu pula untuk subtitle: isi **SALAH SATU** saja per varian, yaitu (`captionStyle` + `captionVariant`) ATAU `subtitleStyle` (jangan tulis keduanya sekaligus di varian yang sama).
+- Untuk A/B testing terbaik, kamu sangat disarankan memadukan keduanya (misalnya `v1` memakai `cardStyle` + `captionStyle`, sedangkan `v2` memakai `hookStyle` + `subtitleStyle`, atau sebaliknya).
+
+Daftar Palet & Opsi Flat:
+1. "palette" (Selalu sertakan di setiap versi JSON):
    - `"editorial"`: Neon Lime / Hijau Stabilo (Gadget, teknologi, tools, modern, visual berenergi tinggi)
    - `"fresh_mint"`: Hijau Mint Segar (Suplemen, vitamin, kesehatan, herbal, kesegaran)
-   - `"sale_yellow"`: Kuning Promo (Flash sale, produk viral, promo tanggal kembar, diskon hemat)
+   - `"sale_yellow"`: Kuning Promo (Produk viral, value belanja, promo tanggal kembar)
    - `"pastel_rose"`: Soft Rose Pink (Skincare, kecantikan, bumil/busui, fashion wanita)
    - `"tech_blue"`: Biru Teknologi (Gadget, elektronik, otomotif, perabot modern)
-   - `"warm_kuliner"`: Saffron & Terracotta Hangat (Makanan, snack, minuman, bumbu dapur, kuliner viral)
+   - `"warm_kuliner"`: Saffron & Terracotta Hangat (Makanan, snack, minuman, bumbu dapur, kuliner)
    - `"sage_hampers"`: Hijau Sage & Emas Hangat (Fashion muslim, hijab, mukena, hampers, koleksi Lebaran)
-   - `"flash_sale"`: Crimson Red (Promo gila-gilaan, cuci gudang, urgensi diskon)
+   - `"flash_sale"`: Crimson Red (Khusus event promo besar atau diskon terverifikasi)
    - `"ink_mono"`: Monokrom / Kertas Elegan (Luxury, lifestyle, editorial santai)
    - `"pastel"`: Lilac / Ungu Pastel Lembut (Skincare estetik, produk relaksasi, wewangian)
    - `"minimal"`: Dark Zinc Clean (Minimalis modern, premium aesthetic, sleek hardware)
 2. "hookStyle" (7 Animasi Hook Flat):
    - `"marker_highlight"`: Kartu kertas + stabilo tergambar (Skincare, bumil/busui, kebutuhan harian)
-   - `"stack_slam"`: Dua plat menghantam layar bergantian + getar (Flash sale, produk viral)
+   - `"stack_slam"`: Dua plat menghantam layar bergantian + getar (Produk viral, energi cepat)
    - `"struck_swap"`: Masalah dicoret lalu digantikan solusi (Problem-solution, sebelum/sesudah)
    - `"tilt_card"`: Kartu 3D tilt dengan stiker badge (Review jujur, suplemen, vitamin)
    - `"mask_wipe"`: Teks naik dari garis potong + plat menyapu (Gadget, fashion, lifestyle)
@@ -119,7 +128,7 @@ Sertakan 3 field modern ini di setiap versi JSON:
    - `"floating_tag"`: Kartu tag e-commerce dengan pin dot berdenyut (Kuliner, hampers, fashion, produk estetik)
 3. "subtitleStyle" (7 Subtitle Kata-per-Kata Flat):
    - `"karaoke_block"`: Kata aktif jadi blok warna solid + highlight angka otomatis (Default aman segala footage)
-   - `"pop_scale"`: Satu kata besar memantul ritme cepat (Voiceover cepat, produk viral)
+   - `"pop_scale"`: Satu kata besar memantul ritme cepat (Voiceover cepat, energi tinggi)
    - `"highlighter_bar"`: Plat gelap + stabilo menyapu kata aktif (Edukatif, penjelasan, skincare)
    - `"fill_sweep"`: Warna mengisi kata sesuai durasi suara (Storytelling, narasi tenang)
    - `"typewriter_band"`: Pita tipis + serif miring (Premium, fashion, parfum)
@@ -127,117 +136,127 @@ Sertakan 3 field modern ini di setiap versi JSON:
    - `"glass_pill"`: Kapsul kaca buram (frosted glass) + pil kata aktif (Kuliner, hampers, ASMR, estetik)
 
 ATURAN A/B TESTING DESAIN (`v1` vs `v2`):
-- Versi 1 (`v1`) dan Versi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` (atau `hookStyle` dan `subtitleStyle`) yang BERBEDA agar visualnya kontras untuk A/B testing!
-- Contoh: Jika Versi 1 memakai `cardStyle: "sticky_note", hookVariant: "v1"` (atau `hookStyle: "marker_highlight"`), maka Versi 2 memakai `cardStyle: "receipt", hookVariant: "v2"` (atau `hookStyle: "tilt_card"`).
+- Versi 1 (`v1`) dan Versi 2 (`v2`) WAJIB memakai kombinasi `cardStyle` + `hookVariant` serta `captionVariant` (atau `hookStyle` dan `subtitleStyle`) yang BERBEDA agar visualnya kontras untuk A/B testing.
 - Jika MODE EVENT diisi: Versi 2 wajib memakai sudut pandang event promo dengan `palette: "sale_yellow"` atau `"flash_sale"`, `hookStyle: "stack_slam"` (atau `cardStyle: "receipt"`).
 - DILARANG memakai cardStyle lama (`unified_glass`, `editorial_minimal`, `creator_aesthetic`, `clean_capsule`, `tiktok_native_ugc`, `top_banner_promo`) kecuali diminta eksplisit.
 
-TULIS "designReason": SATU kalimat (maks 140 karakter) yang menyebut kategori produk dan kondisi footage yang membuat desain itu dipilih. Contoh: "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel yang punya permukaan sendiri."
+TULIS "designReason": SATU kalimat (maks 140 karakter) yang menyebut kategori produk dan kondisi footage yang membuat desain itu dipilih. Contoh: "Produk dapur dengan sepertiga atas terang dan ramai, jadi memakai catatan tempel yang punya bidang solid sendiri."
 
 ================================================================================
-STRATEGI COPYWRITING 4 BABAK TIKTOK AFFILIATE (HIGH-CONVERSION):
+STRATEGI COPYWRITING 4 BABAK TIKTOK AFFILIATE (SPESIFIK & ANTI-SLOP):
 ================================================================================
-PENTING: JANGAN buat naskah seperti iklan TV atau sales brosur yang kaku. TikTok menyukai gaya "UGC Curhat / Teman Rekomendasiin Produk". Terapkan formula 4 babak ini:
+PRINSIP UTAMA: Tulis seperti kreator yang benar-benar memegang dan mencoba barangnya, bukan seperti brosur iklan atau template AI.
 
-ATURAN PENULISAN TEKS LAYAR:
-- Tulis badgeText, demoBadge, specBadge, hook, demo, dan spec dengan HURUF BIASA (huruf besar hanya di awal kalimat dan nama merek). JANGAN huruf kapital semua. Layout baru menampilkan teks sebagai catatan, struk, chat, atau pita label, dan kapital semua terlihat seperti template.
-- Jangan pakai emoji di badge dan hook (kecuali satu emoji yang benar-benar relevan).
+ATURAN KEBERSIHAN BAHASA (WAJIB DICEK SEBELUM OUTPUT):
+1. DILARANG menggunakan karakter em dash (tanda pisah panjang) atau dua tanda hubung berurutan di seluruh output (baik di VO, kartu layar, cover, maupun caption). Gunakan koma, titik, atau titik dua.
+2. HURUF BIASA (Sentence Case) di SEMUA teks layar termasuk cover (`badgeText`, `demoBadge`, `specBadge`, `hook`, `demo`, `spec`, `ctaText`, `coverBadge`, `coverTitle`, `coverSubtitle`). Huruf besar hanya di awal kalimat, nama merek, atau singkatan resmi (seperti BPOM, UV, 2-in-1). JANGAN menulis kalimat huruf kapital semua.
+3. HEMAT TANDA SERU & EMOJI: Jangan menutup setiap baris dengan tanda seru (`!`). Gunakan kalimat deklaratif yang tenang dan meyakinkan; maksimal satu tanda seru di seluruh set kartu bila memang diperlukan. Jangan pakai emoji di badge, kartu hook, demo, spec, maupun cover.
+4. HINDARI POLA KLIMAKS PALSU & KATA KOSONG AI:
+   - Dilarang menulis pola kontras klise seperti "Bukan sekadar X, tapi Y", "Solusinya bukan X, tapi Y", "Ternyata caranya segampang ini", atau "Gak nyangka efeknya segila ini".
+   - Dilarang menumpuk kata penguat ganda seperti "jauh lebih murah banget", "super praktis banget", atau kata brosur kosong seperti "revolusioner", "solusi terbaik", "wajib punya banget".
+5. LULUS UJI TUKAR PRODUK (SWAP TEST):
+   - Jika kalimat hook atau highlight kamu masih masuk akal saat ditempel ke produk lain yang sama sekali berbeda (misalnya "Ganti ke produk ini aja" atau "Ternyata segampang ini"), berarti kalimat itu GAGAL. Ganti dengan detail fisik, ukuran, tekstur, atau mekanisme kerja produk yang terlihat di video.
 
-1. BABAK 1 - HOOK (DETIK 0 - 3) [ANTI-SWIPE & CURIOSITY]:
-   - ATURAN BADGE: JANGAN gunakan nama produk atau fitur kaku (seperti "Bagus serap air").
-     PILIH SALAH SATU DARI 4 FORMULA VIRAL TIKTOK INI (2-4 kata):
-     * 1. Target Audiens Call-Out: "Ibu-ibu wajib tau", "Anak kos simpan ini", "Spill racun TikTok", "Khusus wanita karir".
-     * 2. Curiosity & Larangan: "Jangan beli dulu!", "Nyesel baru tahu", "Rahasia lemari wangi", "Life hack 2026".
-     * 3. Social Proof & Angka: "Terjual 50rb+ pcs", "Rating 4.9 di TikTok", "Paling banyak dicari", "Repeat order tertinggi". HANYA pakai angka yang benar-benar diberikan user.
-     * 4. Event Promo & Urgensi: "Flash sale hari ini", "Promo tanggal kembar", "Diskon besar hari ini", "Gratis ongkir xtra".
-   - HOOK LINE 1: Gunakan problem relatable, angka konkret, atau urgensi event:
-     * Problem Relatable: "Lemari bau padahal baru dicuci?"
-     * Angka Konkret: "Cuma modal 15 ribuan per bulan..."
-     * Urgensi Event: "Mumpung promo 11.11 lagi jalan..." / "Jangan checkout sebelum klaim ini!"
-   - HOOK HIGHLIGHT: JANGAN LANGSUNG BERIKAN JAWABAN! Tahan rasa penasaran (Curiosity Gap) agar penonton tidak scroll lewat:
-     * Tahan Penasaran: "Ternyata caranya segampang ini!", "Solusinya bukan kapur barus!", "Gak nyangka efeknya segila ini!"
-     * Tahan Penasaran (Event): "Bisa dapet diskon + gratis ongkir!", "Harganya lagi terjun bebas hari ini!"
+STRUKTUR 4 BABAK TEKS LAYAR:
 
-2. BABAK 2 - SOLUSI & DEMO (DETIK 3 - 10) [SENSORY & SHOW, DON'T TELL]:
-   - ATURAN DEMO BADGE: "Demo langsung", "Bukti nyata", "Se-praktis ini", "Uji coba langsung".
-   - TEKS DEMO: Hindari kalimat brosur pasif ("Produk ini menyerap air"). Gunakan kata kerja aktif & sensori:
-     * Contoh 1: Line: "Tinggal taruh di pojok lemari..." | Highlight: "Air & lembap langsung terserap!"
-     * Contoh 2: Line: "Gak usah repot jemur kapur barus" | Highlight: "Baju wangi & bebas jamur terus"
-     * Contoh Event: Line: "Tinggal taruh di lemari langsung rapi" | Highlight: "Mumpung stok promonya masih ada!"
+1. BABAK 1 - HOOK (DETIK 0 - 3) [MASALAH NYATA + MEKANISME SPESIFIK]:
+   - `badgeText` (2-4 kata): Konteks pemakaian atau situasi spesifik audiens tanpa klaim palsu.
+     * Contoh baik: "Masuk tas selempang", "Khusus lemari lembap", "Praktis dibawa kerja", "Solusi kerah menguning".
+     * Hanya pakai angka terjual/rating atau nama promo jika datanya diberikan user.
+   - `hookLine1`: Sebutkan satu gangguan harian yang langsung dikenali pembeli atau detail fisik paling mencolok di detik awal video.
+     * Contoh: "Lemari bau apek habis musim hujan?" / "Bawa mukena bikin tas kecil penuh?"
+   - `hookHighlight`: Tunjukkan mekanisme atau hasil konkret produk yang menjawab `hookLine1` (bukan clickbait kosong).
+     * Contoh baik: "Serap uap lembap sampai ke kantong bawah" / "Dilipat muat di satu genggaman tangan"
+     * Contoh buruk (DILARANG): "Ternyata caranya segampang ini!" / "Pakai ini aja!"
 
-3. BABAK 3 - SPESIFIKASI & BUKTI (DETIK 10 - 18) [VALUE & OBJECTION KILLER]:
-   - ATURAN SPEC BADGE: "Kapasitas jumbo", "Rating 4.9/5.0", "Formula aman", "Hemat 2 bulan", "Paket bundle", "Suara halus".
-   - TEKS SPESIFIKASI & FORMULA PEMATAH KERAGUAN (OBJECTION HANDLING):
-     Calon pembeli selalu punya keraguan di benaknya sebelum checkout. WAJIB sertakan 1 poin yang mematahkan keraguan terbesar kategori produk:
-     * Elektronik / Kipas: Keraguan = suara bising / baterai boros -> Patahkan: Line: "Suaranya juga super halus..." | Highlight: "Nggak berisik pas dipakai tidur!"
-     * Skincare / Kosmetik: Keraguan = lengket / dempul / luntur -> Patahkan: Line: "Tekstur ringan gak dempul..." | Highlight: "Tahan keringat seharian!"
-     * Rumah Tangga / Perabot: Keraguan = repot / makan tempat -> Patahkan: Line: "Wadah praktis bisa diisi ulang..." | Highlight: "Jauh lebih hemat jangka panjang!"
-     * Value Translation: Line: "Isi jumbo 450ml ekstra hemat..." | Highlight: "Satu kotak tahan 1-2 bulan!"
-     * Bundle Event: Line: "Ambil paket bundle isi 3 kotak..." | Highlight: "Jatuhnya jauh lebih murah banget!"
+2. BABAK 2 - SOLUSI & DEMO (DETIK 3 - 10) [GAMBARKAN AKSI DI LAYAR]:
+   - `demoBadge` (2-4 kata): Label aksi singkat sesuai visual Klip 2, misal "Uji semprot langsung", "Lipatan seukuran saku", "Kantong penampung air".
+   - `demoLine1` & `demoHighlight`: Deskripsikan apa yang dilihat mata penonton pada Klip 2 dengan kata kerja aktif dan konkret.
+     * Contoh: Line 1: "Tinggal gantung satu kantong di lemari" | Highlight: "Butiran putihnya mengikat uap air"
 
-4. BABAK 4 - CALL TO ACTION / CTA (DETIK 18 - 24) [URGENSI & RAMAH CROSS-POSTING TIKTOK + IG]:
-   - ATURAN VOICE OVER CTA (RAMAH TIKTOK & INSTAGRAM REELS):
-     Naskah Voiceover dibuat netral, persuasif, dan mendesak tanpa menyebut kaku hanya "keranjang kuning" di audio (agar 1 audio rekaman bisa di-upload ke TikTok & IG Reels sekaligus):
-     * Rekomendasi VO: "Mumpung lagi ada promo diskon, buruan amankan sekarang ya!" / "Cek harga flash sale-nya sebelum kehabisan!" / "Langsung klik dan checkout sebelum stoknya ludes!"
-   - ATURAN TEKS CTA LAYAR:
-     * Hari Biasa: "Cek Promo Diskon Sekarang!" / "Klaim Voucher Promo di Sini"
-     * Tanggal Kembar / Payday: "Klaim Voucher 11.11 Sekarang!" / "Checkout Mumpung Flash Sale!"
-   - Di JSON produk, sertakan field: "ctaPlatform": "universal" (secara default mengarahkan panah diagonal ↙ ke Keranjang di kiri bawah, kompatibel untuk TikTok & Instagram Reels).
+3. BABAK 3 - SPESIFIKASI & PEMATAH RAGU (DETIK 10 - 18) [JAWAB KERAGUAN UTAMA]:
+   - `specBadge` (2-4 kata): Detail ukuran, kapasitas, atau fitur kunci yang nyata di video, misal "Kapasitas 450 ml", "5 mata pisau rapat", "Resleting dagu 2-in-1".
+   - `specLine1` & `specHighlight`: Patahkan 1 keraguan terbesar pembeli saat hendak membeli kategori produk tersebut:
+     * Elektronik / Alat: bising, ribet dibersihkan, atau boros daya -> tunjukkan suara halus, kepala bisa dilepas, atau kapasitas baterai nyata.
+     * Skincare / Bodycare: lengket, perih, atau meninggalkan noda di baju -> tunjukkan tekstur cair cepat kering dan hasil di kain/kulit.
+     * Fashion / Mukena / Tas: menerawang, gerah, atau jahitan kasar -> tunjukkan kerapatan kain, tepi lasercut, atau potongan resleting dagu.
+     * Rumah Tangga / Habis Pakai: cepat habis -> terjemahkan ukuran ke estimasi durasi pakai yang wajar (misal "Isi 450 ml cukup untuk 1-2 bulan").
 
-PENYESUAIAN COPY PER LAYOUT (supaya teks pas dengan bahannya):
-- chat_thread: Line 1 = ucapan atau pertanyaan orang lain ("Lemari kamu kok gak bau?"). Highlight = jawabanmu ("Rahasianya cuma ini!"). Badge = topik singkat.
-- receipt: Line 1 = rincian penawaran. Highlight = "total" yang paling menguntungkan (harga, bonus, hemat). Isi urgencyTag jika klaimnya benar.
-- sticky_note: Nada seperti catatan pribadi untuk diri sendiri, santai dan singkat.
-- label_tape: Kalimat pendek, satu ide per baris (maks 26 karakter lebih baik).
-- quiet_serif dan type_stack: Highlight pendek, IDEAL 2-5 kata dan maksimal 28 karakter, karena tampil sangat besar.
+4. BABAK 4 - CALL TO ACTION / CTA (DETIK 18 - 24) [SPESIFIK PRODUK, BUKAN TEMPLATE DISKON]:
+   - DILARANG menyalin kalimat template seperti "Lagi promo diskon, langsung cek yuk!" atau "Klaim voucher diskon sekarang!" di setiap produk.
+   - ATURAN `ctaText` LAYAR (maks 38 karakter, mengarah ke keranjang kiri bawah):
+     * JIKA HARI BIASA (`MODE EVENT` kosong): Gunakan rumus `[Kata Kerja] + [Varian / Ukuran / Paket / Detail Produk]`. Dilarang menyebut diskon/flash sale/voucher jika tidak ada info promo.
+       Contoh Hari Biasa: "Pilih warna pouchnya di kiri bawah", "Ambil paket isi 3 buat stok lemari", "Cek ukuran 60 ml di kiri bawah".
+     * JIKA `MODE EVENT` DIISI: Sebutkan nama event yang diberikan user secara spesifik.
+       Contoh Mode Event: "Klaim voucher 11.11 di kiri bawah", "Ambil paket hemat Payday hari ini".
+   - Sertakan `"ctaPlatform": "universal"` di JSON produk (mengarahkan panah diagonal ke kiri bawah, cocok untuk TikTok dan Instagram Reels).
+
+PENYESUAIAN COPY PER LAYOUT:
+- `chat_thread`: Line 1 = pertanyaan teman yang wajar ("Kok baju di lemari gak bau apek?"). Highlight = jawaban spesifik ("Gantung penyerap uap ini di pojok").
+- `receipt`: Line 1 = rincian isi/ukuran produk. Highlight = nilai pakai atau keuntungan paket yang nyata. Isi `urgencyTag` hanya jika `MODE EVENT` aktif.
+- `sticky_note`: Nada catatan pengingat pribadi yang lugas dan akrab.
+- `label_tape`: Frasa ekstra padat dan teknis, ideal maksimal 26 karakter per baris.
+- `quiet_serif` dan `type_stack`: Highlight singkat 2-5 kata (maksimal 28 karakter) karena ukuran hurufnya sangat besar di layar.
 
 ================================================================================
-ATURAN TEKS KARTU & BATAS KARAKTER (WAJIB DIPATUHI - ANTI OVERFLOW):
+ATURAN BATAS KARAKTER & NASKAH VOICE OVER ELEVENLABS:
 ================================================================================
-- badgeText, demoBadge, specBadge: 2-4 kata.
-- Line 1 & Highlight: MAKSIMAL 38 KARAKTER per baris (hitung setiap huruf dan spasi agar pas di safe zone HP). Untuk quiet_serif dan type_stack, highlight maksimal 28 karakter.
-- ctaText: MAKSIMAL 38 KARAKTER (fokus ajakan klik ke arah kiri bawah layar tempat tombol Keranjang Kuning TikTok berada).
-- ctaLabel (opsional): label kecil di atas ctaText, mis. "Promo 11.11". HANYA isi jika promo benar-benar aktif dan diberikan user. Jika tidak ada, jangan tulis field ini.
-- urgencyTag (opsional): tag urgensi (tampil di layout receipt dan top_banner_promo), mis. "Stok terbatas". HANYA isi jika klaimnya benar. Jangan mengarang urgensi; klaim palsu bisa melanggar kebijakan iklan TikTok.
+BATAS KARAKTER KARTU LAYAR (WAJIB HITUNG AGAR TIDAK TERPOTONG SAFE ZONE):
+- `badgeText`, `demoBadge`, `specBadge`: 2-4 kata.
+- `hookLine1`, `hookHighlight`, `demoLine1`, `demoHighlight`, `specLine1`, `specHighlight`: MAKSIMAL 38 KARAKTER per baris (untuk `quiet_serif` dan `type_stack`, highlight maksimal 28 karakter).
+- `ctaText`: MAKSIMAL 38 KARAKTER.
+- `ctaLabel` & `urgencyTag` (opsional): HANYA isi jika `MODE EVENT` diisi user. Jangan cantumkan field ini di hari biasa.
 
-ATURAN NASKAH VOICE OVER (VO ELEVENLABS):
-- Bahasa kasual, mengalir, natural seperti teman curhat ("kalian", "banget", "coba deh", "parah sih").
-- Durasi pembacaan VO pas 16-22 detik (sekitar 40-55 kata agar pas dengan ritme video TikTok yang energetik).
-- Auto-Looping: Buat kalimat terakhir CTA seolah mengalir kembali ke hook pembuka jika video di-loop.
+ATURAN NASKAH VOICE OVER (`voiceOverScript` UNTUK ELEVENLABS TTS):
+1. JANGAN MEMBACA NAMA PANJANG MARKETPLACE SECARA UTUH:
+   - Judul toko seperti "Mukena Travel Mini Pouch Quilted 2-in-1 Resleting Dagu Motif Bunga" terdengar kaku bila dibaca penuh. Gunakan sebutan lisan alami seperti "mukena travel mini ini", "spray Deorex ukuran enam puluh mili ini", atau "kantong penyerap lembap ini".
+2. VARIASIKAN PEMBUKA & PENUTUP (ANTI-KLONING ANTAR PRODUK):
+   - DILARANG selalu membuka `v1` dengan "Kalian sering sebel gak sih... Coba ganti deh ke..." dan selalu membuka `v2` dengan "Stop pakai/bawa...".
+   - DILARANG menutup setiap naskah dengan kalimat seragam "Mumpung lagi promo diskon, buruan amankan sekarang ya".
+   - Gunakan 2 sudut pembuka yang BERBEDA antara `v1` dan `v2` dari 4 pilihan ini:
+     (a) Bukti visual langsung: "Lihat ukuran lipatannya, beneran muat di satu genggaman tangan."
+     (b) Pengalaman harian spesifik: "Habis musim hujan gini, lemari kayu biasanya gampang bau apek."
+     (c) Perbandingan kebiasaan lama: "Daripada tas kecil penuh gara-gara bawa mukena tebal, mending simpan model lipat tipis ini."
+     (d) Hitungan nilai pakai: "Satu kantong gantung ini ternyata sanggup nampung uap air sampai sebulan penuh."
+3. SINKRONISASI 4 KALIMAT = 4 BABAK KLIP (40-55 KATA, ~16-22 DETIK):
+   - Kalimat 1 (Klip 1 Hook): Masalah spesifik atau bukti visual pembuka.
+   - Kalimat 2 (Klip 2 Demo): Ceritakan aksi atau cara pakai yang persis sedang terlihat di layar.
+   - Kalimat 3 (Klip 3 Spec): Sebutkan detail bahan/ukuran nyata sekaligus patahkan keraguan pembeli.
+   - Kalimat 4 (Klip 4 CTA): Ajakan spesifik memilih varian/ukuran produk yang netral untuk TikTok & IG Reels (tanpa menyebut kata "keranjang kuning" di audio).
+4. Tulis angka dengan ejaan yang jelas diucapkan TTS bila perlu, gunakan kalimat mengalir dengan koma dan titik yang wajar, dan TANPA em dash.
 
-DUA VERSI A/B TESTING:
-- Versi 1 (v1): Sudut pandang "Curhat / Problem-Solving / Social Proof". Desain = pilihan UTAMA dari tabel.
-- Versi 2 (v2): Sudut pandang "Value & Hemat / First Impression" atau "Event Promo" jika MODE EVENT diisi. Desain = pilihan CADANGAN (atau receipt jika ada event). cardStyle v2 HARUS berbeda dari v1.
-- sfxPreset: "beauty" untuk pastel, "tech" untuk editorial, "viral" untuk flash_sale, "minimal" untuk minimal.
+DUA VERSI A/B TESTING (`v1` vs `v2`):
+- Versi 1 (`v1`): Sudut pandang "Masalah Harian & Bukti Pemakaian Nyata". Desain = pilihan UTAMA dari tabel.
+- Versi 2 (`v2`): Sudut pandang "Detail Fitur Praktis & Nilai Pakai Jangka Panjang" (atau sudut pandang "Event Promo" jika `MODE EVENT` diisi user). Desain = pilihan CADANGAN yang kontras dari `v1`.
+- `sfxPreset`: `"beauty"` untuk pastel, `"tech"` untuk editorial, `"viral"` untuk flash_sale, `"minimal"` untuk minimal.
 
-PILIHAN TRANSISI & SUARA CTA (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
-- hookTransition: Transisi dari hook ke produk pertama. Pilihan: "zoom_flash" (default reveal), "whip_pan" (geser cepat), "tilt_whip" (banting kamera diagonal ala bang-motion), "split_wipe" (tirai belah dua ala bang-motion), "iris_pop" (lingkaran fokus membesar), "light_leak" (cahaya lembut/skincare), "glitch_stamp" (efek digital/tech), "blur_zoom" (zoom dramatis), "push_up" (swipe scroll FYP), "shutter" (rana kamera), atau "none".
-- clipTransition: Transisi antarklip produk (demo -> spec -> CTA). Isi "auto" (default, otomatis ikut sfxPreset & transitionVariant) atau pilih salah satu jenis transisi di atas.
-- transitionVariant: "v1" (halus), "v2" (cepat & dinamis), atau "v3" (aksen sinematik).
-- ctaSound: Suara saat kartu CTA muncul. Pilihan: "kaching" (kasir), "ding" (bel ringkas), "glockenspiel" (melodi ceria), "sparkle" (kilau lembut), "notify" (ping notifikasi HP).
-- cardSfx: true (default, memutar SFX khas struk printer/kertas/label sesuai cardStyle).
-- socialProofText (opsional): Teks badge trust singkat di Babak 3 & 4 (mis. "⭐ 4.9 • 10rb+ Terjual"). Isi hanya jika klaimnya valid/sesuai data produk.
-- beforeAfter (opsional): Mode split-screen/slider perbandingan Before vs After pada satu babak (mis. `{ "enabled": true, "targetClipIndex": 1, "mode": "slider_lr", "beforeStartSec": 0, "beforeLabel": "BEFORE", "afterLabel": "AFTER" }`).
-- Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec` (detik absolut video sumber agar suara asli produk hanya aktif di momen aksi tertentu), `autoDucking: true` (otomatis kecilkan suara video asli ke 0.45x saat VoiceOver berbicara), dan `fitMode: "blur_backdrop"` (untuk video sumber horizontal 16:9 agar tidak terpotong).
-- productHeadlineMaxSec (opsional): Angka dalam detik (mis. 3.5) agar kartu teks Babak Demo & Spec otomatis hilang setelah beberapa detik sehingga produk tampil penuh tanpa tertutup teks.
+PILIHAN TRANSISI & FITUR PENDUKUNG (OPSIONAL, OTOMATIS JIKA DIKOSONGKAN):
+- `hookTransition`: `"zoom_flash"`, `"whip_pan"`, `"tilt_whip"`, `"split_wipe"`, `"iris_pop"`, `"light_leak"`, `"glitch_stamp"`, `"blur_zoom"`, `"push_up"`, `"shutter"`, atau `"none"`.
+- `clipTransition`: `"auto"` (default) atau pilih salah satu transisi di atas.
+- `transitionVariant`: `"v1"` (halus), `"v2"` (cepat & dinamis), atau `"v3"` (aksen sinematik).
+- `ctaSound`: `"kaching"`, `"ding"`, `"glockenspiel"`, `"sparkle"`, atau `"notify"`.
+- `cardSfx`: `true` (default).
+- `socialProofText` (opsional): Isi HANYA jika user memberikan data rating/terjual nyata di `FAKTA PRODUK`. Jika tidak ada, jangan cantumkan field ini.
+- `beforeAfter` (opsional): `{ "enabled": true, "targetClipIndex": 1, "mode": "slider_lr", "beforeStartSec": 0, "beforeLabel": "Sebelum", "afterLabel": "Sesudah" }`.
+- Pada item `clips`: opsional `muted: false`, `volume: 0.8`, `unmuteStartSec`, `unmuteEndSec`, `autoDucking: true`, dan `fitMode: "blur_backdrop"` (untuk video sumber horizontal 16:9).
+- `productHeadlineMaxSec` (opsional): mis. `3.5` agar kartu teks Babak Demo & Spec otomatis hilang setelah beberapa detik sehingga produk tampil bersih.
 
-LANGKAH 6 - PILIH COVER / THUMBNAIL OTOMATIS (FRAME VIDEO TERBAIK & DESAIN BERBEDA):
-Tonton seluruh video mentah, lalu pilihkan **1 frame paling fotogenik, tajam (tidak blur/goyang), terang, dan memperlihatkan produk/hasil dengan jelas** untuk dijadikan Cover Thumbnail TikTok & IG Reels (tidak harus sama dengan klip hook awal!):
-- `coverClipIndex`: Index klip (`0`, `1`, `2`, atau `3`) yang paling bagus visualnya untuk latar cover (misalnya klip `2` saat close-up produk atau klip `1` saat momen hasil terlihat jelas).
-- `coverFrameSec`: Angka detik **spesifik** di dalam video asli tempat frame paling tajam & estetik tersebut berada (harus berada di dalam rentang `0` sampai durasi video asli, hindari detik transisi atau tangan bergerak cepat).
-- `coverTemplate`: Pilih desain cover yang paling kontras dan menarik di grid profil (8 variasi tersedia):
-  * `"promo_split"`: Visual produk di bagian atas (auto-crop fokus produk) + panel kertas bersih berisi judul & CTA di bagian bawah.
-  * `"top_banner_hero"`: Panel judul besar di bagian atas + visual produk penuh di bagian bawah.
-  * `"magazine_box"`: Halaman katalog kertas dengan masthead atas dan bingkai foto/video fokus produk di tengah.
-  * `"diagonal_split"`: Visual produk di atas + potongan panel diagonal miring tajam dengan pita aksen.
-  * `"polaroid_review"`: Bingkai foto Polaroid miring berisi produk + blok highlight judul di bawahnya.
-  * `"studio_poster"`: Poster grafis studio mandiri **tanpa frame video** (cocok jika seluruh video terlalu gelap/ramai).
-  * `"big_headline"`: Latar frame video penuh + judul blok aksen raksasa di bagian bawah-tengah.
+LANGKAH 6 - PILIH COVER / THUMBNAIL OTOMATIS (FRAME TAJAM & SENTENCE CASE):
+Tonton seluruh video mentah, lalu pilihkan **1 frame paling tajam, terang, tidak goyang, dan memperlihatkan bentuk atau hasil produk dengan jelas** untuk Cover Thumbnail TikTok & IG Reels:
+- `coverClipIndex`: Index klip (`0`, `1`, `2`, atau `3`) yang paling representatif.
+- `coverFrameSec`: Detik spesifik di dalam video asli tempat frame paling bersih berada (0 sampai durasi video asli, hindari momen transisi atau tangan blur).
+- `coverTemplate` (pilih berbeda antara `v1` dan `v2` dari 8 variasi):
+  * `"promo_split"`: Visual produk di atas (auto-crop fokus produk) + panel kertas bersih di bawah.
+  * `"top_banner_hero"`: Panel judul di atas + visual produk penuh di bawah.
+  * `"magazine_box"`: Katalog kertas dengan masthead atas dan bingkai fokus produk di tengah.
+  * `"diagonal_split"`: Visual produk di atas + potongan panel diagonal tajam.
+  * `"polaroid_review"`: Bingkai Polaroid miring berisi produk + blok judul di bawahnya.
+  * `"studio_poster"`: Poster grafis mandiri tanpa frame video (cocok jika seluruh video gelap/kurang tajam).
+  * `"big_headline"`: Latar frame video penuh + blok judul kontras di bagian bawah-tengah.
   * `"hook_card"`: Menggunakan kartu hook yang dibekukan.
-- `coverFocus`: Mode auto-crop fokus produk pada jendela cover: `"auto"` (default, deteksi otomatis posisi & zoom produk), `"center_close"` (zoom close-up tengah 1.35x), `"lower_product"` (fokus ke area tangan/meja bagian bawah), `"upper_face"` (fokus ke area wajah/atas), atau `"full"`.
-- `coverBadge` (2-4 kata), `coverTitle` (maks 28 karakter, berbeda/lebih ringkas dari `hookHighlight` agar tidak monoton), dan `coverSubtitle` (maks 34 karakter).
-- `coverEmbed`: `true` agar cover otomatis disisipkan sebagai frame pertama video (untuk Cover Picker TikTok).
-- Untuk A/B testing, bedakan `coverTemplate` dan `coverFrameSec` antara `v1` dan `v2` (misal `v1` memakai `"big_headline"` dari momen hasil, `v2` memakai `"promo_split"` atau `"studio_poster"`).
+- `coverFocus`: `"auto"`, `"center_close"`, `"lower_product"`, `"upper_face"`, atau `"full"`.
+- `coverBadge` (2-4 kata), `coverTitle` (maks 28 karakter, gunakan huruf biasa / sentence case, ringkas, tanpa tanda seru berlebihan, dan berbeda kalimatnya dari `hookHighlight`), serta `coverSubtitle` (maks 34 karakter, sentence case).
+- `coverEmbed`: `true`.
 
 ================================================================================
 OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
@@ -245,42 +264,24 @@ OUTPUT YANG HARUS KAMU KELUARKAN (WAJIB LENGKAP 3 BAGIAN):
 
 BAGIAN 1: DURASI VIDEO & NASKAH SCRIPT VOICE OVER (UNTUK ELEVENLABS TTS)
 Sebutkan durasi total video yang terdeteksi: "DURASI TOTAL VIDEO: XX detik" (atau jika 2 video: "DURASI VIDEO 1 (HOOK): XX detik | DURASI VIDEO 2 (PRODUK): XX detik").
-Sebutkan analisis desain singkat (3 baris): kategori produk, kondisi sepertiga atas layar, dan desain yang dipilih untuk v1 dan v2 beserta alasannya.
-Tuliskan 2 naskah narasi suara yang mengalir, natural, dan persuasif untuk disalin ke ElevenLabs (durasi baca ~15-22 detik):
+Sebutkan analisis desain singkat (3 baris): kategori produk, kondisi sepertiga atas layar, dan alasan pemilihan desain `v1` serta `v2`.
+Tuliskan 2 naskah narasi suara yang berbeda sudut masuk dan penutupnya untuk disalin ke ElevenLabs (40-55 kata, ~16-22 detik):
 - Naskah Versi 1 (v1 - Simpan audio sebagai "public/voiceover_v1.mp3"):
   "..."
 - Naskah Versi 2 (v2 - Simpan audio sebagai "public/voiceover_v2.mp3"):
   "..."
 
-BAGIAN 2: DUA REKOMENDASI CAPTION TIKTOK SINGKAT & PADAT (UNTUK v1 & v2)
-Karena kita memproduksi 2 video berbeda untuk A/B testing materi TikTok, buatkan 2 teks caption postingan terpisah yang siap di-copypaste saat upload.
-
-ATURAN MUTLAK CAPTION TIKTOK (WAJIB SINGKAT & ENGAGING):
-1. DILARANG membuat caption panjang atau bertele-tele! Caption panjang akan tertutup tombol "...more" dan menutupi tampilan video di layar HP.
-2. Panjang maksimal: 1 - 2 kalimat pendek (total sekitar 70-130 karakter).
-3. JANGAN mengulang kata "cek keranjang kuning" / "klik keranjang kuning"! Karena animasi kartu CTA, stiker gerak, dan ajakan keranjang kuning SUDAH ADA di dalam video! Mengulang kalimat yang sama di caption membuat teks terasa membosankan dan menyia-nyiakan ruang caption.
-4. GANTI DENGAN ALTERNATIF ENGAGEMENT / FOMO / SAVE yang memancing interaksi dan komentar penonton:
-   - Alternatif 1 (Pancing Komentar & Diskusi UGC):
-     "Kalian ada yang punya masalah sama gak? Coba sharing di komen yuk! 👇"
-     "Kira-kira menurut kalian worth it gak nih? Spill di komen ya! 👇"
-     "Ada yang udah pernah coba juga? Beneran seawet itu gak sih? Sharing dong! 👇"
-   - Alternatif 2 (Curiosity / FOMO / Social Proof):
-     "Jujur nyesel baru tau trik ini sekarang 😭 Mumpung masih ready langsung amankan!"
-     "Kaget pas tau dapet bundle sebanyak ini, mumpung vouchernya masih aktif ✨"
-     "Sering banget sold out, untung kebagian pas restock! Jangan sampai kehabisan ya ✨"
-   - Alternatif 3 (Ajakan Save Video / Bookmark):
-     "Save dulu videonya biar gak bingung pas butuh nanti! 📌"
-     "Jangan lupa di-save ya, info lengkapnya udah disematkan ✨"
-5. Struktur standar: [1 Kalimat Hook Masalah/Solusi Menarik] + [1 Kalimat Alternatif Interaksi (Pancing Komen / Save / FOMO)] + [Tepat 5 Hashtag Relevan & FYP (gabungan niche produk, kata kunci solusi, #racuntiktok, #beliditiktok, & #fyp)].
-
-CAPTION POSTINGAN VIDEO 1 (Versi 1 - Sudut Pandang Curhat / Problem-Solving / UGC Relatable):
-- Contoh format: "Jujur nyesel baru tau trik ini sekarang! 😭 Kalian ada yang punya masalah sama juga? Sharing di komen yuk! 👇 #racuntiktok #[katakunci] #solusipraktis #beliditiktok #fyp"
-
-CAPTION POSTINGAN VIDEO 2 (Versi 2 - Sudut Pandang Hard-Selling / Value Hemat & Promo):
-- Contoh format: "Mumpung dapet bundle hemat + gratis ongkir! ⚡ Save dulu videonya biar gak kelupaan pas checkout nanti 📌 #promotiktok #flashsale #[katakunci] #hematbanget #fyp"
+BAGIAN 2: DUA CAPTION POSTINGAN SINGKAT & BANTU-BELI (UNTUK v1 & v2)
+ATURAN CAPTION TIKTOK AFFILIATE (WAJIB RINGKAS & FUNGSIONAL):
+1. Panjang 1-2 kalimat pendek (sekitar 70-130 karakter di luar hashtag) agar tidak terpotong "...more".
+2. JANGAN mengulang "cek keranjang kuning" dan JANGAN memakai umpan komentar basa-basi yang seragam seperti "Kalian tim A atau B nih? Komen yuk! 👇" atau "Save dulu biar gak lupa 📌".
+3. Gunakan struktur **Buyer-Assist (Bantu Pembeli Memutuskan)**:
+   - Kalimat 1: Manfaat atau bukti spesifik produk dalam bahasa sehari-hari.
+   - Kalimat 2: Satu informasi praktis yang membantu calon pembeli (misalnya saran pilih ukuran/varian untuk kebutuhan tertentu, cara/waktu pakai paling efektif, atau alasan praktis menyimpannya).
+4. Maksimal 1 emoji yang relevan atau tanpa emoji sama sekali, tanpa tanda seru beruntun, tanpa em dash, diikuti tepat 5 hashtag relevan (gabungan kata kunci kategori, masalah/solusi spesifik, dan `#racuntiktok` / `#beliditiktok`).
 
 BAGIAN 3: JSON DATA PRODUK LENGKAP (SIAP IMPORT KE WEB STUDIO)
-Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur persis seperti ini (perhatikan: TIDAK ADA field videoSource atau voiceOver, dan TIDAK ADA field src di clips). Nilai cardStyle, hookVariant, captionStyle, captionVariant, dan themeStyle di bawah hanyalah CONTOH; isi sesuai hasil PEMILIHAN DESAIN OTOMATIS untuk video ini:
+Keluarkan HANYA blok JSON yang valid tanpa teks tambahan di dalamnya, dengan struktur persis seperti contoh di bawah ini (nilai desain dan teks di bawah hanyalah contoh; sesuaikan sepenuhnya dengan video dan fakta produk yang dianalisis):
 
 ```json
 {
@@ -288,46 +289,47 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
   "name": "Nama Lengkap Produk",
   "variants": {
     "v1": {
-      "title": "Problem-Solution & Social Proof",
+      "title": "Masalah Harian & Bukti Pemakaian",
       "palette": "pastel_rose",
-      "hookStyle": "marker_highlight",
-      "subtitleStyle": "highlighter_bar",
-      "designReason": "Produk dapur, sepertiga atas terang dan ramai, jadi pakai catatan tempel dengan paku pin & stabilo yang punya permukaan sendiri.",
+      "designReason": "Produk rumah tangga dengan sepertiga atas terang dan ramai, jadi memakai catatan tempel yang punya bidang solid sendiri.",
       "themeStyle": "minimal",
       "cardStyle": "sticky_note",
       "hookVariant": "v2",
-      "captionStyle": "outline_pop",
+      "captionStyle": "marker_sweep",
       "captionVariant": "v1",
       "hookTransition": "iris_pop",
       "clipTransition": "auto",
       "transitionVariant": "v1",
       "sfxPreset": "minimal",
-      "ctaSound": "kaching",
+      "ctaSound": "ding",
       "cardSfx": true,
       "enableSfx": true,
       "sfxVolume": 1.0,
       "showProgressBar": true,
       "showSafeZoneGuide": false,
       "unmuteHook": false,
+      "productHeadlineMaxSec": 3.5,
       "voiceOverDelaySec": 0,
-      "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 1 di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
-      "tiktokCaption": "Solusi lemari bebas apek & lembap! ✨ Kalian ada yang punya masalah sama gak? Sharing di komen yuk! 👇 #racuntiktok #penyeraplembap #antijamur #beliditiktok #fyp",
-      "badgeText": "Ibu-ibu wajib tau",
-      "demoBadge": "Demo langsung",
-      "specBadge": "Kapasitas jumbo",
-      "hookLine1": "Lemari bau padahal baru dicuci?",
-      "hookHighlight": "Ternyata caranya segampang ini!",
-      "demoLine1": "Tinggal taruh di pojok lemari...",
-      "demoHighlight": "Air & lembap langsung terserap!",
-      "specLine1": "Isi jumbo 450ml ekstra hemat...",
-      "specHighlight": "Satu kotak tahan 1-2 bulan!",
-      "ctaText": "Lagi promo diskon, langsung cek yuk!",
+      "voiceOverScript": "Habis musim hujan gini, baju di lemari kayu biasanya gampang bau apek walau baru dicuci. Tinggal gantung satu kantong penyerap lembap ini di sela gantungan baju, butiran putihnya bakal mengikat uap air sampai terkumpul di kantong bawah. Satu bungkus empat ratus lima puluh mili cukup menjaga lemari tetap kering sekitar satu bulan. Buat lemari dua pintu, langsung pilih paket isi tiga biar sekalian stok di rumah.",
+      "tiktokCaption": "Kantong gantung penyerap uap air biar baju di lemari kayu gak bau apek. Untuk lemari 2 pintu, pasang 2 kantong di sisi kiri dan kanan. #penyeraplembap #lemaribebasapek #kebutuhanrumah #racuntiktok #beliditiktok",
+      "badgeText": "Khusus lemari lembap",
+      "demoBadge": "Kantong penampung air",
+      "specBadge": "Kapasitas 450 ml",
+      "hookLine1": "Baju di lemari bau apek habis hujan?",
+      "hookHighlight": "Kantong ini mengikat uap lembapnya",
+      "demoLine1": "Gantung satu kantong di sela pakaian",
+      "demoHighlight": "Uap air terkumpul di kantong bawah",
+      "specLine1": "Isi 450 ml tanpa perlu listrik",
+      "specHighlight": "Satu kantong tahan sekitar sebulan",
+      "ctaText": "Pilih paket isi 3 buat stok lemari",
+      "ctaPlatform": "universal",
       "coverTemplate": "big_headline",
       "coverClipIndex": 2,
       "coverFrameSec": 53.5,
-      "coverBadge": "SOLUSI LEMARI WANGI",
-      "coverTitle": "BEBAS JAMUR & BAU APEK!",
-      "coverSubtitle": "Cukup taruh di pojok lemari",
+      "coverFocus": "auto",
+      "coverBadge": "Solusi lemari lembap",
+      "coverTitle": "Baju bebas apek & jamur",
+      "coverSubtitle": "Kantong gantung penyerap uap 450 ml",
       "coverEmbed": true,
       "clips": [
         { "startSec": 0, "endSec": 6, "videoIndex": 1 },
@@ -337,20 +339,16 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       ]
     },
     "v2": {
-      "title": "Event Promo Tanggal Kembar & Flash Sale",
+      "title": "Detail Praktis & Hitungan Nilai Pakai",
       "palette": "sale_yellow",
-      "hookStyle": "stack_slam",
-      "subtitleStyle": "pop_scale",
-      "designReason": "Ada event 11.11, jadi kupon promo merah dengan garis sobek; subtitle kapsul mengembang + sparkle untuk energi tinggi.",
-      "themeStyle": "flash_sale",
-      "cardStyle": "receipt",
-      "hookVariant": "v2",
-      "captionStyle": "marker_sweep",
-      "captionVariant": "v2",
-      "hookTransition": "tilt_whip",
+      "hookStyle": "tilt_card",
+      "subtitleStyle": "karaoke_block",
+      "designReason": "Latar kamar terang dengan detail pakaian, memakai kartu tilt 3D dan blok karaoke kontras untuk menonjolkan kapasitas pakai.",
+      "themeStyle": "minimal",
+      "hookTransition": "whip_pan",
       "clipTransition": "auto",
       "transitionVariant": "v2",
-      "sfxPreset": "viral",
+      "sfxPreset": "minimal",
       "ctaSound": "kaching",
       "cardSfx": true,
       "enableSfx": true,
@@ -358,25 +356,28 @@ Keluarkan HANYA blok JSON yang valid tanpa tanda kurung ekstra, dengan struktur 
       "showProgressBar": true,
       "showSafeZoneGuide": false,
       "unmuteHook": false,
+      "productHeadlineMaxSec": 3.5,
       "voiceOverDelaySec": 0,
-      "voiceOverScript": "Tuliskan seluruh teks naskah voice over Versi 2 (sudut pandang event promo / diskon tanggal kembar) di sini sebagai referensi fitur Proses Pintar VO untuk auto-correct subtitle Whisper di Web Studio",
-      "tiktokCaption": "Dapet promo bundle isi 3 ekstra hemat! ⚡ Save dulu videonya biar gak kelupaan ya 📌 #promotiktok #flashsale #diskon1111 #racunbelanja #fyp",
-      "badgeText": "Promo 11.11 hari ini",
-      "demoBadge": "Bukti nyata",
-      "specBadge": "Paket bundle",
-      "hookLine1": "Mumpung promo 11.11 lagi jalan...",
-      "hookHighlight": "Bisa dapet diskon + gratis ongkir!",
-      "demoLine1": "Tinggal taruh di lemari langsung rapi",
-      "demoHighlight": "Mumpung stok promonya masih ada!",
-      "specLine1": "Ambil paket bundle isi 3 kotak...",
-      "specHighlight": "Jatuhnya jauh lebih murah banget!",
-      "ctaText": "Klaim voucher diskon sekarang!",
+      "voiceOverScript": "Lihat air yang terkumpul di bagian bawah kantong ini, semuanya hasil uap lembap dari dalam lemari tertutup. Model gantungnya tipis jadi gak makan ruang di antara kemeja atau jaket kerja. Begitu cairan di kantong bawah sudah penuh, tinggal ganti kantong baru tanpa takut tumpah mengenai pakaian. Cek pilihan aroma dan ukuran bungkusnya sesuai isi lemari kamu ya.",
+      "tiktokCaption": "Model gantung tipis yang menampung uap lembap langsung ke kantong bawah tanpa takut tumpah. Tersedia pilihan tanpa pewangi dan aroma lembut. #antijamurlemari #penyeraplembapgantung #tipsrumah #racuntiktok #beliditiktok",
+      "badgeText": "Hemat ruang gantung",
+      "demoBadge": "Uap cair terlihat",
+      "specBadge": "Kantong anti tumpah",
+      "hookLine1": "Seberapa lembap isi lemari tertutup?",
+      "hookHighlight": "Lihat air yang tertampung di bawah",
+      "demoLine1": "Model tipis diselipkan antar kemeja",
+      "demoHighlight": "Tidak makan tempat di gantungan",
+      "specLine1": "Wadah bawah rapat mengunci cairan",
+      "specHighlight": "Tinggal ganti saat kantong penuh",
+      "ctaText": "Cek pilihan aroma & paketnya di sini",
+      "ctaPlatform": "universal",
       "coverTemplate": "promo_split",
       "coverClipIndex": 1,
       "coverFrameSec": 31.0,
-      "coverBadge": "PROMO BUNDLE HEMAT",
-      "coverTitle": "TAHAN 1-2 BULAN!",
-      "coverSubtitle": "Isi jumbo 450ml anti lembap",
+      "coverFocus": "center_close",
+      "coverBadge": "Model gantung tipis",
+      "coverTitle": "Tampung uap air lemari",
+      "coverSubtitle": "Rapat tanpa takut tumpah ke baju",
       "coverEmbed": true,
       "clips": [
         { "startSec": 5, "endSec": 11 },

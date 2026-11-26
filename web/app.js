@@ -722,15 +722,21 @@
       el.btnSyncClipsBetweenVariants.innerHTML = `<svg class="ic" aria-hidden="true"><use href="#i-repeat"></use></svg> Salin Klip ${variantKey.toUpperCase()} ➔ ${otherKey.toUpperCase()}`;
     }
 
-    el.selectThemeStyle.value = v.themeStyle || v.palette || 'pastel';
-    el.selectCardStyle.value = v.cardStyle || 'creator_aesthetic';
+    const multiHookSet = ['sticky_note', 'receipt', 'chat_thread', 'type_stack', 'label_tape', 'quiet_serif'];
+    const multiCapSet = ['outline_pop', 'marker_sweep', 'reveal', 'plate'];
+    el.selectThemeStyle.value = v.palette || v.themeStyle || 'pastel';
+    el.selectCardStyle.value = v.cardStyle || v.hookStyle || 'sticky_note';
     if (el.selectPalette) el.selectPalette.value = v.palette || v.themeStyle || '';
-    if (el.selectHookStyle) el.selectHookStyle.value = v.hookStyle || '';
-    if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = v.subtitleStyle || '';
+    if (el.selectHookStyle) {
+      el.selectHookStyle.value = (v.cardStyle && multiHookSet.includes(v.cardStyle)) ? '' : (v.hookStyle || '');
+    }
+    if (el.selectSubtitleStyle) {
+      el.selectSubtitleStyle.value = (v.captionStyle && multiCapSet.includes(v.captionStyle)) ? '' : (v.subtitleStyle || '');
+    }
     if (el.selectHookVariant) el.selectHookVariant.value = v.hookVariant || 'v1';
     if (el.selectPreset) el.selectPreset.value = v.preset || '';
     if (el.selectPresetVariant) el.selectPresetVariant.value = v.presetVariant || 'v1';
-    if (el.selectCaptionStyle) el.selectCaptionStyle.value = v.captionStyle || '';
+    if (el.selectCaptionStyle) el.selectCaptionStyle.value = v.captionStyle || v.subtitleStyle || 'outline_pop';
     if (el.selectCaptionVariant) el.selectCaptionVariant.value = v.captionVariant || 'v1';
     if (el.selectHookTransition) el.selectHookTransition.value = v.hookTransition || 'zoom_flash';
     if (el.selectClipTransition) el.selectClipTransition.value = v.clipTransition || 'auto';
@@ -1088,11 +1094,15 @@
   // ===========================================================================
   const LIVE_FPS = 60;
   const LIVE_DEBOUNCE_MS = 700;
+  const FLAT_SUBTITLE_IDS = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label', 'glass_pill'];
   const CAPTION_STYLES = [
     { id: 'outline_pop', label: 'Outline' },
     { id: 'marker_sweep', label: 'Stabilo' },
     { id: 'reveal', label: 'Reveal' },
-    { id: 'plate', label: 'Pelat' }
+    { id: 'plate', label: 'Pelat' },
+    { id: 'karaoke_block', label: 'Karaoke' },
+    { id: 'pop_scale', label: 'Pop' },
+    { id: 'glass_pill', label: 'Glass' }
   ];
 
   const live = {
@@ -1132,10 +1142,13 @@
   }
 
   function activeCaptionStyle() {
+    const flatSub = el.selectSubtitleStyle?.value;
     const picked = el.selectCaptionStyle?.value;
+    if (picked && !FLAT_SUBTITLE_IDS.includes(picked)) return picked;
+    if (flatSub) return flatSub;
     if (picked) return picked;
     const preset = DESIGN_PRESETS[el.selectPreset?.value || ''];
-    return preset?.captionStyle || 'outline_pop';
+    return preset?.subtitleStyle || preset?.captionStyle || 'outline_pop';
   }
 
   async function loadLiveWords() {
@@ -1340,8 +1353,22 @@
     sale_yellow: '#FFD23F',
     tech_blue: '#3D6DF2',
     ink_mono: '#E8E3D5',
-    warm_kuliner: '#E86A17',
-    sage_hampers: '#B07D3A'
+    warm_kuliner: '#F97316',
+    sage_hampers: '#C89D54'
+  };
+
+  const THEME_ACCENT_INKS = {
+    pastel: '#FFFFFF',
+    editorial: '#090A0F',
+    flash_sale: '#FFFFFF',
+    minimal: '#09090B',
+    pastel_rose: '#1F1A1C',
+    fresh_mint: '#14261F',
+    sale_yellow: '#141414',
+    tech_blue: '#FFFFFF',
+    ink_mono: '#1A1A1A',
+    warm_kuliner: '#FFFFFF',
+    sage_hampers: '#1C2822'
   };
 
   const CC_PRESETS_META = [
@@ -1668,6 +1695,7 @@
 
     const activeTheme = el.selectPalette?.value || el.selectThemeStyle?.value || 'pastel';
     root.style.setProperty('--cc-accent', THEME_ACCENTS[activeTheme] || '#FF4D6D');
+    root.style.setProperty('--cc-accent-ink', THEME_ACCENT_INKS[activeTheme] || '#0B0C10');
 
     const activePreset = el.selectPreset?.value || '';
     const activePresetVer = el.selectPresetVariant?.value || 'v1';
@@ -1752,9 +1780,11 @@
         const ver = activePreset === p.id ? activePresetVer : activePresetVer;
         const cfg = presetObj?.versions?.[ver] || presetObj;
         const isSelected = activePreset === p.id;
-        const accent = THEME_ACCENTS[cfg.themeStyle] || '#FF4D6D';
+        const themeKeyForCard = isSelected ? activeTheme : (cfg.palette || cfg.themeStyle || 'pastel');
+        const accent = THEME_ACCENTS[themeKeyForCard] || '#FF4D6D';
+        const accentInk = THEME_ACCENT_INKS[themeKeyForCard] || '#0B0C10';
         return `
-          <div class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-preset" data-preset="${p.id}" style="--cc-accent:${accent}">
+          <div class="cc-card ${isSelected ? 'active' : ''}" data-action="pick-preset" data-preset="${p.id}" style="--cc-accent:${accent};--cc-accent-ink:${accentInk}">
             <div class="cc-stage">
               <span class="cc-stage-badge">${ver.toUpperCase()}</span>
               ${buildHookStageHtml(cfg.cardStyle, cfg.hookVariant || 'v1')}
@@ -1954,6 +1984,7 @@
         const isFlat = ['marker_highlight', 'stack_slam', 'struck_swap', 'tilt_card', 'mask_wipe', 'split_versus', 'floating_tag'].includes(card.dataset.style);
         if (isFlat) {
           syncSelectEl(el.selectHookStyle, card.dataset.style);
+          syncSelectEl(el.selectCardStyle, card.dataset.style);
           if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
         } else {
           syncSelectEl(el.selectHookStyle, '');
@@ -1962,9 +1993,10 @@
         }
       } else if (action === 'pick-caption') {
         syncSelectEl(el.selectPreset, '');
-        const isFlat = ['karaoke_block', 'pop_scale', 'highlighter_bar', 'fill_sweep', 'typewriter_band', 'sticker_label', 'glass_pill'].includes(card.dataset.style);
+        const isFlat = FLAT_SUBTITLE_IDS.includes(card.dataset.style);
         if (isFlat) {
           syncSelectEl(el.selectSubtitleStyle, card.dataset.style);
+          syncSelectEl(el.selectCaptionStyle, card.dataset.style);
           if (!el.selectPalette?.value) syncSelectEl(el.selectPalette, 'pastel_rose');
         } else {
           syncSelectEl(el.selectSubtitleStyle, '');
@@ -2040,10 +2072,18 @@
       r.captionBox.addEventListener('click', e => {
         const b = e.target.closest('button[data-style]');
         if (!b || !el.selectCaptionStyle) return;
-        el.selectCaptionStyle.value = b.dataset.style;
+        const pickedStyle = b.dataset.style;
+        if (FLAT_SUBTITLE_IDS.includes(pickedStyle)) {
+          if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = pickedStyle;
+          el.selectCaptionStyle.value = pickedStyle;
+        } else {
+          if (el.selectSubtitleStyle) el.selectSubtitleStyle.value = '';
+          el.selectCaptionStyle.value = pickedStyle;
+        }
         if (el.selectPreset) el.selectPreset.value = '';
         live.armed = true;
         syncFormToVariant();
+        renderCapcutPicker();
         triggerAutoSave();
         renderLiveSide();
         scheduleLivePreview(0);
@@ -3381,12 +3421,18 @@
     const clips = Array.isArray(v.clips) ? v.clips : [];
     const targetClip = clips[clipIdx] || clips[0] || { startSec: 0, endSec: 5 };
     const mainVideo = targetClip.src || el.selectProductVideo?.value || state.currentProduct?.videoSource || '';
-    const explicitSec = el.inputCoverFrameSec && el.inputCoverFrameSec.value !== ''
-      ? parseFloat(el.inputCoverFrameSec.value)
-      : (v.coverFrameSec !== undefined && v.coverFrameSec !== null ? Number(v.coverFrameSec) : NaN);
-    const frameSec = !isNaN(explicitSec) && explicitSec >= 0
-      ? explicitSec
-      : ((targetClip.startSec || 0) + Math.min(1.5, Math.max(0, ((targetClip.endSec || 5) - (targetClip.startSec || 0)) * 0.35)));
+    const cStart = Number(targetClip.startSec) || 0;
+    const cEnd = Number(targetClip.endSec) || (cStart + 5);
+    const defaultClipSec = cStart + Math.min(1.5, Math.max(0, (cEnd - cStart) * 0.35));
+    if (el.inputCoverFrameSec) {
+      el.inputCoverFrameSec.placeholder = `Otomatis (${defaultClipSec.toFixed(1)}s)`;
+    }
+    const rawExplicitVal = el.inputCoverFrameSec
+      ? el.inputCoverFrameSec.value.trim()
+      : (v.coverFrameSec !== undefined && v.coverFrameSec !== null ? String(v.coverFrameSec) : '');
+    const explicitSec = rawExplicitVal !== '' ? parseFloat(rawExplicitVal) : NaN;
+    const hasManualSec = !isNaN(explicitSec) && explicitSec >= 0;
+    const frameSec = hasManualSec ? explicitSec : defaultClipSec;
 
     let bgKind = 'none';
     if (coverImgVal === '__none__') {
@@ -3412,7 +3458,9 @@
         hook_card: 'Hook Card',
       };
       const tplLabel = tplNames[tpl] || 'Cover';
-      metaEl.textContent = bgKind === 'video' ? `${tplLabel} · ${frameSec.toFixed(1)}s` : tplLabel;
+      metaEl.textContent = bgKind === 'video'
+        ? (hasManualSec ? `${tplLabel} · ${frameSec.toFixed(1)}s` : `${tplLabel} · Klip ${clipIdx + 1} (${frameSec.toFixed(1)}s)`)
+        : tplLabel;
     }
 
     // Prepare background media if needed
@@ -3450,21 +3498,27 @@
         if (coverPreviewState.videoLoadedSrc !== vidUrl) {
           coverPreviewState.videoLoadedSrc = vidUrl;
           coverPreviewState.videoTargetSec = frameSec;
+          coverPreviewState.seeking = false;
           setCoverCanvasStatus('Memuat frame video...');
           vid.src = vidUrl;
           vid.load();
-        } else if (vid.readyState >= 2) {
-          if (Math.abs((vid.currentTime || 0) - frameSec) > 0.08 && !coverPreviewState.seeking) {
-            coverPreviewState.seeking = true;
-            coverPreviewState.videoTargetSec = frameSec;
-            setCoverCanvasStatus(`Menuju detik ${frameSec.toFixed(1)}s...`);
-            try {
-              vid.currentTime = Math.min(vid.duration || frameSec, Math.max(0, frameSec));
-            } catch (_) {
-              coverPreviewState.seeking = false;
+        } else if (vid.readyState >= 1) {
+          const clampedTarget = vid.duration ? Math.min(Math.max(0, vid.duration - 0.05), Math.max(0, frameSec)) : Math.max(0, frameSec);
+          coverPreviewState.videoTargetSec = clampedTarget;
+          if (Math.abs((vid.currentTime || 0) - clampedTarget) > 0.05) {
+            if (!coverPreviewState.seeking) {
+              coverPreviewState.seeking = true;
+              setCoverCanvasStatus(`Menuju detik ${clampedTarget.toFixed(1)}s...`);
+              try {
+                vid.currentTime = clampedTarget;
+              } catch (_) {
+                coverPreviewState.seeking = false;
+              }
             }
+          } else {
+            coverPreviewState.seeking = false;
           }
-          if (vid.videoWidth > 0) {
+          if (vid.readyState >= 2 && vid.videoWidth > 0) {
             bgMedia = vid;
             bgW = vid.videoWidth;
             bgH = vid.videoHeight;
@@ -3481,7 +3535,7 @@
 
     const focusCacheKey = bgKind === 'image'
       ? `img:${coverImgVal}`
-      : (bgKind === 'video' ? `vid:${mainVideo}:${frameSec.toFixed(1)}` : '');
+      : (bgKind === 'video' && !coverPreviewState.seeking ? `vid:${mainVideo}:${frameSec.toFixed(1)}` : '');
 
     // Helper: draw background layer into any target box (0,0,1080,1920 or a split window) with smart product focus
     const drawFocusedBgBox = (bx, by, bw, bh, isSplitWindow = false) => {
@@ -4040,18 +4094,42 @@
   (function initCoverCanvasVideo() {
     const vid = $('coverSourceVideo');
     if (!vid) return;
-    vid.addEventListener('loadeddata', () => {
+    const seekToLatestTarget = () => {
       if (coverPreviewState.videoTargetSec >= 0) {
-        try {
-          coverPreviewState.seeking = true;
-          vid.currentTime = Math.min(vid.duration || coverPreviewState.videoTargetSec, Math.max(0, coverPreviewState.videoTargetSec));
-        } catch (_) {
-          coverPreviewState.seeking = false;
+        const clamped = vid.duration
+          ? Math.min(Math.max(0, vid.duration - 0.05), Math.max(0, coverPreviewState.videoTargetSec))
+          : Math.max(0, coverPreviewState.videoTargetSec);
+        if (Math.abs((vid.currentTime || 0) - clamped) > 0.05) {
+          try {
+            coverPreviewState.seeking = true;
+            vid.currentTime = clamped;
+            return;
+          } catch (_) {
+            coverPreviewState.seeking = false;
+          }
         }
       }
+      coverPreviewState.seeking = false;
+      setCoverCanvasStatus('');
       renderCoverLiveCanvas();
+    };
+    vid.addEventListener('loadedmetadata', seekToLatestTarget);
+    vid.addEventListener('loadeddata', () => {
+      if (!coverPreviewState.seeking) {
+        setCoverCanvasStatus('');
+        renderCoverLiveCanvas();
+      }
     });
     vid.addEventListener('seeked', () => {
+      const clamped = vid.duration
+        ? Math.min(Math.max(0, vid.duration - 0.05), Math.max(0, coverPreviewState.videoTargetSec))
+        : Math.max(0, coverPreviewState.videoTargetSec);
+      if (coverPreviewState.videoTargetSec >= 0 && Math.abs((vid.currentTime || 0) - clamped) > 0.08) {
+        try {
+          vid.currentTime = clamped;
+          return;
+        } catch (_) { }
+      }
       coverPreviewState.seeking = false;
       setCoverCanvasStatus('');
       renderCoverLiveCanvas();
@@ -4073,7 +4151,26 @@
     }
   });
 
-  [el.selectCoverTemplate, el.selectCoverFocus, el.selectCoverClipIndex, el.selectCoverImage, el.chkCoverEmbed].forEach(ctrl => {
+  if (el.selectCoverClipIndex) {
+    el.selectCoverClipIndex.addEventListener('change', () => {
+      // Kosongkan override detik manual lama agar pratinjau langsung berpindah ke detik milik klip yang baru dipilih
+      if (el.inputCoverFrameSec) {
+        el.inputCoverFrameSec.value = '';
+      }
+      if (el.selectCoverImage && el.selectCoverImage.value !== '') {
+        syncSelectEl(el.selectCoverImage, '');
+      }
+      syncFormToVariant();
+      renderCoverLiveCanvas();
+      triggerAutoSave();
+    });
+  }
+
+  document.addEventListener('clipsUpdated', () => {
+    renderCoverLiveCanvas();
+  });
+
+  [el.selectCoverTemplate, el.selectCoverFocus, el.selectCoverImage, el.chkCoverEmbed].forEach(ctrl => {
     if (ctrl) {
       ctrl.addEventListener('change', () => {
         syncFormToVariant();
@@ -4192,11 +4289,11 @@
   }
 
   // Mengubah tema / tata letak manual berarti keluar dari preset (menjadi "Kustom").
-  const syncSelectEl = (sel, val) => {
+  function syncSelectEl(sel, val) {
     if (!sel || val === undefined) return;
     sel.value = val;
     if (typeof sel._syncCustomSelect === 'function') sel._syncCustomSelect();
-  };
+  }
 
   function applySelectedPresetToFields() {
     const presetKey = el.selectPreset?.value || '';

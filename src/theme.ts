@@ -9,7 +9,9 @@ export type ThemeStyle =
     | 'sale_yellow'
     | 'tech_blue'
     | 'pastel_rose'
-    | 'ink_mono';
+    | 'ink_mono'
+    | 'warm_kuliner'
+    | 'sage_hampers';
 
 export interface ThemeColors {
     bg: string;
@@ -417,6 +419,84 @@ export const THEMES: Record<ThemeStyle, ThemeDefinition> = {
         },
         easings: sharedEasings,
     },
+
+    // ==========================================
+    // 10. WARM KULINER (Food / Kuliner / Oranye Hangat)
+    // ==========================================
+    warm_kuliner: {
+        id: 'warm_kuliner',
+        name: 'Warm Kuliner',
+        colors: {
+            bg: '#1A110B',
+            surface: 'rgba(38, 23, 16, 0.86)',
+            surfaceBorder: 'rgba(249, 115, 22, 0.42)',
+            boxShadow: '0 24px 50px rgba(0, 0, 0, 0.55)',
+            textPrimary: '#FFF9F2',
+            textMuted: '#FED7AA',
+            accent: '#F97316',
+            accentText: '#FFFFFF',
+            ctaBg: 'rgba(38, 23, 16, 0.92)',
+            ctaText: '#FFF9F2',
+            ctaSubtext: '#F97316',
+            badgeBg: 'rgba(38, 23, 16, 0.90)',
+            badgeBorder: 'rgba(249, 115, 22, 0.52)',
+            badgeText: '#FFF9F2',
+            indicatorColor: '#F97316',
+            highlightBg: '#F97316',
+            highlightText: '#FFFFFF',
+            solutionHighlightBg: '#FFF9F2',
+            solutionHighlightText: '#261710',
+            scrimTop: 'rgba(26, 17, 11, 0.16)',
+            scrimBottom: 'rgba(26, 17, 11, 0.22)',
+            vignetteColor: 'rgba(0, 0, 0, 0.14)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 17, stiffness: 210, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 22, stiffness: 145, mass: 0.88 } as SpringConfig,
+            pill: { damping: 15, stiffness: 185, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
+
+    // ==========================================
+    // 11. SAGE HAMPERS (Muslim / Hampers / Sage Gold)
+    // ==========================================
+    sage_hampers: {
+        id: 'sage_hampers',
+        name: 'Sage Hampers',
+        colors: {
+            bg: '#121B17',
+            surface: 'rgba(28, 40, 34, 0.86)',
+            surfaceBorder: 'rgba(200, 157, 84, 0.42)',
+            boxShadow: '0 22px 48px rgba(0, 0, 0, 0.52)',
+            textPrimary: '#F7FAF7',
+            textMuted: '#CBD5E1',
+            accent: '#C89D54',
+            accentText: '#1C2822',
+            ctaBg: 'rgba(28, 40, 34, 0.92)',
+            ctaText: '#F7FAF7',
+            ctaSubtext: '#C89D54',
+            badgeBg: 'rgba(28, 40, 34, 0.90)',
+            badgeBorder: 'rgba(200, 157, 84, 0.50)',
+            badgeText: '#F7FAF7',
+            indicatorColor: '#C89D54',
+            highlightBg: '#C89D54',
+            highlightText: '#1C2822',
+            solutionHighlightBg: '#F7FAF7',
+            solutionHighlightText: '#1C2822',
+            scrimTop: 'rgba(18, 27, 23, 0.15)',
+            scrimBottom: 'rgba(18, 27, 23, 0.20)',
+            vignetteColor: 'rgba(0, 0, 0, 0.12)',
+        },
+        fonts: sharedFonts,
+        springs: {
+            snappy: { damping: 18, stiffness: 200, mass: 0.7 } as SpringConfig,
+            smooth: { damping: 24, stiffness: 135, mass: 0.9 } as SpringConfig,
+            pill: { damping: 15, stiffness: 175, mass: 0.6 } as SpringConfig,
+        },
+        easings: sharedEasings,
+    },
 };
 
 export const getTheme = (style?: string): ThemeDefinition => {
@@ -445,6 +525,16 @@ export const getTheme = (style?: string): ThemeDefinition => {
         case 'tech_blue':
         case 'blue':
             return THEMES.tech_blue;
+
+        case 'warm_kuliner':
+        case 'kuliner':
+        case 'orange':
+            return THEMES.warm_kuliner;
+
+        case 'sage_hampers':
+        case 'sage':
+        case 'hampers':
+            return THEMES.sage_hampers;
 
         case 'flash_sale':
         case 'flashsale':

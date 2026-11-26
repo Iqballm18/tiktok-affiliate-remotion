@@ -246,7 +246,7 @@ const Shell: React.FC<{
     left?: number;
     right?: number;
     children: React.ReactNode;
-}> = ({ exit, top = 200, left = 64, right = 110, children }) => (
+}> = ({ exit, top = 200, left = 64, right = 148, children }) => (
     <div
         style={{
             position: 'absolute',
@@ -326,6 +326,8 @@ const StickyNote: React.FC<HeadlineLayoutProps> = (p) => {
                     />
                     <div
                         style={{
+                            boxSizing: 'border-box',
+                            maxWidth: '100%',
                             backgroundColor: '#FAF9F5',
                             backgroundImage:
                                 'linear-gradient(rgba(59, 130, 246, 0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.13) 1px, transparent 1px)',
@@ -339,7 +341,9 @@ const StickyNote: React.FC<HeadlineLayoutProps> = (p) => {
                         {badge ? (
                             <div
                                 style={{
-                                    display: 'inline-block',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 8,
                                     fontFamily: FONT.mono,
                                     fontSize: 23,
                                     fontWeight: 700,
@@ -351,7 +355,8 @@ const StickyNote: React.FC<HeadlineLayoutProps> = (p) => {
                                     marginBottom: 14,
                                 }}
                             >
-                                📌 {badge}
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#DC2626' }} />
+                                <span>{badge}</span>
                             </div>
                         ) : null}
 
@@ -369,30 +374,23 @@ const StickyNote: React.FC<HeadlineLayoutProps> = (p) => {
                             </span>
                         </div>
 
-                        <div style={{ position: 'relative', marginTop: 14, display: 'inline-block' }}>
-                            {/* Stabilo kuning menyapu miring ala bang-motion .hl.marker */}
+                        <div style={{ marginTop: 14 }}>
                             <span
                                 style={{
-                                    position: 'absolute',
-                                    left: -10,
-                                    right: -10,
-                                    top: '18%',
-                                    bottom: '-4%',
-                                    backgroundColor: '#FDE047',
-                                    borderRadius: 6,
-                                    transform: `skewX(-6deg) scaleX(${write2})`,
-                                    transformOrigin: 'left center',
-                                }}
-                            />
-                            <span
-                                style={{
-                                    position: 'relative',
                                     fontFamily: FONT.grotesk,
-                                    fontSize: isHook ? 60 : 54,
+                                    fontSize: isHook ? 58 : 52,
                                     fontWeight: 800,
                                     letterSpacing: -1.3,
-                                    lineHeight: 1.06,
+                                    lineHeight: 1.14,
                                     color: '#0F172A',
+                                    backgroundImage: 'linear-gradient(#FDE047, #FDE047)',
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: '0 88%',
+                                    backgroundSize: `${write2 * 100}% 62%`,
+                                    boxDecorationBreak: 'clone',
+                                    WebkitBoxDecorationBreak: 'clone',
+                                    padding: '0 8px',
+                                    margin: '0 -8px',
                                 }}
                             >
                                 {tidy(p.highlightLine)}
@@ -666,7 +664,7 @@ const Receipt: React.FC<HeadlineLayoutProps> = (p) => {
                             fontWeight: 700,
                         }}
                     >
-                        <span>🎟️ {badge || 'VOUCHER SPESIAL'}</span>
+                        <span>{badge || 'Kupon spesial'}</span>
                         {tag ? (
                             <span
                                 style={{
@@ -779,27 +777,25 @@ const Receipt: React.FC<HeadlineLayoutProps> = (p) => {
                             {tidy(p.line1)}
                         </div>
 
-                        {/* Sorotan Pill Mengembang dari Kiri */}
-                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                        {/* Sorotan Pill Mengembang dari Kiri (aman untuk 1 maupun 2 baris) */}
+                        <div>
                             <span
                                 style={{
-                                    position: 'absolute',
-                                    inset: '-4px -14px',
-                                    backgroundColor: '#111111',
-                                    borderRadius: 8,
-                                    transform: `scaleX(${pillIn})`,
-                                    transformOrigin: 'left center',
-                                }}
-                            />
-                            <span
-                                style={{
-                                    position: 'relative',
                                     fontFamily: FONT.grotesk,
-                                    fontSize: isHook ? 54 : 48,
+                                    fontSize: isHook ? 52 : 46,
                                     fontWeight: 800,
-                                    letterSpacing: -1.2,
-                                    lineHeight: 1.08,
+                                    letterSpacing: -1.1,
+                                    lineHeight: 1.18,
                                     color: pillIn > 0.35 ? '#FFFFFF' : '#111111',
+                                    backgroundImage: 'linear-gradient(#111111, #111111)',
+                                    backgroundRepeat: 'no-repeat',
+                                    backgroundPosition: 'left center',
+                                    backgroundSize: `${pillIn * 100}% 100%`,
+                                    boxDecorationBreak: 'clone',
+                                    WebkitBoxDecorationBreak: 'clone',
+                                    borderRadius: 6,
+                                    padding: '4px 12px',
+                                    margin: '0 -12px',
                                 }}
                             >
                                 {tidy(p.highlightLine)}
@@ -940,7 +936,7 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
             // Babak 2 (Demo) & Babak 3 (Spec): Tidak lagi mengulang stiker "Membalas komentar @..."
             // Tampilkan kartu highlight & pembuktian fitur yang bersih dan elegan agar mata penonton fokus ke produk
             return (
-                <Shell exit={exit} top={196} left={56} right={56}>
+                <Shell exit={exit} top={196} left={56} right={148}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 14, width: '100%' }}>
                         {badge ? (
                             <div
@@ -1002,7 +998,7 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
         }
 
         return (
-            <Shell exit={exit} top={196} left={56} right={56}>
+            <Shell exit={exit} top={196} left={56} right={148}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16, width: '100%' }}>
                     {/* Kotak Komentar Penonton TikTok */}
                     <div
@@ -1011,7 +1007,7 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
                             color: '#111111',
                             borderRadius: '22px 22px 22px 6px',
                             padding: '20px 28px 22px',
-                            maxWidth: 790,
+                            maxWidth: '100%',
                             boxShadow: '0 16px 34px rgba(0, 0, 0, 0.45)',
                             transformOrigin: 'left bottom',
                             opacity: clamp01(stickerIn * 3),
@@ -1021,20 +1017,20 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                             <div
                                 style={{
-                                    width: 34,
-                                    height: 34,
+                                    width: 32,
+                                    height: 32,
                                     borderRadius: '50%',
                                     backgroundColor: '#FF2E54',
                                     color: '#FFFFFF',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    fontFamily: FONT.grotesk,
-                                    fontSize: 18,
-                                    fontWeight: 800,
+                                    flexShrink: 0,
                                 }}
                             >
-                                💬
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                </svg>
                             </div>
                             <span
                                 style={{
@@ -1103,7 +1099,7 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
             config: { damping: 14, stiffness: 220, mass: 0.7 },
         });
         return (
-            <Shell exit={exit} top={198} left={56} right={56}>
+            <Shell exit={exit} top={198} left={56} right={148}>
                 <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <div
                         style={{
@@ -1207,7 +1203,7 @@ const ChatThread: React.FC<HeadlineLayoutProps> = (p) => {
     const isTyping = frame < tReply;
 
     return (
-        <Shell exit={exit} top={206} left={56} right={56}>
+        <Shell exit={exit} top={206} left={56} right={148}>
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {badge ? (
                     <div
@@ -1485,39 +1481,27 @@ const TypeStack: React.FC<HeadlineLayoutProps> = (p) => {
                     </div>
                 ) : null}
 
-                {/* Baris 1: Dicoret Garis Strike Merah */}
-                <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-                    <MaskedWords
-                        text={tidy(p.line1)}
-                        frame={frame}
-                        fps={fps}
-                        start={delay}
-                        stagger={stagger}
-                        easing={p.theme.easings.outExpo}
+                {/* Baris 1: Dicoret Garis Strike Merah (aman untuk 1 maupun 2 baris) */}
+                <div style={{ marginBottom: 14, opacity: clamp01(prog(frame, delay, Math.round(0.28 * fps), p.theme.easings.outExpo) * 2) }}>
+                    <span
                         style={{
                             fontFamily: FONT.grotesk,
                             fontSize: 44,
                             fontWeight: 600,
                             letterSpacing: -0.7,
-                            lineHeight: 1.15,
-                            color: strikeDraw > 0.5 ? 'rgba(255, 255, 255, 0.72)' : '#FFFFFF',
+                            lineHeight: 1.22,
+                            color: strikeDraw > 0.5 ? 'rgba(255, 255, 255, 0.74)' : '#FFFFFF',
                             textShadow: `${ring(2.5)}, 0 4px 16px rgba(0, 0, 0, 0.75)`,
+                            backgroundImage: 'linear-gradient(#FF2E54, #FF2E54)',
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'left 54%',
+                            backgroundSize: `${strikeDraw * 100}% 6px`,
+                            boxDecorationBreak: 'clone',
+                            WebkitBoxDecorationBreak: 'clone',
                         }}
-                    />
-                    <span
-                        style={{
-                            position: 'absolute',
-                            left: -6,
-                            right: -6,
-                            top: '52%',
-                            height: 6,
-                            backgroundColor: '#FF2E54',
-                            borderRadius: 4,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
-                            transform: `rotate(-1.5deg) scaleX(${strikeDraw})`,
-                            transformOrigin: 'left center',
-                        }}
-                    />
+                    >
+                        {tidy(p.line1)}
+                    </span>
                 </div>
 
                 {/* Baris 2: Dibingkai Kotak Teknis (.hl.box) dengan Siku Sudut */}
@@ -1641,7 +1625,7 @@ const TypeStack: React.FC<HeadlineLayoutProps> = (p) => {
                     <path
                         d="M2 14 C 80 4, 170 20, 262 9 S 430 16, 498 7"
                         fill="none"
-                        stroke="#FF5A36"
+                        stroke={p.theme.colors.accent}
                         strokeWidth={9}
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"
@@ -1691,19 +1675,21 @@ const Strip: React.FC<{
         >
             <div
                 style={{
+                    boxSizing: 'border-box',
+                    maxWidth: '100%',
                     clipPath: `inset(0 ${(1 - out) * 100}% 0 0)`,
                     backgroundColor: t.bg,
                     color: t.fg,
                     borderRadius: 4,
                     boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.12)',
-                    padding: `${Math.round(size * 0.2)}px ${Math.round(size * 0.5)}px ${Math.round(size * 0.24)}px`,
+                    padding: `${Math.round(size * 0.2)}px ${Math.round(size * 0.46)}px ${Math.round(size * 0.24)}px`,
                     fontFamily: FONT.grotesk,
                     fontSize: size,
                     fontWeight: 800,
                     letterSpacing: -0.4,
-                    lineHeight: 1.05,
+                    lineHeight: 1.08,
                     textShadow: t.shadow,
-                    whiteSpace: 'nowrap',
+                    wordBreak: 'break-word',
                 }}
             >
                 {text}
@@ -1862,7 +1848,7 @@ const LabelTape: React.FC<HeadlineLayoutProps> = (p) => {
 
     // v1: Classic Dymo Label Tape
     const l1 = wrapLines(tidy(p.line1), 26);
-    const hl = wrapLines(tidy(p.highlightLine), 17);
+    const hl = wrapLines(tidy(p.highlightLine), 20);
 
     let i = 0;
     const next = () => delay + gap * i++;
@@ -1870,16 +1856,16 @@ const LabelTape: React.FC<HeadlineLayoutProps> = (p) => {
 
     return (
         <Shell exit={exit} top={206}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 12, maxWidth: '100%' }}>
                 {badge ? (
-                    <Strip text={badge} kind="red" size={32} rot={-2.2} at={next()} frame={frame} fps={fps} />
+                    <Strip text={badge} kind="red" size={30} rot={-2.2} at={next()} frame={frame} fps={fps} />
                 ) : null}
                 {l1.map((line, k) => (
                     <Strip
                         key={`l1-${k}`}
                         text={line}
                         kind="black"
-                        size={42}
+                        size={40}
                         rot={rots[(k + 1) % rots.length]}
                         at={next()}
                         frame={frame}
@@ -1891,7 +1877,7 @@ const LabelTape: React.FC<HeadlineLayoutProps> = (p) => {
                         key={`hl-${k}`}
                         text={line}
                         kind="white"
-                        size={isHook ? 70 : 62}
+                        size={isHook ? 60 : 52}
                         rot={rots[(k + 3) % rots.length]}
                         at={next()}
                         frame={frame}
@@ -1922,7 +1908,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
     // v2: Luxury Magazine Masthead (Garis Vertikal Kiri + Editorial Dua Warna)
     if (ver === 'v2') {
         return (
-            <Shell exit={exit} top={206} left={60} right={60}>
+            <Shell exit={exit} top={206} left={60} right={148}>
                 <div
                     style={{
                         position: 'absolute',
@@ -1996,9 +1982,10 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
     // v3: Warm Paper Pocket (Kartu Kertas Krem Hangat — Kontras Terang `bang-motion` 1b)
     if (ver === 'v3') {
         return (
-            <Shell exit={exit} top={202} left={60} right={60}>
+            <Shell exit={exit} top={202} left={60} right={148}>
                 <div
                     style={{
+                        boxSizing: 'border-box',
                         backgroundColor: '#F7F4EB',
                         color: '#18181B',
                         borderRadius: 14,
@@ -2006,7 +1993,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
                         boxShadow: '0 22px 44px rgba(0, 0, 0, 0.52), inset 0 0 0 1.5px rgba(24, 24, 27, 0.14)',
                         opacity: a,
                         transform: `translateY(${(1 - a) * 20}px)`,
-                        maxWidth: 860,
+                        maxWidth: '100%',
                     }}
                 >
                     {badge ? (
@@ -2039,32 +2026,26 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
                         {tidy(p.line1)}
                     </div>
 
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <div>
                         <span
                             style={{
                                 fontFamily: FONT.serifItalic,
                                 fontSize: isHook ? 56 : 48,
                                 fontWeight: 400,
                                 letterSpacing: -1.2,
-                                lineHeight: 1.02,
+                                lineHeight: 1.12,
                                 color: '#111111',
+                                backgroundImage: `linear-gradient(${p.theme.colors.accent}, ${p.theme.colors.accent})`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: '0 100%',
+                                backgroundSize: `${rule * 100}% 5px`,
+                                boxDecorationBreak: 'clone',
+                                WebkitBoxDecorationBreak: 'clone',
+                                paddingBottom: 4,
                             }}
                         >
                             {tidy(p.highlightLine)}
                         </span>
-                        <span
-                            style={{
-                                position: 'absolute',
-                                left: 0,
-                                right: 0,
-                                bottom: -6,
-                                height: 5,
-                                borderRadius: 3,
-                                backgroundColor: p.theme.colors.accent,
-                                transform: `scaleX(${rule})`,
-                                transformOrigin: 'left center',
-                            }}
-                        />
                     </div>
                 </div>
             </Shell>
@@ -2073,7 +2054,7 @@ const QuietSerif: React.FC<HeadlineLayoutProps> = (p) => {
 
     // v1: Classic Quiet Serif
     return (
-        <Shell exit={exit} top={214} left={64} right={64}>
+        <Shell exit={exit} top={214} left={64} right={148}>
             <div
                 style={{
                     position: 'absolute',
